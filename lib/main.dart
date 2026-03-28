@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:pbl_app_joglo66/screens/login_screen.dart';
+import 'package:pbl_app_joglo66/screens/dashboard_admin.dart';
 
 void main() {
   runApp(const MyApp());
@@ -6,6 +8,34 @@ void main() {
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: LoginScreen(),
+    );
+  }
+}
+
+class MyAppp extends StatelessWidget {
+  const MyAppp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Mini Soccer Admin',
+      theme: ThemeData(
+        primaryColor: const Color(0xFF4A6FA5),
+      ),
+      home: const DashboardAdmin(),
+    );
+  }
+}
+
+class MyApppp extends StatelessWidget {
+  const MyApppp({super.key});
 
   // This widget is the root of your application.
   @override
