@@ -4,7 +4,7 @@ class CustomBottomNavPage extends StatefulWidget {
   const CustomBottomNavPage({super.key});
 
   @override
-  State<CustomBottomNavPage> createState() => _CustomBottomNavPageState();      
+  State<CustomBottomNavPage> createState() => _CustomBottomNavPageState();
 }
 
 class _CustomBottomNavPageState extends State<CustomBottomNavPage> {
@@ -53,7 +53,7 @@ class _CustomBottomNavPageState extends State<CustomBottomNavPage> {
         onPressed: () => _onTap(2),
         child: const Icon(Icons.add),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,  
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 
