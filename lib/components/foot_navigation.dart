@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:pbl_app_joglo66/screens/admin/check_slot_availability_admin_screens.dart';
+import 'package:pbl_app_joglo66/screens/admin/dashboard_admin_screens.dart';
 
 class CustomBottomNavPage extends StatefulWidget {
   const CustomBottomNavPage({super.key});
@@ -11,9 +13,9 @@ class _CustomBottomNavPageState extends State<CustomBottomNavPage> {
   int _currentIndex = 0;
 
   final List<Widget> _pages = const [
-    Center(child: Text("Home")),
+    Center(child: DashboardAdminScreens()),
     Center(child: Text("Jadwal")),
-    Center(child: Text("Booking")),
+    Center(child: CheckSlotAvailabilityAdminScreens()),
     Center(child: Text("Riwayat")),
     Center(child: Text("Profil")),
   ];

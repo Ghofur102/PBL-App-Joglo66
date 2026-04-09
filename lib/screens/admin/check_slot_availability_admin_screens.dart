@@ -1,16 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:pbl_app_joglo66/screens/admin/form_input_booking.dart';
 
-class SlotPage extends StatefulWidget {
-  const SlotPage({super.key});
+class CheckSlotAvailabilityAdminScreens extends StatefulWidget {
+  const CheckSlotAvailabilityAdminScreens({super.key});
 
   @override
-  State<SlotPage> createState() => _SlotPageState();
+  State<CheckSlotAvailabilityAdminScreens> createState() =>
+      _CheckSlotAvailabilityPageState();
 }
 
-class _SlotPageState extends State<SlotPage> {
+class _CheckSlotAvailabilityPageState
+    extends State<CheckSlotAvailabilityAdminScreens> {
   String selectedField = 'Mini Soccer';
   DateTime selectedDate = DateTime.now();
   String selectedTimeFilter = 'Pagi';
+
+  // --- TAMBAHAN: Variabel untuk menyimpan slot waktu yang diklik ---
+  Set<String> selectedTimeSlots = {};
 
   final List<String> fields = ['Mini Soccer', 'Futsal'];
 
@@ -52,6 +58,7 @@ class _SlotPageState extends State<SlotPage> {
     if (picked != null) {
       setState(() {
         selectedDate = picked;
+        selectedTimeSlots.clear(); 
       });
     }
   }
@@ -63,9 +70,8 @@ class _SlotPageState extends State<SlotPage> {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    var filteredSlots = slots
-        .where((e) => e['type'] == selectedTimeFilter)
-        .toList();
+    var filteredSlots =
+        slots.where((e) => e['type'] == selectedTimeFilter).toList();
 
     return Scaffold(
       backgroundColor: const Color(0xFF406093),
@@ -94,7 +100,7 @@ class _SlotPageState extends State<SlotPage> {
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(), // Fixed withOpacity
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 ),
@@ -114,7 +120,8 @@ class _SlotPageState extends State<SlotPage> {
                   ),
                 ),
                 const SizedBox(height: 32),
-                // Pilih Lapangan
+                
+                // --- Pilih Lapangan ---
                 const Text(
                   'Pilih Lapangan',
                   style: TextStyle(
@@ -127,7 +134,7 @@ class _SlotPageState extends State<SlotPage> {
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
-                    vertical: 16,
+                    vertical: 4, // Sedikit diubah agar dropdown pas
                   ),
                   decoration: BoxDecoration(
                     border: Border.all(color: Colors.grey.shade300),
@@ -137,6 +144,7 @@ class _SlotPageState extends State<SlotPage> {
                   child: DropdownButton<String>(
                     value: selectedField,
                     isExpanded: true,
+                    underline: const SizedBox(), 
                     items: fields
                         .map(
                           (e) => DropdownMenuItem(
@@ -168,7 +176,8 @@ class _SlotPageState extends State<SlotPage> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                // Pilih Tanggal
+                
+                // --- Pilih Tanggal ---
                 const Text(
                   'Pilih Tanggal',
                   style: TextStyle(
@@ -210,7 +219,8 @@ class _SlotPageState extends State<SlotPage> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                // Filter waktu
+                
+                // --- Filter Waktu ---
                 const Text(
                   'Filter Waktu',
                   style: TextStyle(
@@ -250,52 +260,132 @@ class _SlotPageState extends State<SlotPage> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                // List slot
-                Text(
+                
+                // --- Ketersediaan Slot ---
+                const Text(
                   'Ketersediaan Slot',
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Color(0xFF2C3E50),
                     fontWeight: FontWeight.w700,
                     fontSize: 18,
                   ),
                 ),
                 const SizedBox(height: 16),
+                
                 ...filteredSlots.map(
-                  (slot) => Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: slot['status']
-                          ? Colors.green.shade50
-                          : Colors.red.shade50,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: slot['status']
-                            ? Colors.green.shade200
-                            : Colors.red.shade200,
+                  (slot) {
+                    bool isAvailable = slot['status'];
+                    bool isSelected = selectedTimeSlots.contains(slot['time']);
+
+                    // Tentukan warna dan icon berdasarkan 3 kemungkinan state
+                    Color bgColor;
+                    Color borderColor;
+                    Widget trailingIcon;
+
+                    if (!isAvailable) {
+                      // 1. Tidak Tersedia (Disabled)
+                      bgColor = Colors.red.shade50;
+                      borderColor = Colors.red.shade200;
+                      trailingIcon = const Icon(Icons.cancel, color: Colors.red, size: 28);
+                    } else if (isSelected) {
+                      // 2. Tersedia & Dipilih
+                      bgColor = Colors.green.shade50;
+                      borderColor = Colors.green.shade200;
+                      trailingIcon = const Icon(Icons.check_circle, color: Colors.green, size: 28);
+                    } else {
+                      // 3. Tersedia & Belum Dipilih (Default)
+                      bgColor = Colors.white;
+                      borderColor = Colors.grey.shade300;
+                      trailingIcon = const SizedBox(width: 28); // Kosongkan saja jika belum dipilih
+                    }
+
+                    return GestureDetector(
+                      onTap: () {
+                        // Jika tidak tersedia, abaikan ketukan
+                        if (!isAvailable) return;
+
+                        setState(() {
+                          if (isSelected) {
+                            selectedTimeSlots.remove(slot['time']);
+                          } else {
+                            selectedTimeSlots.add(slot['time']);
+                          }
+                        });
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: bgColor,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: borderColor),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              slot['time'],
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: isAvailable ? const Color(0xFF2C3E50) : Colors.grey.shade600,
+                              ),
+                            ),
+                            trailingIcon,
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                
+                const SizedBox(height: 24),
+
+                // --- TOMBOL LANJUT KE FORM PESANAN ---
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    // Tombol disabled jika belum ada slot yang dipilih
+                    onPressed: selectedTimeSlots.isEmpty
+                        ? null
+                        : () {
+                            // Hitung durasi (1 slot = 1 jam)
+                            int totalDuration = selectedTimeSlots.length;
+                            
+                            // Gabungkan jam yang dipilih (contoh: 08.00-09.00, 09.00-10.00)
+                            List<String> sortedTimes = selectedTimeSlots.toList()..sort();
+                            String combinedHours = sortedTimes.join(', ');
+
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => FormInputBooking(
+                                  nameField: selectedField,
+                                  selectedDate: selectedDate,
+                                  hours: combinedHours,
+                                  duration: totalDuration,
+                                ),
+                              ),
+                            );
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF406093),
+                      disabledBackgroundColor: Colors.grey.shade300,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          slot['time'],
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF2C3E50),
-                          ),
-                        ),
-                        Icon(
-                          slot['status'] ? Icons.check_circle : Icons.cancel,
-                          color: slot['status'] ? Colors.green : Colors.red,
-                          size: 28,
-                        ),
-                      ],
+                    child: const Text(
+                      'Lanjut Isi Form',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 32),
               ],
             ),
           ),

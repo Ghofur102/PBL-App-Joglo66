@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pbl_app_joglo66/screens/admin/list_booking_admin_screens.dart';
 
 class SuccessfulPaymentAdminScreen extends StatelessWidget {
   const SuccessfulPaymentAdminScreen({super.key});
@@ -84,7 +85,12 @@ class SuccessfulPaymentAdminScreen extends StatelessWidget {
                     elevation: 2,
                   ),
                   onPressed: () {
-                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ListBookingAdminScreens(),
+                      ),
+                    );
                   },
                   child: const Text(
                     'Kembali ke Daftar Pembayaran',

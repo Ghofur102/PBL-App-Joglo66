@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:pbl_app_joglo66/screens/admin/booking_details_admin_screens.dart';
 
 class ListBookingAdminScreens extends StatefulWidget {
   const ListBookingAdminScreens({super.key});
@@ -135,12 +136,12 @@ class _ListBookingAdminScreensState extends State<ListBookingAdminScreens> {
                             context,
                             MaterialPageRoute(
                               builder: (context) =>
-                                  BookingDetailPage(booking: booking),
+                                  BookingDetailsAdminScreen(),
                             ),
                           );
                         },
                       ))
-                  .toList(),
+                  ,
 
               const SizedBox(height: 24),
 
@@ -155,12 +156,12 @@ class _ListBookingAdminScreensState extends State<ListBookingAdminScreens> {
                             context,
                             MaterialPageRoute(
                               builder: (context) =>
-                                  BookingDetailPage(booking: booking),
+                                  BookingDetailsAdminScreen(),
                             ),
                           );
                         },
                       ))
-                  .toList(),
+                  ,
 
               const SizedBox(height: 32),
             ],
@@ -287,146 +288,6 @@ class BookingItem extends StatelessWidget {
               color: Color(0xFF9E9E9E),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-// ==============================================================================
-// BOOKING DETAIL PAGE - Halaman detail booking
-// ==============================================================================
-class BookingDetailPage extends StatelessWidget {
-  final Map<String, String> booking;
-
-  const BookingDetailPage({
-    super.key,
-    required this.booking,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        backgroundColor: const Color(0xFFEEEEEE),
-        appBar: AppBar(
-          backgroundColor: const Color(0xFF4A6FA5),
-          title: Text(
-            'Detail Booking',
-            style: GoogleFonts.poppins(
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
-            ),
-          ),
-          elevation: 0,
-        ),
-        body: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Title
-              Text(
-                'Nama Tim',
-                style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  color: const Color(0xFF9E9E9E),
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                booking['title']!,
-                style: GoogleFonts.poppins(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black,
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // Tanggal Lengkap
-              Text(
-                'Tanggal',
-                style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  color: const Color(0xFF9E9E9E),
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '${booking['date']} ${booking['month']} ${booking['year']}',
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black87,
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // Jam
-              Text(
-                'Jam Bermain',
-                style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  color: const Color(0xFF9E9E9E),
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                booking['time']!,
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFFE53935),
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // Description
-              Text(
-                'Deskripsi',
-                style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  color: const Color(0xFF9E9E9E),
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                booking['description']!,
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  color: Colors.black87,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // Info placeholder
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: Colors.blue.shade200,
-                    width: 1,
-                  ),
-                ),
-                child: Text(
-                  'Data ini akan diambil dari API di masa depan',
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    color: Colors.blue.shade700,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );

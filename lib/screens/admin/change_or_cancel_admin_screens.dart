@@ -159,7 +159,7 @@ class _EditBookingScreenState extends State<ChangeOrCancelAdminScreens> {
                           });
                         },
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 3),
 
                       TabButton(
                         title: 'Dibatalkan',
@@ -175,15 +175,13 @@ class _EditBookingScreenState extends State<ChangeOrCancelAdminScreens> {
                     ],
                   ),
 
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 12),
 
                   // 4. Area Form Dinamis (Berubah sesuai tab yang dipilih)
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: const Color(
-                        0xFF90CAF9,
-                      ), // Biru medium sebagai wadah form
+                      color: const Color.fromARGB(255, 215, 222, 228), 
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: _activeTab == 'Reschedule'
@@ -191,7 +189,7 @@ class _EditBookingScreenState extends State<ChangeOrCancelAdminScreens> {
                         : _buildCancelForm(),
                   ),
 
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 12),
 
                   // Tombol Simpan Perubahan
                   SizedBox(

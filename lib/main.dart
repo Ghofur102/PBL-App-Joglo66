@@ -1,8 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:pbl_app_joglo66/components/buble_card.dart';
 import 'package:pbl_app_joglo66/components/button.dart';
+import 'package:pbl_app_joglo66/components/foot_navigation.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
-void main() {
+void main() async {
+  // 1. Wajib ditambahkan agar Flutter memastikan binding sudah siap sebelum inisialisasi
+  WidgetsFlutterBinding.ensureInitialized(); 
+  
+  // 2. Inisialisasi format tanggal lokal untuk bahasa Indonesia
+  await initializeDateFormatting('id_ID', null);
+
   runApp(const MyApp());
 }
 

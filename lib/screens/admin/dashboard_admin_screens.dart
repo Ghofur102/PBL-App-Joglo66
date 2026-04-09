@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:pbl_app_joglo66/components/menu_grid.dart';
+import 'package:pbl_app_joglo66/screens/admin/field_details_admin_screens.dart';
+import 'package:pbl_app_joglo66/screens/admin/list_booking_admin_screens.dart';
 
 class DashboardAdminScreens extends StatefulWidget {
   const DashboardAdminScreens({super.key});
@@ -9,10 +12,7 @@ class DashboardAdminScreens extends StatefulWidget {
 }
 
 class _DashboardAdminScreensState extends State<DashboardAdminScreens> {
-  // State untuk bottom navigation bar
-  int _currentNavIndex = 0;
-
-  // Dummy data - mudah untuk diganti dengan API nanti
+  // Dummy data
   final Map<String, dynamic> dashboardData = {
     'name': 'Joglo66',
     'slotTerisi': 4,
@@ -21,26 +21,39 @@ class _DashboardAdminScreensState extends State<DashboardAdminScreens> {
     'slotKosong': 13,
   };
 
-  final List<Map<String, dynamic>> miniSoccerMenu = [
-    {
-      'icon': Icons.list_alt,
-      'label': 'Daftar Booking',
-      'color': Colors.blue,
-    },
-    {
-      'icon': Icons.info_outline,
-      'label': 'Detail Lapangan',
-      'color': Colors.green,
-    },
-    {
-      'icon': Icons.image,
-      'label': 'Galeri',
-      'color': Colors.orange,
-    },
-  ];
-
   @override
   Widget build(BuildContext context) {
+    
+    // PINDAHKAN KE SINI: Agar bisa menggunakan parameter 'context' untuk navigasi
+    final List<Map<String, dynamic>> fieldMenu = [
+      {
+        'icon': Icons.list_alt,
+        'label': 'Daftar Booking',
+        'color': Colors.blue,
+        'onTap': () {
+          Navigator.push(context, MaterialPageRoute(builder: (context) => const ListBookingAdminScreens()));
+        },
+      },
+      {
+        'icon': Icons.info_outline,
+        'label': 'Detail Lapangan',
+        'color': Colors.green,
+        'onTap': () {
+          Navigator.push(context, MaterialPageRoute(builder: (context) => const FieldDetailsAdminScreens()));
+        },
+      },
+      {
+        'icon': Icons.image,
+        'label': 'Galeri',
+        'color': Colors.orange,
+        'onTap': () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Menuju Halaman Galeri')),
+          );
+        },
+      },
+    ];
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       body: Stack(
@@ -79,10 +92,11 @@ class _DashboardAdminScreensState extends State<DashboardAdminScreens> {
                           color: Colors.black87,
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 20),
 
-                      // Menu Grid
-                      MenuGrid(menuItems: miniSoccerMenu),
+                      // Memanggil Komponen Menu Grid yang sudah dipisah
+                      MenuGrid(menuItems: fieldMenu),
+                      
                       const SizedBox(height: 40),
                     ],
                   ),
@@ -90,77 +104,11 @@ class _DashboardAdminScreensState extends State<DashboardAdminScreens> {
               ),
             ],
           ),
-          // Custom floating button dengan star shape
-          Positioned(
-            bottom: 20,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: StarPlusButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const AddBookingPage(),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-        ],
-      ),
-
-      // Bottom Navigation Bar - SIMETRIS TANPA FAB GAP
-      bottomNavigationBar: BottomAppBar(
-        child: SizedBox(
-          height: 60,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildNavItem(Icons.home, "Home", 0),
-              _buildNavItem(Icons.calendar_today, "Jadwal", 1),
-              _buildNavItem(Icons.history, "Riwayat", 2),
-              _buildNavItem(Icons.person, "Profil", 3),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // Widget untuk nav item
-  Widget _buildNavItem(IconData icon, String label, int index) {
-    final active = _currentNavIndex == index;
-
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _currentNavIndex = index;
-        });
-      },
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: active ? const Color(0xFF4A6FA5) : Colors.grey),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: active ? const Color(0xFF4A6FA5) : Colors.grey,
-            ),
-          ),
         ],
       ),
     );
   }
 }
-
-
-// ==============================================================================
-// SEPERTI WIDGET - Header Section
-// ==============================================================================
-/// Widget untuk menampilkan header dengan info dashboard
 class HeaderSection extends StatelessWidget {
   final Map<String, dynamic> dashboardData;
 
@@ -244,11 +192,6 @@ class HeaderSection extends StatelessWidget {
     );
   }
 }
-
-// ==============================================================================
-// INFO CIRCLE - Widget untuk menampilkan info dalam bentuk OVAL (bukan bulat)
-// ==============================================================================
-/// Widget oval untuk menampilkan statistik dengan warna biru cerah
 class InfoCircle extends StatelessWidget {
   final String title;
   final String value;
@@ -313,321 +256,3 @@ class InfoCircle extends StatelessWidget {
     );
   }
 }
-
-// ==============================================================================
-// MENU GRID - Widget untuk menampilkan grid menu
-// ==============================================================================
-/// Widget GridView untuk menu mini soccer
-class MenuGrid extends StatelessWidget {
-  final List<Map<String, dynamic>> menuItems;
-
-  const MenuGrid({
-    super.key,
-    required this.menuItems,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-        childAspectRatio: 1,
-      ),
-      itemCount: menuItems.length,
-      itemBuilder: (context, index) {
-        final item = menuItems[index];
-        return MenuGridItem(
-          icon: item['icon'],
-          label: item['label'],
-          color: item['color'],
-          onTap: () {
-            // Handle tap untuk setiap menu
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Anda memilih ${item['label']}'),
-                duration: const Duration(seconds: 1),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-}
-
-// ==============================================================================
-// MENU GRID ITEM - Widget untuk item individual di grid
-// ==============================================================================
-/// Widget individual item dalam grid menu
-class MenuGridItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-
-  const MenuGridItem({
-    super.key,
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Icon
-            Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                icon,
-                color: color,
-                size: 28,
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // Label
-            Text(
-              label,
-              style: GoogleFonts.poppins(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ==============================================================================
-// STAR PLUS BUTTON - Custom widget dengan star shape decorator
-// ==============================================================================
-/// Widget button berbentuk star dengan plus sign di tengah dan teks di bawah
-class StarPlusButton extends StatelessWidget {
-  final VoidCallback onPressed;
-
-  const StarPlusButton({
-    super.key,
-    required this.onPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onPressed,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              // Star shape background - WARNA BIRU
-              CustomPaint(
-                painter: StarPainter(
-                  color: const Color(0xFF4A6FA5),
-                  size: 100,
-                ),
-                size: const Size(100, 100),
-              ),
-              // Plus icon
-              Text(
-                '+',
-                style: TextStyle(
-                  fontSize: 60,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          // Teks Tambah Booking
-          Text(
-            'Tambah Booking',
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF4A6FA5),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ==============================================================================
-// STAR PAINTER - CustomPainter untuk membentuk star shape dengan concave sides
-// ==============================================================================
-/// Custom painter untuk menggambar star shape 4-pointed dengan concave sides
-class StarPainter extends CustomPainter {
-  final Color color;
-  final double size;
-
-  StarPainter({
-    required this.color,
-    required this.size,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-
-    final path = Path();
-    final centerX = size.width / 2;
-    final centerY = size.height / 2;
-    final radius = size.width / 2;
-
-    // Membuat 4-pointed star dengan concave sides
-    // Top point
-    path.moveTo(centerX, centerY - radius);
-
-    // Top right curve
-    path.quadraticBezierTo(
-      centerX + radius * 0.4,
-      centerY - radius * 0.4,
-      centerX + radius,
-      centerY,
-    );
-
-    // Right bottom curve
-    path.quadraticBezierTo(
-      centerX + radius * 0.4,
-      centerY + radius * 0.4,
-      centerX,
-      centerY + radius,
-    );
-
-    // Bottom left curve
-    path.quadraticBezierTo(
-      centerX - radius * 0.4,
-      centerY + radius * 0.4,
-      centerX - radius,
-      centerY,
-    );
-
-    // Left top curve
-    path.quadraticBezierTo(
-      centerX - radius * 0.4,
-      centerY - radius * 0.4,
-      centerX,
-      centerY - radius,
-    );
-
-    path.close();
-
-    canvas.drawPath(path, paint);
-
-    // Optional: Draw border
-    final borderPaint = Paint()
-      ..color = Colors.grey.shade400
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-
-    canvas.drawPath(path, borderPaint);
-  }
-
-  @override
-  bool shouldRepaint(StarPainter oldDelegate) =>
-      oldDelegate.color != color || oldDelegate.size != size;
-}
-
-// ==============================================================================
-// ADD BOOKING PAGE - Halaman dummy untuk tambah booking
-// ==============================================================================
-/// Halaman dummy untuk tambah booking
-class AddBookingPage extends StatelessWidget {
-  const AddBookingPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF4A6FA5),
-        title: Text(
-          'Tambah Booking',
-          style: GoogleFonts.poppins(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        elevation: 0,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Form Booking Lapangan',
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Halaman ini masih dalam pengembangan. Silakan kembali ke dashboard.',
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                color: Colors.grey,
-              ),
-            ),
-            const SizedBox(height: 32),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF4A6FA5),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: Text(
-                  'Kembali ke Dashboard',
-                  style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}    
