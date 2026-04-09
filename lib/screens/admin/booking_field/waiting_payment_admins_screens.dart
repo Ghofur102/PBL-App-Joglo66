@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:pbl_app_joglo66/screens/admin/successful_payment_admin_screens.dart';
+import 'package:pbl_app_joglo66/screens/admin/booking_field/successful_payment_admin_screens.dart';
 class WaitingPaymentAdminsScreen extends StatefulWidget {
   const WaitingPaymentAdminsScreen({super.key});
 

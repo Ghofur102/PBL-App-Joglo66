@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../components/button.dart';
+import '../../../components/button.dart';
 
 class DetailPesananPage extends StatefulWidget {
   const DetailPesananPage({super.key});

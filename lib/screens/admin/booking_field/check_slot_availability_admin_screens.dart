@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:pbl_app_joglo66/screens/admin/form_input_booking.dart';
+import 'package:pbl_app_joglo66/screens/admin/booking_field/form_input_booking.dart';
 
 class CheckSlotAvailabilityAdminScreens extends StatefulWidget {
   const CheckSlotAvailabilityAdminScreens({super.key});

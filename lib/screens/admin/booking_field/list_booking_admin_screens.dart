@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:pbl_app_joglo66/screens/admin/booking_details_admin_screens.dart';
+import 'package:pbl_app_joglo66/screens/admin/booking_field/booking_details_admin_screens.dart';
 
 class ListBookingAdminScreens extends StatefulWidget {
   const ListBookingAdminScreens({super.key});

@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:pbl_app_joglo66/components/input_field.dart';
 import 'package:pbl_app_joglo66/components/tab_button.dart';
 
-class ChangeOrCancelAdminScreens extends StatefulWidget {
+class ChangeBookingAdminScreens extends StatefulWidget {
   // 1. Parameter yang diterima dari halaman sebelumnya
   final String bookingId;
   final String oldDate;
   final String oldTime;
 
-  const ChangeOrCancelAdminScreens({
+  const ChangeBookingAdminScreens({
     super.key,
     required this.bookingId,
     required this.oldDate,
@@ -16,10 +16,10 @@ class ChangeOrCancelAdminScreens extends StatefulWidget {
   });
 
   @override
-  State<ChangeOrCancelAdminScreens> createState() => _EditBookingScreenState();
+  State<ChangeBookingAdminScreens> createState() => _ChangeBookingAdminScreenState();
 }
 
-class _EditBookingScreenState extends State<ChangeOrCancelAdminScreens> {
+class _ChangeBookingAdminScreenState extends State<ChangeBookingAdminScreens> {
   // 2. Variabel State untuk menyimpan tab mana yang sedang aktif
   // Secara default kita set ke 'Reschedule'
   String _activeTab = 'Reschedule';

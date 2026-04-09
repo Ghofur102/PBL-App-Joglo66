@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pbl_app_joglo66/components/detail_row.dart';
 import 'package:pbl_app_joglo66/components/header_one.dart';
 import 'package:pbl_app_joglo66/components/header_two.dart';
-import 'package:pbl_app_joglo66/screens/admin/change_or_cancel_admin_screens.dart';
+import 'package:pbl_app_joglo66/screens/admin/booking_field/change_booking_admin_screens.dart';
 
 class BookingDetailsAdminScreen extends StatelessWidget {
   const BookingDetailsAdminScreen({super.key});
@@ -156,7 +156,7 @@ class BookingDetailsAdminScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const ChangeOrCancelAdminScreens(
+                    builder: (context) => const ChangeBookingAdminScreens(
                       bookingId: 'BK-123456', 
                       oldDate: '12 April 2026', 
                       oldTime: '14:00 - 16:00', 

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:pbl_app_joglo66/screens/admin/list_booking_admin_screens.dart';
+import 'package:pbl_app_joglo66/screens/admin/booking_field/list_booking_admin_screens.dart';
 
 class SuccessfulPaymentAdminScreen extends StatelessWidget {
   const SuccessfulPaymentAdminScreen({super.key});

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:pbl_app_joglo66/components/menu_grid.dart';
-import 'package:pbl_app_joglo66/screens/admin/field_details_admin_screens.dart';
-import 'package:pbl_app_joglo66/screens/admin/list_booking_admin_screens.dart';
+import 'package:pbl_app_joglo66/screens/admin/field/field_details_admin_screens.dart';
+import 'package:pbl_app_joglo66/screens/admin/booking_field/list_booking_admin_screens.dart';
 
 class DashboardAdminScreens extends StatefulWidget {
   const DashboardAdminScreens({super.key});

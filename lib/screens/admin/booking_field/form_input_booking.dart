@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 // Pastikan path import ini sesuai dengan struktur folder Anda
-import 'package:pbl_app_joglo66/screens/admin/payment_details_page_admin_screens.dart';
+import 'package:pbl_app_joglo66/screens/admin/booking_field/payment_details_page_admin_screens.dart';
 
 class FormInputBooking extends StatefulWidget {
   final String nameField;
