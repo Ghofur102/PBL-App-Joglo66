@@ -127,8 +127,9 @@ class FieldDetailsAdminScreens extends StatelessWidget {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    // Aksi tombol "Ubah Data Lapangan" - Navigasi ke screen form pengeditan
+                    Navigator.pushNamed(context, '/form_edit_field');
                   },
+
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(
                       0xFFFFCC80,

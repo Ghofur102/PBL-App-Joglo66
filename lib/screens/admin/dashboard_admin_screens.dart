@@ -39,8 +39,9 @@ class _DashboardAdminScreensState extends State<DashboardAdminScreens> {
         'label': 'Detail Lapangan',
         'color': Colors.green,
         'onTap': () {
-          Navigator.push(context, MaterialPageRoute(builder: (context) => const FieldDetailsAdminScreens()));
+          Navigator.pushNamed(context, '/list_field');
         },
+
       },
       {
         'icon': Icons.image,
