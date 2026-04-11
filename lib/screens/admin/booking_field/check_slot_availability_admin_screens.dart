@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:pbl_app_joglo66/screens/admin/booking_field/form_input_booking.dart';
+import 'package:go_router/go_router.dart'; 
 
 class CheckSlotAvailabilityAdminScreens extends StatefulWidget {
   const CheckSlotAvailabilityAdminScreens({super.key});
@@ -58,7 +58,7 @@ class _CheckSlotAvailabilityPageState
     if (picked != null) {
       setState(() {
         selectedDate = picked;
-        selectedTimeSlots.clear(); 
+        selectedTimeSlots.clear();
       });
     }
   }
@@ -70,8 +70,9 @@ class _CheckSlotAvailabilityPageState
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    var filteredSlots =
-        slots.where((e) => e['type'] == selectedTimeFilter).toList();
+    var filteredSlots = slots
+        .where((e) => e['type'] == selectedTimeFilter)
+        .toList();
 
     return Scaffold(
       backgroundColor: const Color(0xFF406093),
@@ -120,7 +121,7 @@ class _CheckSlotAvailabilityPageState
                   ),
                 ),
                 const SizedBox(height: 32),
-                
+
                 // --- Pilih Lapangan ---
                 const Text(
                   'Pilih Lapangan',
@@ -144,7 +145,7 @@ class _CheckSlotAvailabilityPageState
                   child: DropdownButton<String>(
                     value: selectedField,
                     isExpanded: true,
-                    underline: const SizedBox(), 
+                    underline: const SizedBox(),
                     items: fields
                         .map(
                           (e) => DropdownMenuItem(
@@ -176,7 +177,7 @@ class _CheckSlotAvailabilityPageState
                   ),
                 ),
                 const SizedBox(height: 20),
-                
+
                 // --- Pilih Tanggal ---
                 const Text(
                   'Pilih Tanggal',
@@ -219,7 +220,7 @@ class _CheckSlotAvailabilityPageState
                   ),
                 ),
                 const SizedBox(height: 20),
-                
+
                 // --- Filter Waktu ---
                 const Text(
                   'Filter Waktu',
@@ -260,7 +261,7 @@ class _CheckSlotAvailabilityPageState
                   ),
                 ),
                 const SizedBox(height: 24),
-                
+
                 // --- Ketersediaan Slot ---
                 const Text(
                   'Ketersediaan Slot',
@@ -271,74 +272,84 @@ class _CheckSlotAvailabilityPageState
                   ),
                 ),
                 const SizedBox(height: 16),
-                
-                ...filteredSlots.map(
-                  (slot) {
-                    bool isAvailable = slot['status'];
-                    bool isSelected = selectedTimeSlots.contains(slot['time']);
 
-                    // Tentukan warna dan icon berdasarkan 3 kemungkinan state
-                    Color bgColor;
-                    Color borderColor;
-                    Widget trailingIcon;
+                ...filteredSlots.map((slot) {
+                  bool isAvailable = slot['status'];
+                  bool isSelected = selectedTimeSlots.contains(slot['time']);
 
-                    if (!isAvailable) {
-                      // 1. Tidak Tersedia (Disabled)
-                      bgColor = Colors.red.shade50;
-                      borderColor = Colors.red.shade200;
-                      trailingIcon = const Icon(Icons.cancel, color: Colors.red, size: 28);
-                    } else if (isSelected) {
-                      // 2. Tersedia & Dipilih
-                      bgColor = Colors.green.shade50;
-                      borderColor = Colors.green.shade200;
-                      trailingIcon = const Icon(Icons.check_circle, color: Colors.green, size: 28);
-                    } else {
-                      // 3. Tersedia & Belum Dipilih (Default)
-                      bgColor = Colors.white;
-                      borderColor = Colors.grey.shade300;
-                      trailingIcon = const SizedBox(width: 28); // Kosongkan saja jika belum dipilih
-                    }
+                  // Tentukan warna dan icon berdasarkan 3 kemungkinan state
+                  Color bgColor;
+                  Color borderColor;
+                  Widget trailingIcon;
 
-                    return GestureDetector(
-                      onTap: () {
-                        // Jika tidak tersedia, abaikan ketukan
-                        if (!isAvailable) return;
-
-                        setState(() {
-                          if (isSelected) {
-                            selectedTimeSlots.remove(slot['time']);
-                          } else {
-                            selectedTimeSlots.add(slot['time']);
-                          }
-                        });
-                      },
-                      child: Container(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: bgColor,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: borderColor),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              slot['time'],
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: isAvailable ? const Color(0xFF2C3E50) : Colors.grey.shade600,
-                              ),
-                            ),
-                            trailingIcon,
-                          ],
-                        ),
-                      ),
+                  if (!isAvailable) {
+                    // 1. Tidak Tersedia (Disabled)
+                    bgColor = Colors.red.shade50;
+                    borderColor = Colors.red.shade200;
+                    trailingIcon = const Icon(
+                      Icons.cancel,
+                      color: Colors.red,
+                      size: 28,
                     );
-                  },
-                ),
-                
+                  } else if (isSelected) {
+                    // 2. Tersedia & Dipilih
+                    bgColor = Colors.green.shade50;
+                    borderColor = Colors.green.shade200;
+                    trailingIcon = const Icon(
+                      Icons.check_circle,
+                      color: Colors.green,
+                      size: 28,
+                    );
+                  } else {
+                    // 3. Tersedia & Belum Dipilih (Default)
+                    bgColor = Colors.white;
+                    borderColor = Colors.grey.shade300;
+                    trailingIcon = const SizedBox(
+                      width: 28,
+                    ); // Kosongkan saja jika belum dipilih
+                  }
+
+                  return GestureDetector(
+                    onTap: () {
+                      // Jika tidak tersedia, abaikan ketukan
+                      if (!isAvailable) return;
+
+                      setState(() {
+                        if (isSelected) {
+                          selectedTimeSlots.remove(slot['time']);
+                        } else {
+                          selectedTimeSlots.add(slot['time']);
+                        }
+                      });
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: bgColor,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: borderColor),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            slot['time'],
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: isAvailable
+                                  ? const Color(0xFF2C3E50)
+                                  : Colors.grey.shade600,
+                            ),
+                          ),
+                          trailingIcon,
+                        ],
+                      ),
+                    ),
+                  );
+                }),
+
                 const SizedBox(height: 24),
 
                 // --- TOMBOL LANJUT KE FORM PESANAN ---
@@ -351,21 +362,20 @@ class _CheckSlotAvailabilityPageState
                         : () {
                             // Hitung durasi (1 slot = 1 jam)
                             int totalDuration = selectedTimeSlots.length;
-                            
+
                             // Gabungkan jam yang dipilih (contoh: 08.00-09.00, 09.00-10.00)
-                            List<String> sortedTimes = selectedTimeSlots.toList()..sort();
+                            List<String> sortedTimes =
+                                selectedTimeSlots.toList()..sort();
                             String combinedHours = sortedTimes.join(', ');
 
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => FormInputBooking(
-                                  nameField: selectedField,
-                                  selectedDate: selectedDate,
-                                  hours: combinedHours,
-                                  duration: totalDuration,
-                                ),
-                              ),
+                            context.push(
+                              '/admin/form-input-booking', // Sesuaikan dengan path rute Anda
+                              extra: {
+                                'nameField': selectedField,
+                                'selectedDate': selectedDate,
+                                'hours': combinedHours,
+                                'duration': totalDuration,
+                              },
                             );
                           },
                     style: ElevatedButton.styleFrom(

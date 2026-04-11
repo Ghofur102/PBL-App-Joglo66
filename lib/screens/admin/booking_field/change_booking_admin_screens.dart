@@ -1,18 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart'; 
 import 'package:pbl_app_joglo66/components/input_field.dart';
 import 'package:pbl_app_joglo66/components/tab_button.dart';
 
 class ChangeBookingAdminScreens extends StatefulWidget {
-  // 1. Parameter yang diterima dari halaman sebelumnya
+  // 1. Hanya menerima bookingId dari parameter
   final String bookingId;
-  final String oldDate;
-  final String oldTime;
 
   const ChangeBookingAdminScreens({
     super.key,
     required this.bookingId,
-    required this.oldDate,
-    required this.oldTime,
   });
 
   @override
@@ -20,25 +17,56 @@ class ChangeBookingAdminScreens extends StatefulWidget {
 }
 
 class _ChangeBookingAdminScreenState extends State<ChangeBookingAdminScreens> {
-  // 2. Variabel State untuk menyimpan tab mana yang sedang aktif
-  // Secara default kita set ke 'Reschedule'
+  // Variabel State untuk menyimpan tab aktif
   String _activeTab = 'Reschedule';
 
-  // Controller untuk input (opsional, tapi baik disiapkan)
-  final TextEditingController _alasanController = TextEditingController();
+  final TextEditingController _reasonController = TextEditingController();
   final TextEditingController _newDateController = TextEditingController();
-  final TextEditingController _newTimeController = TextEditingController();
+  final TextEditingController _newStartTimeController = TextEditingController();
+  final TextEditingController _newEndTimeController = TextEditingController();
+
+  // 2. SIMULASI DATABASE (API)
+  // Fungsi ini bertindak sebagai API backend yang mengambil data berdasarkan ID
+  Map<String, dynamic> _fetchDummyData(String id) {
+    final db = {
+      'BK-001': {
+        'tenantName': 'Budi (Sportify FC)',
+        'fieldName': 'Joglo66 Field 1',
+        'oldDate': 'April 14, 2026',
+        'oldTime': '14:00 - 16:00',
+      },
+      'BK-002': {
+        'tenantName': 'Andi (Garuda FC)',
+        'fieldName': 'Futsal Field A',
+        'oldDate': 'April 15, 2026',
+        'oldTime': '19:00 - 20:00',
+      },
+    };
+
+    // Kembalikan data jika ketemu, atau data kosong jika ID tidak valid
+    return db[id] ?? {
+      'tenantName': 'Unknown Tenant',
+      'fieldName': 'Unknown Field',
+      'oldDate': '-',
+      'oldTime': '-',
+    };
+  }
 
   @override
   void dispose() {
-    _alasanController.dispose();
+    // Jangan lupa hapus semua controller dari memori saat layar ditutup
+    _reasonController.dispose();
     _newDateController.dispose();
-    _newTimeController.dispose();
+    _newStartTimeController.dispose();
+    _newEndTimeController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    // 3. Ambil data dari simulasi API berdasarkan bookingId
+    final bookingData = _fetchDummyData(widget.bookingId);
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -46,10 +74,16 @@ class _ChangeBookingAdminScreenState extends State<ChangeBookingAdminScreens> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/');
+            }
+          },
         ),
         title: const Text(
-          'Ubah / Batalkan',
+          'Modify / Cancel',
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
       ),
@@ -75,7 +109,7 @@ class _ChangeBookingAdminScreenState extends State<ChangeBookingAdminScreens> {
                     ),
                     alignment: Alignment.center,
                     child: const Text(
-                      'foto',
+                      'Photo',
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -87,25 +121,24 @@ class _ChangeBookingAdminScreenState extends State<ChangeBookingAdminScreens> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Nama Pemesan (Nama Tim)',
-                          style: TextStyle(
+                        Text(
+                          bookingData['tenantName'], // Data dari API simulasi
+                          style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
                           ),
                         ),
                         const SizedBox(height: 4),
-                        const Text(
-                          'Nama Lapangan',
-                          style: TextStyle(
+                        Text(
+                          bookingData['fieldName'], // Data dari API simulasi
+                          style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                         const SizedBox(height: 4),
-                        // Menggunakan parameter yang dikirim
                         Text(
-                          'Jadwal: ${widget.oldDate} | ${widget.oldTime}',
+                          'Schedule: ${bookingData['oldDate']} | ${bookingData['oldTime']}',
                           style: const TextStyle(
                             fontSize: 14,
                             color: Colors.black54,
@@ -139,12 +172,12 @@ class _ChangeBookingAdminScreenState extends State<ChangeBookingAdminScreens> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   const Text(
-                    'Ubah / Batalkan Pesanan',
+                    'Modify / Cancel Order',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
                   ),
                   const SizedBox(height: 20),
 
-                  // 3. Tab Pilihan (Reschedule vs Dibatalkan)
+                  // Tab Pilihan (Reschedule vs Cancel)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -159,37 +192,37 @@ class _ChangeBookingAdminScreenState extends State<ChangeBookingAdminScreens> {
                           });
                         },
                       ),
-                      const SizedBox(width: 3),
-
+                      const SizedBox(width: 8), // Sedikit diperlebar agar rapi
                       TabButton(
-                        title: 'Dibatalkan',
+                        title: 'Cancel',
                         icon: Icons.cancel_outlined,
-                        isActive: _activeTab == 'Dibatalkan',
+                        isActive: _activeTab == 'Cancel',
                         activeColor: const Color(0xFFE57373),
                         onTap: () {
                           setState(() {
-                            _activeTab = 'Dibatalkan';
+                            _activeTab = 'Cancel';
                           });
                         },
                       ),
                     ],
                   ),
 
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
 
-                  // 4. Area Form Dinamis (Berubah sesuai tab yang dipilih)
+                  // Area Form Dinamis (Berubah sesuai tab yang dipilih)
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: const Color.fromARGB(255, 215, 222, 228), 
                       borderRadius: BorderRadius.circular(12),
                     ),
+                    // Lempar data ke dalam fungsi form agar bisa ditampilkan
                     child: _activeTab == 'Reschedule'
-                        ? _buildRescheduleForm()
+                        ? _buildRescheduleForm(bookingData)
                         : _buildCancelForm(),
                   ),
 
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
 
                   // Tombol Simpan Perubahan
                   SizedBox(
@@ -198,15 +231,17 @@ class _ChangeBookingAdminScreenState extends State<ChangeBookingAdminScreens> {
                       onPressed: () {
                         // Logika simpan berdasarkan tab yang aktif
                         if (_activeTab == 'Reschedule') {
-                          //
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Reschedule request saved!')),
+                          );
                         } else {
-                          //
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Order has been cancelled!')),
+                          );
                         }
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(
-                          0xFFFFCC80,
-                        ), // Oranye pastel
+                        backgroundColor: const Color(0xFFFFCC80), // Oranye pastel
                         foregroundColor: Colors.black87,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
@@ -215,7 +250,7 @@ class _ChangeBookingAdminScreenState extends State<ChangeBookingAdminScreens> {
                         elevation: 0,
                       ),
                       child: const Text(
-                        'Simpan Perubahan',
+                        'Save Changes',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
@@ -223,7 +258,7 @@ class _ChangeBookingAdminScreenState extends State<ChangeBookingAdminScreens> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 8),
                 ],
               ),
             ),
@@ -235,39 +270,36 @@ class _ChangeBookingAdminScreenState extends State<ChangeBookingAdminScreens> {
 
   // --- WIDGET HELPER FORM ---
 
-  // Form Khusus Reschedule
-  Widget _buildRescheduleForm() {
+  // Form Khusus Reschedule (Menerima parameter data agar bisa menampilkan jadwal lama)
+  Widget _buildRescheduleForm(Map<String, dynamic> data) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Jadwal Lama (Disabled)
         InputField(
-          label: 'Jadwal Saat Ini (Tidak bisa diedit)',
-          initialValue: '${widget.oldDate} | ${widget.oldTime}',
-          isEnabled: false, // Membuatnya disabled
+          label: 'Current Schedule (Cannot be edited)',
+          initialValue: '${data['oldDate']} | ${data['oldTime']}',
+          isEnabled: false, 
         ),
         const SizedBox(height: 16),
+        
         // Input Tanggal Baru
         InputField(
-          label: 'Tanggal Main Baru',
-          hint: 'Pilih Tanggal Baru',
+          label: 'New Play Date',
+          hint: 'Select New Date',
           controller: _newDateController,
           icon: Icons.calendar_today,
-          readOnly: true, // Cegah keyboard muncul
+          readOnly: true, 
           onTap: () async {
-            // Memunculkan dialog kalender bawaan Flutter
             DateTime? pickedDate = await showDatePicker(
               context: context,
-              initialDate: DateTime.now(), // Tanggal default
-              firstDate: DateTime.now(), // Minimal pilih hari ini
-              lastDate: DateTime(2030), // Maksimal tahun 2030
+              initialDate: DateTime.now(),
+              firstDate: DateTime.now(),
+              lastDate: DateTime(2030), 
             );
 
-            // Jika user memilih tanggal (tidak cancel)
             if (pickedDate != null) {
-              // Ubah format tanggal (contoh sederhana) dan masukkan ke controller
-              String formattedDate =
-                  "${pickedDate.day}-${pickedDate.month}-${pickedDate.year}";
+              String formattedDate = "${pickedDate.day}-${pickedDate.month}-${pickedDate.year}";
               setState(() {
                 _newDateController.text = formattedDate;
               });
@@ -275,49 +307,45 @@ class _ChangeBookingAdminScreenState extends State<ChangeBookingAdminScreens> {
           },
         ),
         const SizedBox(height: 16),
-        // Input Jam Baru
+        
+        // Input Jam Awal Baru (Menggunakan controller StartTime)
         InputField(
-          label: 'Jam Awal Main Baru',
-          hint: 'Pilih Jam Baru',
-          controller: _newTimeController,
+          label: 'New Start Time',
+          hint: 'Select Start Time',
+          controller: _newStartTimeController,
           icon: Icons.access_time,
-          readOnly: true, // Cegah keyboard muncul
+          readOnly: true, 
           onTap: () async {
-            // Memunculkan dialog jam bawaan Flutter
             TimeOfDay? pickedTime = await showTimePicker(
               context: context,
               initialTime: TimeOfDay.now(),
             );
 
-            // Jika user memilih jam
-            if (pickedTime != null) {
-              // Masukkan ke controller (format bawaan jam:menit)
+            if (pickedTime != null && context.mounted) {
               setState(() {
-                _newTimeController.text = pickedTime.format(context);
+                _newStartTimeController.text = pickedTime.format(context);
               });
             }
           },
         ),
         const SizedBox(height: 16),
-        // Input Jam Baru
+        
+        // Input Jam Akhir Baru (Menggunakan controller EndTime)
         InputField(
-          label: 'Jam Akhir Main Baru',
-          hint: 'Pilih Jam Baru',
-          controller: _newTimeController,
+          label: 'New End Time',
+          hint: 'Select End Time',
+          controller: _newEndTimeController,
           icon: Icons.access_time,
-          readOnly: true, // Cegah keyboard muncul
+          readOnly: true, 
           onTap: () async {
-            // Memunculkan dialog jam bawaan Flutter
             TimeOfDay? pickedTime = await showTimePicker(
               context: context,
               initialTime: TimeOfDay.now(),
             );
 
-            // Jika user memilih jam
-            if (pickedTime != null) {
-              // Masukkan ke controller (format bawaan jam:menit)
+            if (pickedTime != null && context.mounted) {
               setState(() {
-                _newTimeController.text = pickedTime.format(context);
+                _newEndTimeController.text = pickedTime.format(context);
               });
             }
           },
@@ -332,15 +360,15 @@ class _ChangeBookingAdminScreenState extends State<ChangeBookingAdminScreens> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Alasan Pembatalan',
+          'Reason for Cancellation',
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
         ),
         const SizedBox(height: 8),
         TextField(
-          controller: _alasanController,
-          maxLines: 5, // Membuatnya menjadi Textarea (tinggi 5 baris)
+          controller: _reasonController,
+          maxLines: 5, 
           decoration: InputDecoration(
-            hintText: 'Tuliskan alasan membatalkan pesanan...',
+            hintText: 'Write the reason for cancelling the order...',
             filled: true,
             fillColor: Colors.white,
             border: OutlineInputBorder(

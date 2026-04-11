@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:pbl_app_joglo66/components/header_two.dart';
+import 'package:go_router/go_router.dart';
 import 'package:pbl_app_joglo66/components/button.dart';
+import 'package:pbl_app_joglo66/router/app_router.dart';
 
 class LoginScreens extends StatefulWidget {
   const LoginScreens({super.key});
@@ -23,11 +24,11 @@ class _LoginScreensState extends State<LoginScreens> {
 
   void _submit() {
     if (_formKey.currentState!.validate()) {
-      print('Login submitted!');
+      authService.login('admin');
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Login berhasil!')));
-      Navigator.pushReplacementNamed(context, '/');
+      context.go('/');
     }
   }
 
@@ -74,7 +75,7 @@ class _LoginScreensState extends State<LoginScreens> {
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
+                        color: Colors.black.withValues(),
                         blurRadius: 30,
                         offset: const Offset(0, 15),
                       ),
@@ -85,7 +86,7 @@ class _LoginScreensState extends State<LoginScreens> {
                       Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: Colors.blue.withOpacity(0.1),
+                          color: Colors.blue.withValues(),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
@@ -145,10 +146,8 @@ class _LoginScreensState extends State<LoginScreens> {
                             ),
                             const SizedBox(height: 20),
                             TextButton(
-                              onPressed: () => Navigator.pushReplacementNamed(
-                                context,
-                                '/register',
-                              ),
+                              onPressed: () =>
+                                  context.go('/register'), 
                               child: const Text('Belum punya akun? Daftar'),
                             ),
                           ],

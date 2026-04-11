@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:pbl_app_joglo66/components/header_one.dart';
+import 'package:pbl_app_joglo66/components/info_card_circle.dart';
 import 'package:pbl_app_joglo66/components/menu_grid.dart';
-import 'package:pbl_app_joglo66/screens/admin/field/field_details_admin_screens.dart';
-import 'package:pbl_app_joglo66/screens/admin/booking_field/list_booking_admin_screens.dart';
 
 class DashboardAdminScreens extends StatefulWidget {
   const DashboardAdminScreens({super.key});
@@ -24,32 +25,31 @@ class _DashboardAdminScreensState extends State<DashboardAdminScreens> {
   @override
   Widget build(BuildContext context) {
     
-    // PINDAHKAN KE SINI: Agar bisa menggunakan parameter 'context' untuk navigasi
     final List<Map<String, dynamic>> fieldMenu = [
       {
         'icon': Icons.list_alt,
         'label': 'Daftar Booking',
         'color': Colors.blue,
         'onTap': () {
-          Navigator.push(context, MaterialPageRoute(builder: (context) => const ListBookingAdminScreens()));
+          context.push('/admin/list-booking');
         },
       },
       {
         'icon': Icons.info_outline,
-        'label': 'Detail Lapangan',
+        'label': 'Daftar Lapangan',
         'color': Colors.green,
         'onTap': () {
-          Navigator.pushNamed(context, '/list_field');
+          context.push('/admin/list-field');
         },
 
       },
       {
-        'icon': Icons.image,
-        'label': 'Galeri',
+        'icon': Icons.money,
+        'label': 'Pengeluaran',
         'color': Colors.orange,
         'onTap': () {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Menuju Halaman Galeri')),
+            const SnackBar(content: Text('Menuju Halaman Pengeluaran')),
           );
         },
       },
@@ -85,14 +85,7 @@ class _DashboardAdminScreensState extends State<DashboardAdminScreens> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Title Mini Soccer
-                      Text(
-                        'Mini Soccer',
-                        style: GoogleFonts.poppins(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
-                      ),
+                      HeaderOne(title: dashboardData['name']),
                       const SizedBox(height: 20),
 
                       // Memanggil Komponen Menu Grid yang sudah dipisah
@@ -161,96 +154,29 @@ class HeaderSection extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const SizedBox(width: 20),
                   // Slot Terisi (atas kiri)
-                  InfoCircle(
+                  InfoCardCircle(
                     title: 'Slot Terisi',
                     value: '${dashboardData['slotTerisi']}/${dashboardData['totalSlot']}',
                     icon: Icons.check_circle,
                   ),
                   // Slot Kosong (atas kanan)
-                  InfoCircle(
+                  InfoCardCircle(
                     title: 'Slot Kosong',
                     value: '${dashboardData['slotKosong']}/${dashboardData['totalSlot']}',
                     icon: Icons.open_in_full,
                   ),
-                  const SizedBox(width: 20),
                 ],
               ),
-              const SizedBox(height: 20),
               // Total Booking (bawah tengah)
               Center(
-                child: InfoCircle(
+                child: InfoCardCircle(
                   title: 'Total Booking',
                   value: '${dashboardData['totalBooking']}',
                   icon: Icons.calendar_today,
                 ),
               ),
             ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-class InfoCircle extends StatelessWidget {
-  final String title;
-  final String value;
-  final IconData icon;
-
-  const InfoCircle({
-    super.key,
-    required this.title,
-    required this.value,
-    required this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 115,
-      height: 105,
-      decoration: BoxDecoration(
-        // Oval shape (ellipse) MENYAMPING dengan warna biru cerah
-        color: Colors.blue.shade300,
-        borderRadius: BorderRadius.circular(40),
-        border: Border.all(
-          color: Colors.blue.shade400,
-          width: 1.5,
-        ),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Icon
-          Icon(
-            icon,
-            color: Colors.white,
-            size: 26,
-          ),
-          const SizedBox(height: 6),
-
-          // Value
-          Text(
-            value,
-            style: GoogleFonts.poppins(
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 2),
-
-          // Title
-          Text(
-            title,
-            style: GoogleFonts.poppins(
-              fontSize: 9,
-              color: Colors.white,
-              fontWeight: FontWeight.w500,
-            ),
-            textAlign: TextAlign.center,
           ),
         ],
       ),

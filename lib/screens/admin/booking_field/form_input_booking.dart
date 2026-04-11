@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-// Pastikan path import ini sesuai dengan struktur folder Anda
-import 'package:pbl_app_joglo66/screens/admin/booking_field/payment_details_page_admin_screens.dart';
+import 'package:go_router/go_router.dart'; 
 
 class FormInputBooking extends StatefulWidget {
   final String nameField;
@@ -23,7 +22,7 @@ class FormInputBooking extends StatefulWidget {
 
 class _FormInputBookingPageState extends State<FormInputBooking> {
   // Status pembayaran default
-  String statusPembayaran = ''; 
+  String statusPembayaran = '';
   bool agree = false;
 
   final TextEditingController namaController = TextEditingController();
@@ -39,20 +38,20 @@ class _FormInputBookingPageState extends State<FormInputBooking> {
     final int totalHarga = widget.duration * hargaPerJam;
     final int dpHarga = (totalHarga * 0.5).toInt(); // DP 50%
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PaymentDetailsPageAdminScreens(
-          nameField: widget.nameField,
-          nameTenant: namaController.text.isEmpty ? 'Tanpa Nama' : namaController.text,
-          selectedDate: widget.selectedDate,
-          hours: widget.hours,
-          duration: widget.duration,
-          totalPrice: totalHarga,
-          downPaymentPrice: dpHarga,
-          statusEarly: statusPembayaran,
-        ),
-      ),
+    context.push(
+      '/admin/payment-details',
+      extra: {
+        'nameField': widget.nameField,
+        'nameTenant': namaController.text.isEmpty
+            ? 'Tanpa Nama'
+            : namaController.text,
+        'selectedDate': widget.selectedDate,
+        'hours': widget.hours,
+        'duration': widget.duration,
+        'totalPrice': totalHarga,
+        'downPaymentPrice': dpHarga,
+        'statusEarly': statusPembayaran,
+      },
     );
   }
 
@@ -146,7 +145,11 @@ class _FormInputBookingPageState extends State<FormInputBooking> {
 
   // Widget khusus untuk pilihan DP atau Lunas
   Widget paymentOption(String title, int price, String valueStr) {
-    final formatPrice = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0).format(price);
+    final formatPrice = NumberFormat.currency(
+      locale: 'id_ID',
+      symbol: 'Rp ',
+      decimalDigits: 0,
+    ).format(price);
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       child: RadioListTile(
@@ -162,7 +165,11 @@ class _FormInputBookingPageState extends State<FormInputBooking> {
           children: [
             Text(
               title,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF2C3E50)),
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF2C3E50),
+              ),
             ),
             Text(
               formatPrice,
@@ -172,7 +179,11 @@ class _FormInputBookingPageState extends State<FormInputBooking> {
         ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: statusPembayaran == valueStr ? const Color(0xFF406093) : Colors.transparent),
+          side: BorderSide(
+            color: statusPembayaran == valueStr
+                ? const Color(0xFF406093)
+                : Colors.transparent,
+          ),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 8),
         tileColor: Colors.grey.shade50,
@@ -189,9 +200,17 @@ class _FormInputBookingPageState extends State<FormInputBooking> {
 
     final int totalHarga = widget.duration * hargaPerJam;
     final int dpHarga = (totalHarga * 0.5).toInt(); // Setengah harga untuk DP
-    
-    final formattedHargaPerJam = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0).format(hargaPerJam);
-    final formattedTotalHarga = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0).format(totalHarga);
+
+    final formattedHargaPerJam = NumberFormat.currency(
+      locale: 'id_ID',
+      symbol: 'Rp ',
+      decimalDigits: 0,
+    ).format(hargaPerJam);
+    final formattedTotalHarga = NumberFormat.currency(
+      locale: 'id_ID',
+      symbol: 'Rp ',
+      decimalDigits: 0,
+    ).format(totalHarga);
 
     return Scaffold(
       backgroundColor: const Color(0xFF406093),
@@ -255,10 +274,22 @@ class _FormInputBookingPageState extends State<FormInputBooking> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                readOnlyField('Lapangan', widget.nameField, Icons.sports_soccer),
-                readOnlyField('Tanggal', formattedDate, Icons.calendar_today_outlined),
+                readOnlyField(
+                  'Lapangan',
+                  widget.nameField,
+                  Icons.sports_soccer,
+                ),
+                readOnlyField(
+                  'Tanggal',
+                  formattedDate,
+                  Icons.calendar_today_outlined,
+                ),
                 readOnlyField('Jam', widget.hours, Icons.access_time),
-                readOnlyField('Durasi', '${widget.duration} Jam', Icons.timer_outlined),
+                readOnlyField(
+                  'Durasi',
+                  '${widget.duration} Jam',
+                  Icons.timer_outlined,
+                ),
 
                 const SizedBox(height: 16),
 
@@ -391,7 +422,7 @@ class _FormInputBookingPageState extends State<FormInputBooking> {
                   style: TextStyle(color: Colors.grey, fontSize: 13),
                 ),
                 const SizedBox(height: 16),
-                
+
                 paymentOption('DP (50%)', dpHarga, 'DP'),
                 paymentOption('Bayar Lunas', totalHarga, 'Lunas'),
 
@@ -427,7 +458,9 @@ class _FormInputBookingPageState extends State<FormInputBooking> {
                       width: 140,
                       child: ElevatedButton(
                         // Aktif jika setuju dan status pembayaran sudah dipilih
-                        onPressed: agree && statusPembayaran.isNotEmpty ? nextPage : null,
+                        onPressed: agree && statusPembayaran.isNotEmpty
+                            ? nextPage
+                            : null,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF406093),
                           foregroundColor: Colors.white,

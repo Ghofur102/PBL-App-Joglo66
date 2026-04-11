@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:pbl_app_joglo66/components/header_two.dart';
 import 'package:pbl_app_joglo66/components/button.dart';
+import 'package:go_router/go_router.dart';
 
 class RegisterScreens extends StatefulWidget {
   const RegisterScreens({super.key});
@@ -29,7 +29,6 @@ class _RegisterScreensState extends State<RegisterScreens> {
 
   void _submit() {
     if (_formKey.currentState!.validate()) {
-      print('Register submitted!');
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Pendaftaran berhasil!')));
@@ -92,7 +91,7 @@ class _RegisterScreensState extends State<RegisterScreens> {
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
+                        color: Colors.black.withValues(),
                         blurRadius: 30,
                         offset: const Offset(0, 15),
                       ),
@@ -105,7 +104,7 @@ class _RegisterScreensState extends State<RegisterScreens> {
                       Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: Colors.blue.withOpacity(0.1),
+                          color: Colors.blue.withValues(),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
@@ -219,10 +218,8 @@ class _RegisterScreensState extends State<RegisterScreens> {
                             ),
                             const SizedBox(height: 20),
                             TextButton(
-                              onPressed: () => Navigator.pushReplacementNamed(
-                                context,
-                                '/login',
-                              ),
+                              onPressed: () =>
+                                  context.go('/login'), 
                               child: const Text('Sudah punya akun? Login'),
                             ),
                           ],

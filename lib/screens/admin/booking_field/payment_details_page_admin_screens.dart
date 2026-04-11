@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:pbl_app_joglo66/screens/admin/booking_field/waiting_payment_admins_screens.dart';
-import '../../../components/button.dart';
+import 'package:pbl_app_joglo66/components/button.dart';
 
 class PaymentDetailsPageAdminScreens extends StatefulWidget {
-  // Parameter untuk menerima kiriman dari Form Booking
   final String nameField;
   final String nameTenant;
   final DateTime selectedDate;
@@ -12,7 +11,7 @@ class PaymentDetailsPageAdminScreens extends StatefulWidget {
   final int duration;
   final int totalPrice;
   final int downPaymentPrice;
-  final String statusEarly; // Berisi 'DP' atau 'Lunas'
+  final String statusEarly; 
 
   const PaymentDetailsPageAdminScreens({
     super.key,

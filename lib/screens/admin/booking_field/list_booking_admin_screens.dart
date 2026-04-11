@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:pbl_app_joglo66/screens/admin/booking_field/booking_details_admin_screens.dart';
+import 'package:pbl_app_joglo66/components/cards_booking.dart';
+import 'package:pbl_app_joglo66/components/header_one.dart';
+import 'package:go_router/go_router.dart';
 
 class ListBookingAdminScreens extends StatefulWidget {
   const ListBookingAdminScreens({super.key});
 
   @override
-  State<ListBookingAdminScreens> createState() => _ListBookingAdminScreensState();
+  State<ListBookingAdminScreens> createState() =>
+      _ListBookingAdminScreensState();
 }
 
 class _ListBookingAdminScreensState extends State<ListBookingAdminScreens> {
   // Dummy data untuk booking
   final List<Map<String, String>> todayBookings = [
     {
+      'detailBookingId': '1',
       'date': '06',
       'month': 'Mar',
       'year': '2026',
@@ -20,18 +24,11 @@ class _ListBookingAdminScreensState extends State<ListBookingAdminScreens> {
       'time': '13.00 - 15.00',
       'description': 'Booking lapangan mini soccer A dengan durasi 2 jam',
     },
-    {
-      'date': '06',
-      'month': 'Mar',
-      'year': '2026',
-      'title': 'Byteforce (Stefano)',
-      'time': '19.00 - 21.00',
-      'description': 'Booking lapangan mini soccer B dengan durasi 2 jam',
-    },
   ];
 
   final List<Map<String, String>> upcomingBookings = [
     {
+      'detailBookingId': '2',
       'date': '07',
       'month': 'Mar',
       'year': '2026',
@@ -39,38 +36,40 @@ class _ListBookingAdminScreensState extends State<ListBookingAdminScreens> {
       'time': '13.00 - 15.00',
       'description': 'Booking lapangan mini soccer A dengan durasi 2 jam',
     },
-    {
-      'date': '08',
-      'month': 'Mar',
-      'year': '2026',
-      'title': 'PAIPAMA (Vicky)',
-      'time': '19.00 - 21.00',
-      'description': 'Booking lapangan mini soccer C dengan durasi 2 jam',
-    },
   ];
 
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.black),
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/');
+              }
+            },
+          ),
+          title: Text(
+            'List Booking',
+            style: const TextStyle(
+              color: Colors.black,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
         backgroundColor: const Color(0xFFEEEEEE),
         body: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: ListView(
             children: [
-              // Header text
-              const SizedBox(height: 16),
-              Text(
-                'Halaman daftar booking zami',
-                style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  color: const Color(0xFF9E9E9E),
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-              const SizedBox(height: 12),
-
               // Search dan Filter
+              const SizedBox(height: 20,),
               Row(
                 children: [
                   // Search field
@@ -126,168 +125,38 @@ class _ListBookingAdminScreensState extends State<ListBookingAdminScreens> {
               const SizedBox(height: 24),
 
               // Section Booking Hari Ini
-              SectionTitle(title: 'Hari Ini'),
+              HeaderOne(title: 'Hari Ini'),
               const SizedBox(height: 8),
-              ...todayBookings
-                  .map((booking) => BookingItem(
-                        booking: booking,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  BookingDetailsAdminScreen(),
-                            ),
-                          );
-                        },
-                      ))
-                  ,
+              ...todayBookings.map(
+                (booking) => CardsBooking(
+                  booking: booking,
+                  onTap: () {
+                    context.push(
+                      '/admin/booking-detail/${booking['detailBookingId']}',
+                    );
+                  },
+                ),
+              ),
 
               const SizedBox(height: 24),
 
               // Section Booking Mendatang
-              SectionTitle(title: 'Mendatang'),
+              HeaderOne(title: 'Mendatang'),
               const SizedBox(height: 8),
-              ...upcomingBookings
-                  .map((booking) => BookingItem(
-                        booking: booking,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  BookingDetailsAdminScreen(),
-                            ),
-                          );
-                        },
-                      ))
-                  ,
+              ...upcomingBookings.map(
+                (booking) => CardsBooking(
+                  booking: booking,
+                  onTap: () {
+                    context.push(
+                      '/admin/booking-detail/${booking['detailBookingId']}',
+                    );
+                  },
+                ),
+              ),
 
               const SizedBox(height: 32),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-// ==============================================================================
-// SECTION TITLE - Reusable widget untuk judul section
-// ==============================================================================
-class SectionTitle extends StatelessWidget {
-  final String title;
-
-  const SectionTitle({
-    super.key,
-    required this.title,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: GoogleFonts.poppins(
-        fontSize: 18,
-        fontWeight: FontWeight.w600,
-        color: Colors.black87,
-      ),
-    );
-  }
-}
-
-// ==============================================================================
-// BOOKING ITEM - Reusable widget untuk card booking
-// ==============================================================================
-class BookingItem extends StatelessWidget {
-  final Map<String, String> booking;
-  final VoidCallback onTap;
-
-  const BookingItem({
-    super.key,
-    required this.booking,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(
-            color: const Color(0xFFDADADA),
-            width: 1,
-          ),
-          borderRadius: BorderRadius.circular(30),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            // Kiri: Tanggal
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${booking['date']} ${booking['month']}',
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    color: const Color(0xFF757575),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                Text(
-                  booking['year']!,
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    color: const Color(0xFF757575),
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ],
-            ),
-
-            // Tengah: Title dan Time
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      booking['title']!,
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      booking['time']!,
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        color: const Color(0xFFE53935),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Kanan: Arrow icon
-            const Icon(
-              Icons.arrow_forward_ios,
-              size: 16,
-              color: Color(0xFF9E9E9E),
-            ),
-          ],
         ),
       ),
     );

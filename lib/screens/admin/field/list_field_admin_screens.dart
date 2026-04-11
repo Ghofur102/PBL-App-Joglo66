@@ -1,23 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
-class DaftarLapanganPage extends StatelessWidget {
-  const DaftarLapanganPage({super.key});
+class ListFieldAdminScreens extends StatelessWidget {
+  const ListFieldAdminScreens({super.key});
 
   final List<Map<String, String>> dataLapangan = const [
     {
-      'nama': 'Mini Soccer',
+      'id': '1',
+      'fieldName': 'Mini Soccer',
       'status': 'Buka',
-      'jam': '08.00 - 23.00',
+      'hours': '08.00 - 23.00',
     },
     {
-      'nama': 'Futsal',
+      'id': '2',
+      'fieldName': 'Futsal',
       'status': 'Maintenance',
-      'jam': '08.00 - 23.00',
-    },
-    {
-      'nama': 'Mini Soccer',
-      'status': 'Tutup',
-      'jam': '08.00 - 23.00',
+      'hours': '08.00 - 23.00',
     },
   ];
 
@@ -25,7 +23,7 @@ class DaftarLapanganPage extends StatelessWidget {
   Widget cardLapangan(BuildContext context, Map<String, String> data) {
     return GestureDetector(
       onTap: () {
-        Navigator.pushNamed(context, '/field_details');
+        context.push('/admin/field-details/${data['id']}');
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
@@ -39,7 +37,7 @@ class DaftarLapanganPage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Nama Lapangan'),
-          Text(data['nama']!, style: const TextStyle(fontWeight: FontWeight.bold)),
+          Text(data['fieldName']!, style: const TextStyle(fontWeight: FontWeight.bold)),
 
           const SizedBox(height: 6),
 
@@ -49,7 +47,7 @@ class DaftarLapanganPage extends StatelessWidget {
           const SizedBox(height: 6),
 
           Text('Jam ketersediaan'),
-          Text(data['jam']!),
+          Text(data['hours']!),
 
           const SizedBox(height: 12),
 
@@ -76,16 +74,21 @@ class DaftarLapanganPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.grey[300],
       appBar: AppBar(
-        title: const Text('Daftar Lapangan'),
-        centerTitle: true,
-        backgroundColor: Colors.grey[300],
+        backgroundColor: Colors.white,
         elevation: 0,
-        foregroundColor: Colors.black,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () {
-            Navigator.pop(context);
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/'); 
+            }
           },
+        ),
+        title: Text(
+          'Daftar Lapangan', 
+          style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
       ),
       body: Padding(
@@ -94,7 +97,6 @@ class DaftarLapanganPage extends StatelessWidget {
           itemCount: dataLapangan.length,
           itemBuilder: (context, index) {
             return cardLapangan(context, dataLapangan[index]);
-
           },
         ),
       ),
