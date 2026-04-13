@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pbl_app_joglo66/api_test_screen.dart';
 import 'package:pbl_app_joglo66/router/app_router.dart';
 import 'package:pbl_app_joglo66/screens/admin/booking_field/check_slot_availability_admin_screens.dart';
 import 'package:pbl_app_joglo66/screens/admin/booking_field/list_booking_admin_screens.dart';
@@ -20,7 +21,7 @@ class _CustomBottomNavPageState extends State<CustomBottomNavPage> {
     ListClosedBookingAdminScreens(),      // Index 1
     CheckSlotAvailabilityAdminScreens(),      // Index 2 (Tengah/FAB)
     ListBookingAdminScreens(),                // Index 3
-    Center(child: Text("Profil Admin")),      // Index 4
+    ApiTestScreen(),      // Index 4
   ];
 
   void _onTap(int index) {
