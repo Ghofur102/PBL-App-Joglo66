@@ -195,14 +195,12 @@ class _ListBookingAdminScreensState extends State<ListBookingAdminScreens> {
                           ...todayBookings.map(
                             (booking) => CardsBooking(
                               booking: {
-                                'detailBookingId': booking['id'].toString(),
-                                'date': booking['date'],
-                                'month': booking['month'],
-                                'year': booking['year'],
-                                'title': booking['title'],
-                                'time': booking['time'],
-                                'description': booking['description'],
-                                'status': booking['status'],
+                                'date': booking['date']?.toString() ?? '',
+                                'month': booking['month']?.toString() ?? '',
+                                'year': booking['year']?.toString() ?? '',
+                                'title': booking['title']?.toString() ?? '',
+                                'time': booking['time']?.toString() ?? '',
+                                'description': booking['description']?.toString() ?? '',
                               },
                               onTap: () {
                                 context.push(
@@ -225,14 +223,12 @@ class _ListBookingAdminScreensState extends State<ListBookingAdminScreens> {
                           ...upcomingBookings.map(
                             (booking) => CardsBooking(
                               booking: {
-                                'detailBookingId': booking['id'].toString(),
-                                'date': booking['date'],
-                                'month': booking['month'],
-                                'year': booking['year'],
-                                'title': booking['title'],
-                                'time': booking['time'],
-                                'description': booking['description'],
-                                'status': booking['status'],
+                                'date': booking['date']?.toString() ?? '',
+                                'month': booking['month']?.toString() ?? '',
+                                'year': booking['year']?.toString() ?? '',
+                                'title': booking['title']?.toString() ?? '',
+                                'time': booking['time']?.toString() ?? '',
+                                'description': booking['description']?.toString() ?? '',
                               },
                               onTap: () {
                                 context.push(

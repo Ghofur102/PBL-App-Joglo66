@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pbl_app_joglo66/services/dashboard_service.dart';
+import 'package:pbl_app_joglo66/components/cards_booking.dart';
+import 'package:pbl_app_joglo66/components/header_one.dart';
 
 class ListFieldAdminScreens extends StatefulWidget {
   const ListFieldAdminScreens({super.key});
@@ -53,64 +55,18 @@ class _ListFieldAdminScreensState extends State<ListFieldAdminScreens> {
   }
 
   Widget cardLapangan(BuildContext context, Map<String, dynamic> data) {
-    return GestureDetector(
-      onTap: () {
-        context.push('/admin/field-details/${data['id']}');
+    return CardsBooking(
+      booking: {
+        'date': data['date']?.toString() ?? '',
+        'month': data['month']?.toString() ?? '',
+        'year': data['year']?.toString() ?? '',
+        'title': data['title']?.toString() ?? '',
+        'time': data['time']?.toString() ?? '',
+        'description': data['description']?.toString() ?? '',
       },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.grey[200],
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Tim / Lapangan'),
-            Text(
-              data['title'] ?? 'N/A',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 6),
-            Text('Waktu'),
-            Text(data['time'] ?? 'N/A'),
-            const SizedBox(height: 6),
-            Text('Tanggal'),
-            Text('${data['date'] ?? ''} ${data['month'] ?? ''} ${data['year'] ?? ''}'),
-            const SizedBox(height: 6),
-            Text('Status'),
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: _getStatusColor(data['status']),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                data['status'] ?? 'unknown',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            // Placeholder gambar
-            Container(
-              height: 150,
-              decoration: BoxDecoration(
-                color: Colors.grey[400],
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Center(
-                child: Icon(Icons.image, size: 40),
-              ),
-            )
-          ],
-        ),
-      ),
+      onTap: () {
+        context.push('/admin/booking-detail/${data['id']}');
+      },
     );
   }
 
