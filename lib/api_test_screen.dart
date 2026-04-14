@@ -15,14 +15,29 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
 
   // Fungsi untuk memanggil API Laravel
   Future<void> fetchData() async {
-    // UBAH IP INI SESUAIAIKAN DENGAN LANGKAH 2 DI ATAS!
-    // Contoh ini menggunakan Android Emulator
-    String baseUrl = dotenv.env['API_BASE_URL'] ?? "http://10.252.57.16";
+    // Ambil base URL dari .env, fallback ke localhost jika tidak ada
+    String baseUrl = dotenv.env['API_BASE_URL'] ?? "http://10.28.239.114:8000";
     final url = Uri.parse('$baseUrl/api/hello');
-    print("URL=$url");
+    print("========== API DEBUG ==========");
+    print("Calling URL: $url");
+    print("Base URL: $baseUrl");
+    print("===============================");
 
     try {
-      final response = await http.get(url);
+      setState(() {
+        _message = "Sedang memanggil API...";
+      });
+
+      final response = await http.get(url).timeout(
+        Duration(seconds: 10),
+        onTimeout: () {
+          print("ERROR: Request timeout setelah 10 detik");
+          return http.Response('Timeout', 408);
+        },
+      );
+
+      print("Response Status: ${response.statusCode}");
+      print("Response Body: ${response.body}");
 
       if (response.statusCode == 200) {
         // Parse data JSON
@@ -30,14 +45,18 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
         setState(() {
           _message = data['message'];
         });
+        print("SUCCESS: ${data['message']}");
       } else {
         setState(() {
-          _message = "Gagal mengambil data: ${response.statusCode}";
+          _message = "Gagal: Status ${response.statusCode} - ${response.body}";
         });
+        print("ERROR: Status Code ${response.statusCode}");
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print("EXCEPTION: $e");
+      print("StackTrace: $stackTrace");
       setState(() {
-        _message = "Error jaringan: $e";
+        _message = "Error: $e";
       });
     }
   }
