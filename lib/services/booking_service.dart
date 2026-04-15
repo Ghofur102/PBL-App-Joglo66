@@ -8,8 +8,8 @@ class BookingService {
 
   static const int _timeout = 10; // seconds
 
-  /// Create new booking
-  /// POST /api/bookings
+  /// Create new booking (Danil's endpoint)
+  /// POST /api/admin/create-booking
   /// 
   /// Request body:
   /// {
@@ -31,7 +31,7 @@ class BookingService {
     required int price,
   }) async {
     try {
-      final url = Uri.parse('$_baseUrl/api/bookings');
+      final url = Uri.parse('$_baseUrl/api/admin/create-booking');
       final headers = {
         'Authorization': 'Bearer $_token',
         'Accept': 'application/json',
@@ -70,14 +70,16 @@ class BookingService {
       if (response.statusCode == 201 || response.statusCode == 200) {
         final jsonData = json.decode(response.body);
 
-        if (jsonData['status'] == 'success') {
+        if (jsonData['status'] == 'success' || jsonData['success'] == true) {
+          // Handle both response formats
+          final bookingId = jsonData['data']?['id'] ?? jsonData['booking_id'];
           return {
             'success': true,
-            'booking_id': jsonData['data']['id'],
+            'booking_id': bookingId,
             'data': jsonData['data'],
           };
         } else {
-          throw Exception(jsonData['message_error'] ?? 'Failed to create booking');
+          throw Exception(jsonData['message_error'] ?? jsonData['message'] ?? 'Failed to create booking');
         }
       } else {
         throw Exception('Error ${response.statusCode}: ${response.body}');
@@ -88,8 +90,8 @@ class BookingService {
     }
   }
 
-  /// Process cash payment
-  /// POST /api/cash-payment
+  /// Process cash payment (Danil's endpoint)
+  /// POST /api/admin/payment-booking
   ///
   /// Request body:
   /// {
@@ -103,7 +105,7 @@ class BookingService {
     String paymentType = 'down payment',
   }) async {
     try {
-      final url = Uri.parse('$_baseUrl/api/cash-payment');
+      final url = Uri.parse('$_baseUrl/api/admin/payment-booking');
       final headers = {
         'Authorization': 'Bearer $_token',
         'Accept': 'application/json',
@@ -136,15 +138,19 @@ class BookingService {
       if (response.statusCode == 201 || response.statusCode == 200) {
         final jsonData = json.decode(response.body);
 
-        if (jsonData['status'] == 'success') {
+        if (jsonData['status'] == 'success' || jsonData['success'] == true) {
+          // Handle different response formats
+          final paymentData = jsonData['data_payment'] ?? jsonData['data'] ?? {};
+          final paymentId = paymentData['id'] ?? jsonData['payment_id'];
+          
           return {
             'success': true,
-            'payment_id': jsonData['data_payment']['id'],
-            'payment_status': jsonData['data_payment']['status'],
-            'data': jsonData['data_payment'],
+            'payment_id': paymentId,
+            'payment_status': paymentData['status'] ?? 'success',
+            'data': paymentData,
           };
         } else {
-          throw Exception(jsonData['message_error'] ?? 'Failed to process payment');
+          throw Exception(jsonData['message_error'] ?? jsonData['message'] ?? 'Failed to process payment');
         }
       } else {
         throw Exception('Error ${response.statusCode}: ${response.body}');

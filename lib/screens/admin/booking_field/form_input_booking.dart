@@ -9,6 +9,7 @@ class FormInputBooking extends StatefulWidget {
   final DateTime selectedDate;
   final String hours;
   final int duration;
+  final int? fieldPrice; // Optional: harga per jam dari parent
 
   const FormInputBooking({
     super.key,
@@ -17,6 +18,7 @@ class FormInputBooking extends StatefulWidget {
     required this.selectedDate,
     required this.hours,
     required this.duration,
+    this.fieldPrice,
   });
 
   @override
@@ -34,8 +36,16 @@ class _FormInputBookingPageState extends State<FormInputBooking> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController catatanController = TextEditingController();
 
-  // Harga per jam (bisa disesuaikan dengan database nanti)
-  final int hargaPerJam = 150000;
+  // Harga per jam - bisa dari parent atau default
+  late final int hargaPerJam;
+
+  @override
+  void initState() {
+    super.initState();
+    // Gunakan harga dari parent jika ada, kalau tidak gunakan default
+    hargaPerJam = widget.fieldPrice ?? 150000;
+    print('[FormInputBooking] Using price: $hargaPerJam per hour');
+  }
 
   /// Parse time string "HH.mm - HH.mm" to start and end time
   Map<String, String> parseTimeRange(String timeRange) {

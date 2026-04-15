@@ -135,23 +135,34 @@ class DashboardService {
       };
 
       print('[DashboardService] Fetching slots: $url');
+      print('[DashboardService] Field ID: $fieldId, Date: $dateStr, Token: $_token');
 
       final response = await http.get(url, headers: headers).timeout(
         Duration(seconds: _timeout),
         onTimeout: () => throw Exception('Request timeout'),
       );
 
+      print('[DashboardService] Status: ${response.statusCode}');
+      print('[DashboardService] Response Body: ${response.body}');
+
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
         
+        print('[DashboardService] Response Status: ${jsonData['status']}');
+        
         if (jsonData['status'] == 'success') {
           final List<dynamic> slots = jsonData['available_slots'] ?? [];
+          print('[DashboardService] Available slots: ${slots.length}');
           return slots.map((slot) => slot as Map<String, dynamic>).toList();
         } else {
           throw Exception(jsonData['message'] ?? 'Gagal mengambil available slots');
         }
+      } else if (response.statusCode == 403) {
+        throw Exception('Unauthorized: ${response.body}');
+      } else if (response.statusCode == 404) {
+        throw Exception('Field not found or endpoint not found: ${response.body}');
       } else {
-        throw Exception('Error ${response.statusCode}');
+        throw Exception('Error ${response.statusCode}: ${response.body}');
       }
     } catch (e) {
       print('[DashboardService] Error fetching slots: $e');

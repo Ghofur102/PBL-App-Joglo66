@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart'; 
+import 'package:go_router/go_router.dart';
+import 'package:pbl_app_joglo66/services/dashboard_service.dart';
 
 class CheckSlotAvailabilityAdminScreens extends StatefulWidget {
   const CheckSlotAvailabilityAdminScreens({super.key});
@@ -11,43 +12,122 @@ class CheckSlotAvailabilityAdminScreens extends StatefulWidget {
 
 class _CheckSlotAvailabilityPageState
     extends State<CheckSlotAvailabilityAdminScreens> {
-  String selectedField = 'Mini Soccer';
+  // Dynamic data from API
+  List<Map<String, dynamic>> fields = [];
+  String? selectedFieldId; // Ubah dari String ke int first
+  String selectedFieldName = '';
   DateTime selectedDate = DateTime.now();
   String selectedTimeFilter = 'Pagi';
-
-  // --- TAMBAHAN: Variabel untuk menyimpan slot waktu yang diklik ---
   Set<String> selectedTimeSlots = {};
 
-  final List<String> fields = ['Mini Soccer', 'Futsal'];
+  // For loading states
+  bool isLoadingFields = true;
+  bool isLoadingSlots = false;
+  String? errorMessage;
 
-  // Mapping field names to IDs
-  final Map<String, int> fieldNameToId = {
-    'Mini Soccer': 1,
-    'Futsal': 2,
-  };
+  // Available slots from API
+  List<Map<String, dynamic>> availableSlots = [];
 
-  final List<Map<String, dynamic>> slots = [
-    {'time': '08.00 - 09.00', 'status': true, 'type': 'Pagi'},
-    {'time': '09.00 - 10.00', 'status': false, 'type': 'Pagi'},
-    {'time': '10.00 - 11.00', 'status': false, 'type': 'Pagi'},
-    {'time': '11.00 - 12.00', 'status': true, 'type': 'Siang'},
-    {'time': '12.00 - 13.00', 'status': true, 'type': 'Siang'},
-    {'time': '13.00 - 14.00', 'status': true, 'type': 'Siang'},
-    {'time': '14.00 - 15.00', 'status': false, 'type': 'Sore'},
-    {'time': '15.00 - 16.00', 'status': false, 'type': 'Sore'},
-    {'time': '16.00 - 17.00', 'status': true, 'type': 'Sore'},
-    {'time': '18.00 - 19.00', 'status': false, 'type': 'Malam'},
-    {'time': '19.00 - 20.00', 'status': true, 'type': 'Malam'},
-    {'time': '21.00 - 22.00', 'status': true, 'type': 'Malam'},
-    {'time': '22.00 - 23.00', 'status': true, 'type': 'Malam'},
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadFields();
+  }
+
+  /// Fetch fields dari API
+  Future<void> _loadFields() async {
+    try {
+      setState(() {
+        isLoadingFields = true;
+        errorMessage = null;
+      });
+
+      final fetchedFields = await DashboardService.fetchFields();
+      
+      setState(() {
+        fields = fetchedFields;
+        if (fetchedFields.isNotEmpty) {
+          selectedFieldId = fetchedFields[0]['id'].toString();
+          selectedFieldName = fetchedFields[0]['name'] ?? '';
+          // Fetch slots untuk field pertama
+          _loadSlots();
+        }
+        isLoadingFields = false;
+      });
+
+      print('[CheckSlot] ${fetchedFields.length} fields loaded');
+    } catch (e) {
+      print('[CheckSlot] Error loading fields: $e');
+      setState(() {
+        errorMessage = e.toString();
+        isLoadingFields = false;
+      });
+    }
+  }
+
+  /// Fetch available slots dari API
+  Future<void> _loadSlots() async {
+    if (selectedFieldId == null) return;
+
+    try {
+      setState(() {
+        isLoadingSlots = true;
+      });
+
+      final fieldId = int.tryParse(selectedFieldId!) ?? 0;
+      final slots = await DashboardService.fetchAvailableSlots(
+        fieldId,
+        selectedDate,
+      );
+
+      setState(() {
+        availableSlots = slots;
+        isLoadingSlots = false;
+      });
+
+      print('[CheckSlot] ${slots.length} slots loaded for field $fieldId');
+    } catch (e) {
+      print('[CheckSlot] Error loading slots: $e');
+      setState(() {
+        availableSlots = [];
+        isLoadingSlots = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading slots: $e')),
+      );
+    }
+  }
+
+  /// Format time dari format API "HH:00:00" ke "HH.00 - HH+1.00"
+  String formatTimeSlot(String startTime, String endTime) {
+    try {
+      final start = startTime.split(':')[0];
+      final end = endTime.split(':')[0];
+      return '$start.00 - $end.00';
+    } catch (e) {
+      return '$startTime - $endTime';
+    }
+  }
+
+  /// Determine time type (Pagi/Siang/Sore/Malam) dari hour
+  String getTimeType(String startTime) {
+    try {
+      final hour = int.parse(startTime.split(':')[0]);
+      if (hour >= 6 && hour < 12) return 'Pagi';
+      if (hour >= 12 && hour < 15) return 'Siang';
+      if (hour >= 15 && hour < 18) return 'Sore';
+      return 'Malam';
+    } catch (e) {
+      return 'Pagi';
+    }
+  }
 
   Future<void> pickDate() async {
     DateTime? picked = await showDatePicker(
       context: context,
       initialDate: selectedDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2100),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 90)),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -66,6 +146,8 @@ class _CheckSlotAvailabilityPageState
         selectedDate = picked;
         selectedTimeSlots.clear();
       });
+      // Fetch slots untuk tanggal baru
+      _loadSlots();
     }
   }
 
@@ -76,9 +158,27 @@ class _CheckSlotAvailabilityPageState
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    var filteredSlots = slots
-        .where((e) => e['type'] == selectedTimeFilter)
+
+    // Filter slots berdasarkan time type
+    var filteredSlots = availableSlots
+        .where((slot) => getTimeType(slot['start']) == selectedTimeFilter)
         .toList();
+
+    if (isLoadingFields) {
+      return Scaffold(
+        backgroundColor: const Color(0xFF406093),
+        body: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Loading lapangan...'),
+            ],
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFF406093),
@@ -107,7 +207,7 @@ class _CheckSlotAvailabilityPageState
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(), // Fixed withOpacity
+                  color: Colors.black.withValues(),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 ),
@@ -128,6 +228,21 @@ class _CheckSlotAvailabilityPageState
                 ),
                 const SizedBox(height: 32),
 
+                // Error message
+                if (errorMessage != null)
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.orange[100],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      errorMessage!,
+                      style: const TextStyle(fontSize: 12, color: Colors.orange),
+                    ),
+                  ),
+
                 // --- Pilih Lapangan ---
                 const Text(
                   'Pilih Lapangan',
@@ -141,7 +256,7 @@ class _CheckSlotAvailabilityPageState
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
-                    vertical: 4, // Sedikit diubah agar dropdown pas
+                    vertical: 4,
                   ),
                   decoration: BoxDecoration(
                     border: Border.all(color: Colors.grey.shade300),
@@ -149,15 +264,15 @@ class _CheckSlotAvailabilityPageState
                     color: Colors.grey.shade50,
                   ),
                   child: DropdownButton<String>(
-                    value: selectedField,
+                    value: selectedFieldId,
                     isExpanded: true,
                     underline: const SizedBox(),
                     items: fields
-                        .map(
-                          (e) => DropdownMenuItem(
-                            value: e,
+                        .map<DropdownMenuItem<String>>(
+                          (field) => DropdownMenuItem<String>(
+                            value: field['id'].toString(),
                             child: Text(
-                              e,
+                              field['name'] ?? 'Lapangan',
                               style: const TextStyle(
                                 fontSize: 16,
                                 color: Color(0xFF2C3E50),
@@ -167,9 +282,18 @@ class _CheckSlotAvailabilityPageState
                         )
                         .toList(),
                     onChanged: (value) {
-                      setState(() {
-                        selectedField = value!;
-                      });
+                      if (value != null) {
+                        final selected = fields.firstWhere(
+                          (f) => f['id'].toString() == value,
+                          orElse: () => fields[0],
+                        );
+                        setState(() {
+                          selectedFieldId = value;
+                          selectedFieldName = selected['name'] ?? '';
+                          selectedTimeSlots.clear();
+                        });
+                        _loadSlots();
+                      }
                     },
                     style: const TextStyle(
                       fontSize: 16,
@@ -279,82 +403,73 @@ class _CheckSlotAvailabilityPageState
                 ),
                 const SizedBox(height: 16),
 
-                ...filteredSlots.map((slot) {
-                  bool isAvailable = slot['status'];
-                  bool isSelected = selectedTimeSlots.contains(slot['time']);
-
-                  // Tentukan warna dan icon berdasarkan 3 kemungkinan state
-                  Color bgColor;
-                  Color borderColor;
-                  Widget trailingIcon;
-
-                  if (!isAvailable) {
-                    // 1. Tidak Tersedia (Disabled)
-                    bgColor = Colors.red.shade50;
-                    borderColor = Colors.red.shade200;
-                    trailingIcon = const Icon(
-                      Icons.cancel,
-                      color: Colors.red,
-                      size: 28,
-                    );
-                  } else if (isSelected) {
-                    // 2. Tersedia & Dipilih
-                    bgColor = Colors.green.shade50;
-                    borderColor = Colors.green.shade200;
-                    trailingIcon = const Icon(
-                      Icons.check_circle,
-                      color: Colors.green,
-                      size: 28,
-                    );
-                  } else {
-                    // 3. Tersedia & Belum Dipilih (Default)
-                    bgColor = Colors.white;
-                    borderColor = Colors.grey.shade300;
-                    trailingIcon = const SizedBox(
-                      width: 28,
-                    ); // Kosongkan saja jika belum dipilih
-                  }
-
-                  return GestureDetector(
-                    onTap: () {
-                      // Jika tidak tersedia, abaikan ketukan
-                      if (!isAvailable) return;
-
-                      setState(() {
-                        if (isSelected) {
-                          selectedTimeSlots.remove(slot['time']);
-                        } else {
-                          selectedTimeSlots.add(slot['time']);
-                        }
-                      });
-                    },
-                    child: Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: bgColor,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: borderColor),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            slot['time'],
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: isAvailable
-                                  ? const Color(0xFF2C3E50)
-                                  : Colors.grey.shade600,
-                            ),
-                          ),
-                          trailingIcon,
-                        ],
+                // Loading state untuk slots
+                if (isLoadingSlots)
+                  const Center(
+                    child: CircularProgressIndicator(),
+                  )
+                else if (filteredSlots.isEmpty)
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Text(
+                        'Tidak ada slot tersedia untuk waktu ini',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 14,
+                        ),
                       ),
                     ),
-                  );
-                }),
+                  )
+                else
+                  ...filteredSlots.map((slot) {
+                    final String timeKey = '${slot['start']}-${slot['end']}';
+                    final String timeDisplay = formatTimeSlot(slot['start'], slot['end']);
+                    final bool isSelected = selectedTimeSlots.contains(timeKey);
+
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          if (isSelected) {
+                            selectedTimeSlots.remove(timeKey);
+                          } else {
+                            selectedTimeSlots.add(timeKey);
+                          }
+                        });
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: isSelected ? Colors.green.shade50 : Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isSelected
+                                ? Colors.green.shade200
+                                : Colors.grey.shade300,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              timeDisplay,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF2C3E50),
+                              ),
+                            ),
+                            Icon(
+                              isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
+                              color: isSelected ? Colors.green : Colors.grey,
+                              size: 28,
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
 
                 const SizedBox(height: 24),
 
@@ -362,26 +477,36 @@ class _CheckSlotAvailabilityPageState
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    // Tombol disabled jika belum ada slot yang dipilih
-                    onPressed: selectedTimeSlots.isEmpty
+                    onPressed: selectedTimeSlots.isEmpty || selectedFieldId == null
                         ? null
                         : () {
                             // Hitung durasi (1 slot = 1 jam)
                             int totalDuration = selectedTimeSlots.length;
 
-                            // Gabungkan jam yang dipilih (contoh: 08.00-09.00, 09.00-10.00)
+                            // Gabungkan jam yang dipilih
                             List<String> sortedTimes =
                                 selectedTimeSlots.toList()..sort();
                             String combinedHours = sortedTimes.join(', ');
 
+                            // Get fieldId dan harga dari field data
+                            final int fieldId = int.tryParse(selectedFieldId!) ?? 0;
+                            final fieldData = fields.firstWhere(
+                              (f) => f['id'].toString() == selectedFieldId,
+                              orElse: () => {'price': 150000},
+                            );
+                            final int fieldPrice = fieldData['price'] is int
+                                ? fieldData['price'] as int
+                                : int.tryParse(fieldData['price'].toString()) ?? 150000;
+
                             context.push(
-                              '/admin/form-input-booking', // Sesuaikan dengan path rute Anda
+                              '/admin/form-input-booking',
                               extra: {
-                                'nameField': selectedField,
-                                'fieldId': fieldNameToId[selectedField] ?? 1,
+                                'nameField': selectedFieldName,
+                                'fieldId': fieldId,
                                 'selectedDate': selectedDate,
                                 'hours': combinedHours,
                                 'duration': totalDuration,
+                                'fieldPrice': fieldPrice,
                               },
                             );
                           },

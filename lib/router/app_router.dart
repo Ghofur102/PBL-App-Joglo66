@@ -128,8 +128,9 @@ final GoRouter appRouter = GoRouter(
           nameField: data['nameField'] as String,
           fieldId: data['fieldId'] as int,
           selectedDate: data['selectedDate'],     
-          hours: data['hours'],
+          hours: data['hours'] as String,
           duration: data['duration'] as int,
+          fieldPrice: data['fieldPrice'] as int?,
         );
       },
     ),
