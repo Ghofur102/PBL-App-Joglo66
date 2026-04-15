@@ -1,19 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:go_router/go_router.dart'; 
+import 'package:go_router/go_router.dart';
+import 'package:pbl_app_joglo66/services/booking_service.dart';
 
 class FormInputBooking extends StatefulWidget {
   final String nameField;
+  final int fieldId;
   final DateTime selectedDate;
   final String hours;
   final int duration;
+  final int? fieldPrice; // Optional: harga per jam dari parent
 
   const FormInputBooking({
     super.key,
     required this.nameField,
+    required this.fieldId,
     required this.selectedDate,
     required this.hours,
     required this.duration,
+    this.fieldPrice,
   });
 
   @override
@@ -24,35 +29,110 @@ class _FormInputBookingPageState extends State<FormInputBooking> {
   // Status pembayaran default
   String statusPembayaran = '';
   bool agree = false;
+  bool isLoading = false;
 
   final TextEditingController namaController = TextEditingController();
   final TextEditingController waController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController catatanController = TextEditingController();
 
-  // Harga per jam (bisa disesuaikan dengan database nanti)
-  final int hargaPerJam = 150000;
+  // Harga per jam - bisa dari parent atau default
+  late final int hargaPerJam;
 
-  void nextPage() {
-    // Menghitung total dan DP untuk dikirim ke halaman selanjutnya
-    final int totalHarga = widget.duration * hargaPerJam;
-    final int dpHarga = (totalHarga * 0.5).toInt(); // DP 50%
+  @override
+  void initState() {
+    super.initState();
+    // Gunakan harga dari parent jika ada, kalau tidak gunakan default
+    hargaPerJam = widget.fieldPrice ?? 150000;
+    print('[FormInputBooking] Using price: $hargaPerJam per hour');
+  }
 
-    context.push(
-      '/admin/payment-details',
-      extra: {
-        'nameField': widget.nameField,
-        'nameTenant': namaController.text.isEmpty
-            ? 'Tanpa Nama'
-            : namaController.text,
-        'selectedDate': widget.selectedDate,
-        'hours': widget.hours,
-        'duration': widget.duration,
-        'totalPrice': totalHarga,
-        'downPaymentPrice': dpHarga,
-        'statusEarly': statusPembayaran,
-      },
-    );
+  /// Parse time string "HH.mm - HH.mm" to start and end time
+  Map<String, String> parseTimeRange(String timeRange) {
+    final parts = timeRange.split(' - ');
+    if (parts.length == 2) {
+      return {
+        'start': parts[0].replaceAll('.', ':'), // "14.00" -> "14:00"
+        'end': parts[1].replaceAll('.', ':'),
+      };
+    }
+    return {'start': '00:00', 'end': '01:00'};
+  }
+
+  Future<void> nextPage() async {
+    if (!agree) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Mohon setujui syarat & ketentuan')),
+      );
+      return;
+    }
+
+    if (statusPembayaran.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Silakan pilih opsi pembayaran')),
+      );
+      return;
+    }
+
+    setState(() => isLoading = true);
+
+    try {
+      // Parse time
+      final timeRange = parseTimeRange(widget.hours);
+      final startTime = timeRange['start']!;
+      final endTime = timeRange['end']!;
+
+      // Calculate total price
+      final int totalHarga = widget.duration * hargaPerJam;
+      final int dpHarga = (totalHarga * 0.5).toInt();
+      final int paymentAmount =
+          statusPembayaran == 'DP' ? dpHarga : totalHarga;
+
+      // Create booking via API
+      print('[FormInputBooking] Creating booking...');
+      final bookingResult = await BookingService.createBooking(
+        fieldId: widget.fieldId,
+        playDate: widget.selectedDate,
+        startTime: startTime,
+        endTime: endTime,
+        price: totalHarga,
+      );
+
+      if (bookingResult['success'] == true) {
+        final bookingId = bookingResult['booking_id'];
+        print('[FormInputBooking] Booking created: $bookingId');
+
+        if (mounted) {
+          // Navigate to payment page
+          context.push(
+            '/admin/payment-details',
+            extra: {
+              'nameField': widget.nameField,
+              'nameTenant': namaController.text.isEmpty
+                  ? 'Tanpa Nama'
+                  : namaController.text,
+              'selectedDate': widget.selectedDate,
+              'hours': widget.hours,
+              'duration': widget.duration,
+              'totalPrice': totalHarga,
+              'downPaymentPrice': dpHarga,
+              'statusEarly': statusPembayaran,
+              'bookingId': bookingId,
+              'paymentAmount': paymentAmount,
+            },
+          );
+        }
+      }
+    } catch (e) {
+      print('[FormInputBooking] Error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    } finally {
+      setState(() => isLoading = false);
+    }
   }
 
   // Widget baru untuk menampilkan data yang read-only (tidak bisa diedit)
@@ -457,8 +537,8 @@ class _FormInputBookingPageState extends State<FormInputBooking> {
                     SizedBox(
                       width: 140,
                       child: ElevatedButton(
-                        // Aktif jika setuju dan status pembayaran sudah dipilih
-                        onPressed: agree && statusPembayaran.isNotEmpty
+                        // Aktif jika setuju dan status pembayaran sudah dipilih dan tidak sedang loading
+                        onPressed: (agree && statusPembayaran.isNotEmpty && !isLoading)
                             ? nextPage
                             : null,
                         style: ElevatedButton.styleFrom(
@@ -473,20 +553,31 @@ class _FormInputBookingPageState extends State<FormInputBooking> {
                           ),
                           elevation: 4,
                         ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'Next',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
+                        child: isLoading
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
+                                ),
+                              )
+                            : const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    'Next',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  SizedBox(width: 8),
+                                  Icon(Icons.arrow_forward_ios, size: 16),
+                                ],
                               ),
-                            ),
-                            SizedBox(width: 8),
-                            Icon(Icons.arrow_forward_ios, size: 16),
-                          ],
-                        ),
                       ),
                     ),
                   ],

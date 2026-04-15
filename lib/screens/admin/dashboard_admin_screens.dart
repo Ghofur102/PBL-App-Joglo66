@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:pbl_app_joglo66/components/header_one.dart';
 import 'package:pbl_app_joglo66/components/info_card_circle.dart';
 import 'package:pbl_app_joglo66/components/menu_grid.dart';
+import 'package:pbl_app_joglo66/services/dashboard_service.dart';
 
 class DashboardAdminScreens extends StatefulWidget {
   const DashboardAdminScreens({super.key});
@@ -13,18 +14,52 @@ class DashboardAdminScreens extends StatefulWidget {
 }
 
 class _DashboardAdminScreensState extends State<DashboardAdminScreens> {
-  // Dummy data
-  final Map<String, dynamic> dashboardData = {
-    'name': 'Joglo66',
-    'slotTerisi': 4,
-    'totalSlot': 17,
-    'totalBooking': 4,
-    'slotKosong': 13,
-  };
+  // State variables
+  Map<String, dynamic>? dashboardData;
+  bool isLoading = true;
+  String? errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDashboardData();
+  }
+
+  /// Fetch dashboard data dari API
+  Future<void> _loadDashboardData() async {
+    try {
+      setState(() {
+        isLoading = true;
+        errorMessage = null;
+      });
+
+      final data = await DashboardService.fetchDashboardData();
+      
+      setState(() {
+        dashboardData = data;
+        isLoading = false;
+      });
+
+      print('[Dashboard] Data loaded successfully: $data');
+    } catch (e) {
+      print('[Dashboard] Error loading data: $e');
+      setState(() {
+        errorMessage = e.toString();
+        isLoading = false;
+        // Set default data jika error
+        dashboardData = {
+          'name': 'Joglo66',
+          'slotTerisi': 0,
+          'totalSlot': 0,
+          'slotKosong': 0,
+          'totalBooking': 0,
+        };
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    
     final List<Map<String, dynamic>> fieldMenu = [
       {
         'icon': Icons.list_alt,
@@ -41,7 +76,6 @@ class _DashboardAdminScreensState extends State<DashboardAdminScreens> {
         'onTap': () {
           context.push('/admin/list-field');
         },
-
       },
       {
         'icon': Icons.money,
@@ -57,49 +91,93 @@ class _DashboardAdminScreensState extends State<DashboardAdminScreens> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
-      body: Stack(
-        children: [
-          CustomScrollView(
-            slivers: [
-              // Header Section dengan curved bottom
-              SliverAppBar(
-                expandedHeight: 380,
-                automaticallyImplyLeading: false,
-                backgroundColor: const Color(0xFF4A6FA5),
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(40),
-                    bottomRight: Radius.circular(40),
-                  ),
-                ),
-                flexibleSpace: FlexibleSpaceBar(
-                  background: HeaderSection(dashboardData: dashboardData),
-                ),
+      body: isLoading
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Memuat data dashboard...'),
+                ],
               ),
+            )
+          : Stack(
+              children: [
+                CustomScrollView(
+                  slivers: [
+                    // Header Section dengan curved bottom
+                    SliverAppBar(
+                      expandedHeight: 380,
+                      automaticallyImplyLeading: false,
+                      backgroundColor: const Color(0xFF4A6FA5),
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.only(
+                          bottomLeft: Radius.circular(40),
+                          bottomRight: Radius.circular(40),
+                        ),
+                      ),
+                      flexibleSpace: FlexibleSpaceBar(
+                        background: HeaderSection(dashboardData: dashboardData ?? {}),
+                      ),
+                    ),
 
-              // Content Section
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Title Mini Soccer
-                      HeaderOne(title: dashboardData['name']),
-                      const SizedBox(height: 20),
+                    // Content Section
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Error message jika ada
+                            if (errorMessage != null)
+                              Container(
+                                padding: EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.orange[100],
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Peringatan',
+                                      style: TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                                    Text(
+                                      errorMessage ?? '',
+                                      style: TextStyle(fontSize: 12),
+                                    ),
+                                    SizedBox(height: 8),
+                                    ElevatedButton.icon(
+                                      onPressed: _loadDashboardData,
+                                      icon: Icon(Icons.refresh, size: 16),
+                                      label: Text('Coba Lagi'),
+                                      style: ElevatedButton.styleFrom(
+                                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            if (errorMessage != null) SizedBox(height: 16),
 
-                      // Memanggil Komponen Menu Grid yang sudah dipisah
-                      MenuGrid(menuItems: fieldMenu),
-                      
-                      const SizedBox(height: 40),
-                    ],
-                  ),
+                            // Title Mini Soccer
+                            HeaderOne(title: dashboardData?['name'] ?? 'Joglo66'),
+                            const SizedBox(height: 20),
+
+                            // Menu Grid
+                            MenuGrid(menuItems: fieldMenu),
+
+                            const SizedBox(height: 40),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
-          ),
-        ],
-      ),
+              ],
+            ),
     );
   }
 }

@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pbl_app_joglo66/components/foot_navigation.dart';
 import 'package:pbl_app_joglo66/router/protected_route.dart';
@@ -124,10 +125,12 @@ final GoRouter appRouter = GoRouter(
         final data = state.extra as Map<String, dynamic>;
         
         return FormInputBooking(
-          nameField: data['nameField'] as String, 
+          nameField: data['nameField'] as String,
+          fieldId: data['fieldId'] as int,
           selectedDate: data['selectedDate'],     
-          hours: data['hours'],
+          hours: data['hours'] as String,
           duration: data['duration'] as int,
+          fieldPrice: data['fieldPrice'] as int?,
         );
       },
     ),
@@ -138,6 +141,35 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) {
         final data = state.extra as Map<String, dynamic>;
         
+        // Safe null handling
+        final bookingId = data['bookingId'] as int?;
+        final paymentAmount = data['paymentAmount'] as int?;
+        
+        if (bookingId == null || paymentAmount == null) {
+          // Fallback jika data tidak lengkap
+          return Scaffold(
+            appBar: AppBar(
+              title: const Text('Error'),
+              backgroundColor: Colors.white,
+            ),
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error, size: 48, color: Colors.red),
+                  const SizedBox(height: 16),
+                  const Text('Data booking tidak lengkap'),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Kembali'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+        
         return PaymentDetailsPageAdminScreens(
           nameField: data['nameField'] as String,
           nameTenant: data['nameTenant'] as String,
@@ -146,7 +178,9 @@ final GoRouter appRouter = GoRouter(
           duration: data['duration'] as int,
           totalPrice: data['totalPrice'] as int,
           downPaymentPrice: data['downPaymentPrice'] as int,
-          statusEarly: data['statusEarly'],  
+          statusEarly: data['statusEarly'],
+          bookingId: bookingId,
+          paymentAmount: paymentAmount,
         );
       },
     ),
