@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:pbl_app_joglo66/screens/admin/booking_field/waiting_payment_admins_screens.dart';
 import 'package:pbl_app_joglo66/components/button.dart';
+import 'package:pbl_app_joglo66/services/booking_service.dart';
 
 class PaymentDetailsPageAdminScreens extends StatefulWidget {
   final String nameField;
@@ -11,7 +12,9 @@ class PaymentDetailsPageAdminScreens extends StatefulWidget {
   final int duration;
   final int totalPrice;
   final int downPaymentPrice;
-  final String statusEarly; 
+  final String statusEarly;
+  final int bookingId;
+  final int paymentAmount;
 
   const PaymentDetailsPageAdminScreens({
     super.key,
@@ -23,6 +26,8 @@ class PaymentDetailsPageAdminScreens extends StatefulWidget {
     required this.totalPrice,
     required this.downPaymentPrice,
     required this.statusEarly,
+    required this.bookingId,
+    required this.paymentAmount,
   });
 
   @override
@@ -34,6 +39,49 @@ class _PaymentDetailsPageAdminScreensState
     extends State<PaymentDetailsPageAdminScreens> {
   // Karena Metode Pembayaran hanya diset "Cash" dari form sebelumnya, kita buat konstan
   final String metodePembayaran = 'Cash';
+  bool isLoading = false;
+
+  Future<void> _handlePaymentConfirmation() async {
+    setState(() => isLoading = true);
+
+    try {
+      print('[PaymentDetailsPage] Processing payment...');
+      print('[PaymentDetailsPage] BookingId: ${widget.bookingId}');
+      print('[PaymentDetailsPage] Amount: ${widget.paymentAmount}');
+
+      // Determine payment type based on statusEarly
+      final paymentType = widget.statusEarly == 'DP' ? 'down payment' : 'final payment';
+
+      final paymentResult = await BookingService.processCashPayment(
+        bookingId: widget.bookingId,
+        amount: widget.paymentAmount,
+        paymentType: paymentType,
+      );
+
+      if (paymentResult['success'] == true) {
+        print('[PaymentDetailsPage] Payment successful: ${paymentResult['payment_id']}');
+
+        if (mounted) {
+          // Navigate to success page
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => WaitingPaymentAdminsScreen(),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print('[PaymentDetailsPage] Error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    } finally {
+      setState(() => isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -220,19 +268,33 @@ class _PaymentDetailsPageAdminScreensState
             Center(
               child: SizedBox(
                 width: 250,
-                child: Button(
-                  label: 'Konfirmasi Pembayaran',
-                  backgroundColor: Colors.blue,
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => WaitingPaymentAdminsScreen(),
-                      ),
-                    );
-                  },
-                  borderRadius: 12,
-                  fontSize: 14,
+                child: ElevatedButton(
+                  onPressed: isLoading ? null : _handlePaymentConfirmation,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: isLoading
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Text(
+                          'Konfirmasi Pembayaran',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
                 ),
               ),
             ),

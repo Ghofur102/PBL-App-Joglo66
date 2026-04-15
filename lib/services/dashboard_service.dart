@@ -75,7 +75,8 @@ class DashboardService {
         final jsonData = json.decode(response.body);
         
         if (jsonData['success'] == true) {
-          final List<dynamic> fields = jsonData['data']['upcoming'] ?? [];
+          // Response format: data is direct array, not { upcoming: [...] }
+          final List<dynamic> fields = jsonData['data'] ?? [];
           return fields.map((field) => field as Map<String, dynamic>).toList();
         } else {
           throw Exception(jsonData['message'] ?? 'Gagal mengambil data lapangan');
@@ -118,6 +119,78 @@ class DashboardService {
       }
     } catch (e) {
       print('[DashboardService] Error fetching bookings: $e');
+      rethrow;
+    }
+  }
+
+  /// Fetch available slots untuk field tertentu pada tanggal tertentu
+  /// GET /api/admin/check-slot-availability/{field_id}/{date}
+  static Future<List<Map<String, dynamic>>> fetchAvailableSlots(int fieldId, DateTime date) async {
+    try {
+      final dateStr = date.toString().split(' ')[0]; // YYYY-MM-DD format
+      final url = Uri.parse('$_baseUrl/api/admin/check-slot-availability/$fieldId/$dateStr');
+      final headers = {
+        'Authorization': 'Bearer $_token',
+        'Accept': 'application/json',
+      };
+
+      print('[DashboardService] Fetching slots: $url');
+
+      final response = await http.get(url, headers: headers).timeout(
+        Duration(seconds: _timeout),
+        onTimeout: () => throw Exception('Request timeout'),
+      );
+
+      if (response.statusCode == 200) {
+        final jsonData = json.decode(response.body);
+        
+        if (jsonData['status'] == 'success') {
+          final List<dynamic> slots = jsonData['available_slots'] ?? [];
+          return slots.map((slot) => slot as Map<String, dynamic>).toList();
+        } else {
+          throw Exception(jsonData['message'] ?? 'Gagal mengambil available slots');
+        }
+      } else {
+        throw Exception('Error ${response.statusCode}');
+      }
+    } catch (e) {
+      print('[DashboardService] Error fetching slots: $e');
+      rethrow;
+    }
+  }
+
+  /// Fetch field prices untuk field tertentu
+  /// GET /api/admin/field-prices/{field_id}
+  /// Returns list of price tiers berdasarkan time dan day type
+  static Future<List<Map<String, dynamic>>> fetchFieldPrices(int fieldId) async {
+    try {
+      final url = Uri.parse('$_baseUrl/api/admin/field-prices/$fieldId');
+      final headers = {
+        'Authorization': 'Bearer $_token',
+        'Accept': 'application/json',
+      };
+
+      print('[DashboardService] Fetching field prices: $url');
+
+      final response = await http.get(url, headers: headers).timeout(
+        Duration(seconds: _timeout),
+        onTimeout: () => throw Exception('Request timeout'),
+      );
+
+      if (response.statusCode == 200) {
+        final jsonData = json.decode(response.body);
+        
+        if (jsonData['success'] == true) {
+          final List<dynamic> prices = jsonData['data'] ?? [];
+          return prices.map((price) => price as Map<String, dynamic>).toList();
+        } else {
+          throw Exception(jsonData['message'] ?? 'Gagal mengambil field prices');
+        }
+      } else {
+        throw Exception('Error ${response.statusCode}');
+      }
+    } catch (e) {
+      print('[DashboardService] Error fetching field prices: $e');
       rethrow;
     }
   }

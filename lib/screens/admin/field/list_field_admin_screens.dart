@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pbl_app_joglo66/services/dashboard_service.dart';
-import 'package:pbl_app_joglo66/components/cards_booking.dart';
-import 'package:pbl_app_joglo66/components/header_one.dart';
 
 class ListFieldAdminScreens extends StatefulWidget {
   const ListFieldAdminScreens({super.key});
@@ -13,8 +11,7 @@ class ListFieldAdminScreens extends StatefulWidget {
 
 class _ListFieldAdminScreensState extends State<ListFieldAdminScreens> {
   // State variables
-  List<Map<String, dynamic>> todayFields = [];
-  List<Map<String, dynamic>> upcomingFields = [];
+  List<Map<String, dynamic>> fields = [];
   bool isLoading = true;
   String? errorMessage;
 
@@ -24,7 +21,7 @@ class _ListFieldAdminScreensState extends State<ListFieldAdminScreens> {
     _loadFieldData();
   }
 
-  /// Fetch field booking data dari API
+  /// Fetch field data dari API
   Future<void> _loadFieldData() async {
     try {
       setState(() {
@@ -32,19 +29,15 @@ class _ListFieldAdminScreensState extends State<ListFieldAdminScreens> {
         errorMessage = null;
       });
 
-      final data = await DashboardService.fetchFields();
-      
-      // fetchFields returns List, but we want to split into today/upcoming
-      // We'll call fetchBookings instead to get proper structure
-      final bookingData = await DashboardService.fetchBookings();
+      // Fetch FIELDS (lapangan), not bookings!
+      final fieldList = await DashboardService.fetchFields();
       
       setState(() {
-        todayFields = List<Map<String, dynamic>>.from(bookingData['today'] ?? []);
-        upcomingFields = List<Map<String, dynamic>>.from(bookingData['upcoming'] ?? []);
+        fields = fieldList;
         isLoading = false;
       });
 
-      print('[ListField] Data loaded successfully');
+      print('[ListField] ${fieldList.length} fields loaded successfully');
     } catch (e) {
       print('[ListField] Error loading data: $e');
       setState(() {
@@ -54,37 +47,49 @@ class _ListFieldAdminScreensState extends State<ListFieldAdminScreens> {
     }
   }
 
-  Widget cardLapangan(BuildContext context, Map<String, dynamic> data) {
-    return CardsBooking(
-      booking: {
-        'date': data['date']?.toString() ?? '',
-        'month': data['month']?.toString() ?? '',
-        'year': data['year']?.toString() ?? '',
-        'title': data['title']?.toString() ?? '',
-        'time': data['time']?.toString() ?? '',
-        'description': data['description']?.toString() ?? '',
-      },
-      onTap: () {
-        context.push('/admin/booking-detail/${data['id']}');
-      },
+  Widget fieldCard(BuildContext context, Map<String, dynamic> field) {
+    // Safe type casting
+    final int fieldId = field['id'] is int 
+        ? field['id'] as int 
+        : int.tryParse(field['id'].toString()) ?? 0;
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ListTile(
+        leading: Icon(
+          Icons.sports_soccer,
+          color: const Color(0xFF406093),
+          size: 32,
+        ),
+        title: Text(
+          field['name']?.toString() ?? 'Lapangan',
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+          ),
+        ),
+        subtitle: Text(
+          'Kategori: ${field['category']?.toString() ?? 'N/A'} • Harga: Rp${field['price']?.toString() ?? '0'}',
+          style: const TextStyle(fontSize: 12),
+        ),
+        trailing: const Icon(Icons.arrow_forward),
+        onTap: () {
+          // Navigate to field details with fieldId
+          context.push('/admin/field-details/$fieldId');
+        },
+      ),
     );
-  }
-
-  Color _getStatusColor(String? status) {
-    switch (status?.toLowerCase()) {
-      case 'active':
-        return Colors.green;
-      case 'waiting':
-        return Colors.orange;
-      case 'cancelled':
-        return Colors.red;
-      case 'finish':
-        return Colors.blue;
-      case 'reschedule':
-        return Colors.purple;
-      default:
-        return Colors.grey;
-    }
   }
 
   @override
@@ -163,46 +168,28 @@ class _ListFieldAdminScreensState extends State<ListFieldAdminScreens> {
                       ),
                     ),
 
-                  // Hari Ini Section
-                  if (todayFields.isNotEmpty)
+                  // Fields List Section
+                  if (fields.isNotEmpty)
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Hari Ini',
-                          style: TextStyle(
+                          'Daftar Lapangan (${fields.length})',
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        SizedBox(height: 12),
-                        ...todayFields.map((field) => cardLapangan(context, field)),
-                        SizedBox(height: 24),
-                      ],
-                    ),
-
-                  // Mendatang Section
-                  if (upcomingFields.isNotEmpty)
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Mendatang',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        SizedBox(height: 12),
-                        ...upcomingFields.map((field) => cardLapangan(context, field)),
+                        const SizedBox(height: 12),
+                        ...fields.map((field) => fieldCard(context, field)),
                       ],
                     ),
 
                   // Empty state
-                  if (todayFields.isEmpty && upcomingFields.isEmpty)
+                  if (fields.isEmpty)
                     Center(
                       child: Padding(
-                        padding: EdgeInsets.all(32),
+                        padding: const EdgeInsets.all(32),
                         child: Column(
                           children: [
                             Icon(
@@ -210,7 +197,7 @@ class _ListFieldAdminScreensState extends State<ListFieldAdminScreens> {
                               size: 48,
                               color: Colors.grey[400],
                             ),
-                            SizedBox(height: 16),
+                            const SizedBox(height: 16),
                             Text(
                               'Tidak ada data lapangan',
                               style: TextStyle(

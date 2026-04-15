@@ -11,52 +11,56 @@ class ApiTestScreen extends StatefulWidget {
 }
 
 class _ApiTestScreenState extends State<ApiTestScreen> {
-  String _message = "Belum ada data";
+  String _message = "Pilih endpoint untuk di-test";
+  String _endpoint = "";
 
-  // Fungsi untuk memanggil API Laravel
-  Future<void> fetchData() async {
-    // Ambil base URL dari .env, fallback ke localhost jika tidak ada
+  Future<void> fetchData(String endpointPath, String endpointName) async {
     String baseUrl = dotenv.env['API_BASE_URL'] ?? "http://10.28.239.114:8000";
-    final url = Uri.parse('$baseUrl/api/hello');
-    print("========== API DEBUG ==========");
-    print("Calling URL: $url");
-    print("Base URL: $baseUrl");
-    print("===============================");
+    String token = dotenv.env['API_TOKEN'] ?? "";
+    final url = Uri.parse('$baseUrl$endpointPath');
+    
+    print("\n========== API TEST: $endpointName ==========");
+    print("URL: $url");
+    print("Token: ${token.substring(0, 20)}...");
 
     try {
       setState(() {
-        _message = "Sedang memanggil API...";
+        _message = "Sedang memanggil $endpointName...";
+        _endpoint = endpointName;
       });
 
-      final response = await http.get(url).timeout(
+      final response = await http.get(
+        url,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      ).timeout(
         Duration(seconds: 10),
         onTimeout: () {
-          print("ERROR: Request timeout setelah 10 detik");
+          print("ERROR: Request timeout");
           return http.Response('Timeout', 408);
         },
       );
 
-      print("Response Status: ${response.statusCode}");
-      print("Response Body: ${response.body}");
+      print("Status: ${response.statusCode}");
+      print("Body: ${response.body.length > 200 ? response.body.substring(0, 200) + '...' : response.body}");
 
       if (response.statusCode == 200) {
-        // Parse data JSON
         final data = json.decode(response.body);
         setState(() {
-          _message = data['message'];
+          _message = "✅ ${data['message'] ?? 'Success'}";
         });
-        print("SUCCESS: ${data['message']}");
+        print("SUCCESS ✅");
       } else {
         setState(() {
-          _message = "Gagal: Status ${response.statusCode} - ${response.body}";
+          _message = "❌ Error ${response.statusCode}";
         });
-        print("ERROR: Status Code ${response.statusCode}");
       }
-    } catch (e, stackTrace) {
+    } catch (e) {
       print("EXCEPTION: $e");
-      print("StackTrace: $stackTrace");
       setState(() {
-        _message = "Error: $e";
+        _message = "❌ Error: $e";
       });
     }
   }
@@ -64,16 +68,28 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Laravel x Flutter')),
+      appBar: AppBar(title: Text('API Test - Zami')),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(_message, style: TextStyle(fontSize: 18)),
-            SizedBox(height: 20),
+            Text('Endpoint: $_endpoint', style: TextStyle(fontSize: 14, color: Colors.grey)),
+            SizedBox(height: 10),
+            Text(_message, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+            SizedBox(height: 30),
             ElevatedButton(
-              onPressed: fetchData,
-              child: Text('Panggil API'),
+              onPressed: () => fetchData('/api/admin/dashboard', 'Dashboard'),
+              child: Text('Test Dashboard'),
+            ),
+            SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: () => fetchData('/api/admin/list-field', 'List Field'),
+              child: Text('Test List Field'),
+            ),
+            SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: () => fetchData('/api/admin/list-booking', 'List Booking'),
+              child: Text('Test List Booking'),
             ),
           ],
         ),

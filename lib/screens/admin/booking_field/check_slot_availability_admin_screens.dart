@@ -20,6 +20,12 @@ class _CheckSlotAvailabilityPageState
 
   final List<String> fields = ['Mini Soccer', 'Futsal'];
 
+  // Mapping field names to IDs
+  final Map<String, int> fieldNameToId = {
+    'Mini Soccer': 1,
+    'Futsal': 2,
+  };
+
   final List<Map<String, dynamic>> slots = [
     {'time': '08.00 - 09.00', 'status': true, 'type': 'Pagi'},
     {'time': '09.00 - 10.00', 'status': false, 'type': 'Pagi'},
@@ -372,6 +378,7 @@ class _CheckSlotAvailabilityPageState
                               '/admin/form-input-booking', // Sesuaikan dengan path rute Anda
                               extra: {
                                 'nameField': selectedField,
+                                'fieldId': fieldNameToId[selectedField] ?? 1,
                                 'selectedDate': selectedDate,
                                 'hours': combinedHours,
                                 'duration': totalDuration,
