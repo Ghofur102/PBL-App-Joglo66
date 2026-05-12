@@ -1,97 +1,121 @@
 import 'package:flutter/material.dart';
-import 'package:pbl_app_joglo66/api_test_screen.dart';
-import 'package:pbl_app_joglo66/router/app_router.dart';
-import 'package:pbl_app_joglo66/screens/admin/booking_field/check_slot_availability_admin_screens.dart';
-import 'package:pbl_app_joglo66/screens/admin/booking_field/list_booking_admin_screens.dart';
-import 'package:pbl_app_joglo66/screens/admin/dashboard_admin_screens.dart';
-import 'package:pbl_app_joglo66/screens/admin/field/list_closed_booking_admin_screens.dart';
+import 'package:go_router/go_router.dart';
 
-class CustomBottomNavPage extends StatefulWidget {
-  const CustomBottomNavPage({super.key});
+class CustomBottomNavPage extends StatelessWidget {
+  // Menerima child dari ShellRoute (Isi layarnya)
+  final Widget child;
 
-  @override
-  State<CustomBottomNavPage> createState() => _CustomBottomNavPageState();
-}
+  const CustomBottomNavPage({super.key, required this.child});
 
-class _CustomBottomNavPageState extends State<CustomBottomNavPage> {
-  int _currentIndex = 0;
+  // Fungsi untuk mengetahui menu ke berapa yang sedang aktif
+  int _calculateSelectedIndex(BuildContext context) {
+    final String location = GoRouterState.of(context).uri.toString();
+    if (location.startsWith('/admin/dashboard')) return 0;
+    if (location.startsWith('/admin/list-booking')) return 1;
+    if (location.startsWith('/admin/list-field')) return 2;
+    if (location.startsWith('/admin/profile')) return 3;
+    return 0;
+  }
 
-  final List<Widget> _adminPages = const [
-    DashboardAdminScreens(),                  // Index 0
-    ListClosedBookingAdminScreens(),      // Index 1
-    CheckSlotAvailabilityAdminScreens(),      // Index 2 (Tengah/FAB)
-    ListBookingAdminScreens(),                // Index 3
-    ApiTestScreen(),      // Index 4
-  ];
-
-  void _onTap(int index) {
-    setState(() {
-      _currentIndex = index;
-    });
+  // Fungsi untuk pindah ke tab menu
+  void _onItemTapped(int index, BuildContext context) {
+    switch (index) {
+      case 0:
+        context.go('/admin/dashboard');
+        break;
+      case 1:
+        context.go('/admin/list-booking');
+        break;
+      case 2:
+        context.go('/admin/list-field');
+        break;
+      case 3:
+        context.go('/admin/profile');
+        break;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final bool isAdmin = authService.role == 'admin';
-    
-    final List<Widget> currentPages = isAdmin ? _adminPages : _adminPages;
+    final int currentIndex = _calculateSelectedIndex(context);
 
     return Scaffold(
-      body: currentPages[_currentIndex],
-
+      // --- CHILD INI ADALAH LAYAR YANG BERUBAH-UBAH ---
+      body: child, 
+      
+      // --- TOMBOL PLUS (+) DI TENGAH MENGAMBANG ---
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: const Color(0xFF406093),
+        shape: const CircleBorder(), // Membuatnya bulat sempurna
+        elevation: 4,
+        onPressed: () {
+          // Arahkan ke rute layar Cek Ketersediaan Slot Anda.
+          // PASTIKAN nama rutenya sesuai dengan yang ada di app_router.dart Anda
+          context.push('/admin/check-availability'); 
+        },
+        child: const Icon(Icons.add, color: Colors.white, size: 32),
+      ),
+      
+      // Mengunci posisi tombol di tengah bawah
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      
+      // --- BOTTOM NAVIGATION BAR DENGAN CEKUNGAN ---
       bottomNavigationBar: BottomAppBar(
-        shape: const CircularNotchedRectangle(),
-        notchMargin: 8,
+        shape: const CircularNotchedRectangle(), // Memberikan efek cekungan untuk tombol plus
+        notchMargin: 8.0, // Jarak cekungan dengan tombol
+        color: Colors.white,
+        clipBehavior: Clip.antiAlias,
         child: SizedBox(
           height: 60,
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            mainAxisAlignment: MainAxisAlignment.spaceAround, // Meratakan jarak antar ikon
             children: [
-              _item(Icons.home, "Home", 0),
-              _item(Icons.calendar_today, isAdmin ? "Booking Tutup" : "Jadwal", 1),
-
-              const SizedBox(width: 40), // Spasi kosong untuk tombol tengah (FAB)
-
-              // Teks menunya bisa diubah dinamis juga!
-              _item(Icons.history, isAdmin ? "Daftar Booking" : "Riwayat", 3),
-              _item(Icons.person, "Profil", 4),
+              // Bagian Kiri
+              _buildNavItem(context, Icons.dashboard, 'Dashboard', 0, currentIndex),
+              _buildNavItem(context, Icons.book_online, 'Booking', 1, currentIndex),
+              
+              // Jarak kosong di tengah untuk memberi ruang pada tombol Plus
+              const SizedBox(width: 48), 
+              
+              // Bagian Kanan
+              _buildNavItem(context, Icons.sports_soccer, 'Lapangan', 2, currentIndex),
+              _buildNavItem(context, Icons.person, 'Profil', 3, currentIndex),
             ],
           ),
         ),
       ),
-
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFF406093), // Warna utama aplikasi
-        onPressed: () => _onTap(2), // Mengarah ke index 2
-        // Ikonnya juga bisa beda tergantung role
-        child: Icon(isAdmin ? Icons.add : Icons.sports_soccer, color: Colors.white),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 
-  Widget _item(IconData icon, String label, int index) {
-    final active = _currentIndex == index;
-    final color = active ? const Color(0xFF406093) : Colors.grey;
+  // Fungsi helper untuk merender setiap Ikon beserta Text-nya
+  Widget _buildNavItem(BuildContext context, IconData icon, String label, int index, int currentIndex) {
+    final isSelected = currentIndex == index;
+    final color = isSelected ? const Color(0xFF406093) : Colors.grey;
 
-    return GestureDetector(
-      onTap: () => _onTap(index),
-      behavior: HitTestBehavior.opaque, 
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: color),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: active ? FontWeight.bold : FontWeight.normal,
-              color: color,
-            ),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _onItemTapped(index, context),
+        borderRadius: BorderRadius.circular(50),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: color, size: 24),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: TextStyle(
+                  color: color, 
+                  fontSize: 10, 
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

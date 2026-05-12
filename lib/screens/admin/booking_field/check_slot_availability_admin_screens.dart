@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:pbl_app_joglo66/services/dashboard_service.dart';
+import 'package:intl/intl.dart'; // <-- JANGAN LUPA IMPORT INI UNTUK FORMAT RUPIAH
+import 'package:pbl_app_joglo66/services/field_service.dart';
 
 class CheckSlotAvailabilityAdminScreens extends StatefulWidget {
   const CheckSlotAvailabilityAdminScreens({super.key});
@@ -10,12 +11,11 @@ class CheckSlotAvailabilityAdminScreens extends StatefulWidget {
       _CheckSlotAvailabilityPageState();
 }
 
-class _CheckSlotAvailabilityPageState
-    extends State<CheckSlotAvailabilityAdminScreens> {
+class _CheckSlotAvailabilityPageState extends State<CheckSlotAvailabilityAdminScreens> {
   // Dynamic data from API
   List<Map<String, dynamic>> fields = [];
-  String? selectedFieldId; // Ubah dari String ke int first
-  String selectedFieldName = '';
+  String? selectedFieldId; 
+  String selectedFieldName = ''; 
   DateTime selectedDate = DateTime.now();
   String selectedTimeFilter = 'Pagi';
   Set<String> selectedTimeSlots = {};
@@ -34,34 +34,33 @@ class _CheckSlotAvailabilityPageState
     _loadFields();
   }
 
-  /// Fetch fields dari API
+  /// Fetch field data dari API
   Future<void> _loadFields() async {
     try {
-      setState(() {
-        isLoadingFields = true;
-        errorMessage = null;
-      });
-
-      final fetchedFields = await DashboardService.fetchFields();
+      final rawData = await FieldService.fetchListField();
+      final fieldList = rawData.map((item) => item as Map<String, dynamic>).toList();
       
-      setState(() {
-        fields = fetchedFields;
-        if (fetchedFields.isNotEmpty) {
-          selectedFieldId = fetchedFields[0]['id'].toString();
-          selectedFieldName = fetchedFields[0]['name'] ?? '';
-          // Fetch slots untuk field pertama
-          _loadSlots();
-        }
-        isLoadingFields = false;
-      });
+      if (mounted) {
+        setState(() {
+          fields = fieldList;
+          isLoadingFields = false;
+          errorMessage = null;
 
-      print('[CheckSlot] ${fetchedFields.length} fields loaded');
+          // Auto-pilih lapangan pertama agar dropdown tidak kosong
+          if (fields.isNotEmpty && selectedFieldId == null) {
+            selectedFieldId = fields[0]['id'].toString();
+            selectedFieldName = fields[0]['name'] ?? '';
+            _loadSlots(); 
+          }
+        });
+      }
     } catch (e) {
-      print('[CheckSlot] Error loading fields: $e');
-      setState(() {
-        errorMessage = e.toString();
-        isLoadingFields = false;
-      });
+      if (mounted) {
+        setState(() {
+          errorMessage = e.toString().replaceAll('Exception: ', '');
+          isLoadingFields = false; 
+        });
+      }
     }
   }
 
@@ -70,31 +69,37 @@ class _CheckSlotAvailabilityPageState
     if (selectedFieldId == null) return;
 
     try {
-      setState(() {
-        isLoadingSlots = true;
-      });
+      if (mounted) setState(() => isLoadingSlots = true);
 
       final fieldId = int.tryParse(selectedFieldId!) ?? 0;
-      final slots = await DashboardService.fetchAvailableSlots(
-        fieldId,
-        selectedDate,
+      final String formattedDate = selectedDate.toString().split(' ')[0];
+
+      final rawSlots = await FieldService.checkAvailability(
+        fieldId: fieldId,
+        date: formattedDate,
       );
 
-      setState(() {
-        availableSlots = slots;
-        isLoadingSlots = false;
-      });
+      final slots = rawSlots.map((slot) => slot as Map<String, dynamic>).toList();
 
-      print('[CheckSlot] ${slots.length} slots loaded for field $fieldId');
+      if (mounted) {
+        setState(() {
+          availableSlots = slots;
+          isLoadingSlots = false;
+        });
+      }
     } catch (e) {
-      print('[CheckSlot] Error loading slots: $e');
-      setState(() {
-        availableSlots = [];
-        isLoadingSlots = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading slots: $e')),
-      );
+      if (mounted) {
+        setState(() {
+          availableSlots = [];
+          isLoadingSlots = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceAll('Exception: ', '')),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -141,12 +146,11 @@ class _CheckSlotAvailabilityPageState
       },
     );
 
-    if (picked != null) {
+    if (picked != null && mounted) {
       setState(() {
         selectedDate = picked;
         selectedTimeSlots.clear();
       });
-      // Fetch slots untuk tanggal baru
       _loadSlots();
     }
   }
@@ -159,21 +163,20 @@ class _CheckSlotAvailabilityPageState
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
 
-    // Filter slots berdasarkan time type
     var filteredSlots = availableSlots
         .where((slot) => getTimeType(slot['start']) == selectedTimeFilter)
         .toList();
 
     if (isLoadingFields) {
-      return Scaffold(
-        backgroundColor: const Color(0xFF406093),
-        body: const Center(
+      return const Scaffold(
+        backgroundColor: Color(0xFF406093),
+        body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              CircularProgressIndicator(),
+              CircularProgressIndicator(color: Colors.white),
               SizedBox(height: 16),
-              Text('Loading lapangan...'),
+              Text('Loading lapangan...', style: TextStyle(color: Colors.white)),
             ],
           ),
         ),
@@ -207,7 +210,7 @@ class _CheckSlotAvailabilityPageState
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(),
+                  color: Colors.black.withOpacity(0.1),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 ),
@@ -228,7 +231,6 @@ class _CheckSlotAvailabilityPageState
                 ),
                 const SizedBox(height: 32),
 
-                // Error message
                 if (errorMessage != null)
                   Container(
                     padding: const EdgeInsets.all(12),
@@ -243,7 +245,6 @@ class _CheckSlotAvailabilityPageState
                     ),
                   ),
 
-                // --- Pilih Lapangan ---
                 const Text(
                   'Pilih Lapangan',
                   style: TextStyle(
@@ -254,10 +255,7 @@ class _CheckSlotAvailabilityPageState
                 ),
                 const SizedBox(height: 12),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 4,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                   decoration: BoxDecoration(
                     border: Border.all(color: Colors.grey.shade300),
                     borderRadius: BorderRadius.circular(12),
@@ -282,7 +280,7 @@ class _CheckSlotAvailabilityPageState
                         )
                         .toList(),
                     onChanged: (value) {
-                      if (value != null) {
+                      if (value != null && mounted) {
                         final selected = fields.firstWhere(
                           (f) => f['id'].toString() == value,
                           orElse: () => fields[0],
@@ -308,7 +306,6 @@ class _CheckSlotAvailabilityPageState
                 ),
                 const SizedBox(height: 20),
 
-                // --- Pilih Tanggal ---
                 const Text(
                   'Pilih Tanggal',
                   style: TextStyle(
@@ -322,10 +319,7 @@ class _CheckSlotAvailabilityPageState
                   onTap: pickDate,
                   child: Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 16,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                     decoration: BoxDecoration(
                       border: Border.all(color: Colors.grey.shade300),
                       borderRadius: BorderRadius.circular(12),
@@ -351,7 +345,6 @@ class _CheckSlotAvailabilityPageState
                 ),
                 const SizedBox(height: 20),
 
-                // --- Filter Waktu ---
                 const Text(
                   'Filter Waktu',
                   style: TextStyle(
@@ -380,9 +373,11 @@ class _CheckSlotAvailabilityPageState
                                 fontWeight: FontWeight.w600,
                               ),
                               onSelected: (_) {
-                                setState(() {
-                                  selectedTimeFilter = e;
-                                });
+                                if (mounted) {
+                                  setState(() {
+                                    selectedTimeFilter = e;
+                                  });
+                                }
                               },
                             ),
                           ),
@@ -392,7 +387,6 @@ class _CheckSlotAvailabilityPageState
                 ),
                 const SizedBox(height: 24),
 
-                // --- Ketersediaan Slot ---
                 const Text(
                   'Ketersediaan Slot',
                   style: TextStyle(
@@ -403,7 +397,6 @@ class _CheckSlotAvailabilityPageState
                 ),
                 const SizedBox(height: 16),
 
-                // Loading state untuk slots
                 if (isLoadingSlots)
                   const Center(
                     child: CircularProgressIndicator(),
@@ -413,7 +406,7 @@ class _CheckSlotAvailabilityPageState
                     child: Padding(
                       padding: const EdgeInsets.all(24),
                       child: Text(
-                        'Tidak ada slot tersedia untuk waktu ini',
+                        'Tidak ada slot tersedia / Lapangan Tutup',
                         style: TextStyle(
                           color: Colors.grey[600],
                           fontSize: 14,
@@ -425,44 +418,114 @@ class _CheckSlotAvailabilityPageState
                   ...filteredSlots.map((slot) {
                     final String timeKey = '${slot['start']}-${slot['end']}';
                     final String timeDisplay = formatTimeSlot(slot['start'], slot['end']);
-                    final bool isSelected = selectedTimeSlots.contains(timeKey);
+                    
+                    // 1. CEK STATUS KETERSEDIAAN DARI API
+                    bool isAvailable = slot['is_available'] ?? true; 
+                    bool isPastTime = false;
+
+                    // =========================================================
+                    // 2. LOGIKA BARU: CEK WAKTU TERLEWAT (PAST TIME VALIDATION)
+                    // =========================================================
+                    final now = DateTime.now();
+                    // Jika tanggal yang dipilih adalah HARI INI
+                    if (selectedDate.year == now.year && 
+                        selectedDate.month == now.month && 
+                        selectedDate.day == now.day) {
+                      
+                      final parts = slot['start'].toString().split(':');
+                      if (parts.length >= 2) {
+                        final slotHour = int.parse(parts[0]);
+                        final slotMinute = int.parse(parts[1]);
+                        
+                        // Buat jam dari slot tersebut di hari ini
+                        final slotTime = DateTime(now.year, now.month, now.day, slotHour, slotMinute);
+                        
+                        // Jika waktu sekarang sudah MELEWATI waktu mulai slot
+                        if (now.isAfter(slotTime)) {
+                          isAvailable = false; // Matikan slot
+                          isPastTime = true;   // Tandai sebagai sudah terlewat
+                        }
+                      }
+                    }
+                    // =========================================================
+                    
+                    // Hanya bisa terpilih jika dia available dan diklik
+                    final bool isSelected = isAvailable && selectedTimeSlots.contains(timeKey);
+                    
+                    // Format Harga ke Rupiah
+                    final int price = slot['price'] is int ? slot['price'] : int.tryParse(slot['price'].toString()) ?? 0;
+                    final String formatRp = NumberFormat.currency(
+                      locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0
+                    ).format(price);
 
                     return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          if (isSelected) {
-                            selectedTimeSlots.remove(timeKey);
-                          } else {
-                            selectedTimeSlots.add(timeKey);
-                          }
-                        });
-                      },
+                      // MATIKAN FUNGSI KLIK JIKA SUDAH DIPESAN ATAU TERLEWAT
+                      onTap: isAvailable ? () {
+                        if (mounted) {
+                          setState(() {
+                            if (isSelected) {
+                              selectedTimeSlots.remove(timeKey);
+                            } else {
+                              selectedTimeSlots.add(timeKey);
+                            }
+                          });
+                        }
+                      } : null, 
                       child: Container(
                         margin: const EdgeInsets.only(bottom: 12),
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: isSelected ? Colors.green.shade50 : Colors.white,
+                          // WARNA ABU-ABU JIKA SUDAH DIPESAN/TERLEWAT
+                          color: !isAvailable 
+                              ? Colors.grey.shade200 
+                              : (isSelected ? Colors.green.shade50 : Colors.white),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: isSelected
-                                ? Colors.green.shade200
-                                : Colors.grey.shade300,
+                            color: !isAvailable 
+                                ? Colors.grey.shade300 
+                                : (isSelected ? Colors.green.shade200 : Colors.grey.shade300),
                           ),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              timeDisplay,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF2C3E50),
-                              ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  timeDisplay,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    // TEKS DICORET JIKA SUDAH DIPESAN/TERLEWAT
+                                    color: !isAvailable ? Colors.grey.shade500 : const Color(0xFF2C3E50),
+                                    decoration: !isAvailable ? TextDecoration.lineThrough : null,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  // TAMPILKAN TEKS DINAMIS BERDASARKAN KONDISI
+                                  !isAvailable 
+                                    ? (isPastTime ? 'Waktu Terlewat' : 'Sudah Dipesan / Tutup') 
+                                    : formatRp,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    color: !isAvailable 
+                                        ? Colors.red.shade400 
+                                        : (isSelected ? Colors.green.shade700 : Colors.grey.shade600),
+                                  ),
+                                ),
+                              ],
                             ),
                             Icon(
-                              isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
-                              color: isSelected ? Colors.green : Colors.grey,
+                              // GANTI IKON JADI BLOKIR JIKA SUDAH DIPESAN/TERLEWAT
+                              !isAvailable 
+                                  ? Icons.block 
+                                  : (isSelected ? Icons.check_circle : Icons.radio_button_unchecked),
+                              color: !isAvailable 
+                                  ? Colors.grey.shade400 
+                                  : (isSelected ? Colors.green : Colors.grey),
                               size: 28,
                             ),
                           ],
@@ -473,30 +536,29 @@ class _CheckSlotAvailabilityPageState
 
                 const SizedBox(height: 24),
 
-                // --- TOMBOL LANJUT KE FORM PESANAN ---
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: selectedTimeSlots.isEmpty || selectedFieldId == null
                         ? null
                         : () {
-                            // Hitung durasi (1 slot = 1 jam)
                             int totalDuration = selectedTimeSlots.length;
-
-                            // Gabungkan jam yang dipilih
-                            List<String> sortedTimes =
-                                selectedTimeSlots.toList()..sort();
+                            List<String> sortedTimes = selectedTimeSlots.toList()..sort();
                             String combinedHours = sortedTimes.join(', ');
 
-                            // Get fieldId dan harga dari field data
                             final int fieldId = int.tryParse(selectedFieldId!) ?? 0;
-                            final fieldData = fields.firstWhere(
-                              (f) => f['id'].toString() == selectedFieldId,
-                              orElse: () => {'price': 150000},
-                            );
-                            final int fieldPrice = fieldData['price'] is int
-                                ? fieldData['price'] as int
-                                : int.tryParse(fieldData['price'].toString()) ?? 150000;
+                            
+                            // MENGAMBIL HARGA SEBENARNYA DARI SLOT YANG DIPILIH
+                            int realPrice = 150000;
+                            if (sortedTimes.isNotEmpty) {
+                              var chosenSlot = availableSlots.firstWhere(
+                                (s) => '${s['start']}-${s['end']}' == sortedTimes.first,
+                                orElse: () => {'price': 150000}
+                              );
+                              realPrice = chosenSlot['price'] is int 
+                                  ? chosenSlot['price'] 
+                                  : int.tryParse(chosenSlot['price'].toString()) ?? 150000;
+                            }
 
                             context.push(
                               '/admin/form-input-booking',
@@ -506,7 +568,7 @@ class _CheckSlotAvailabilityPageState
                                 'selectedDate': selectedDate,
                                 'hours': combinedHours,
                                 'duration': totalDuration,
-                                'fieldPrice': fieldPrice,
+                                'fieldPrice': realPrice, // Harga dari DB dikirim ke form!
                               },
                             );
                           },

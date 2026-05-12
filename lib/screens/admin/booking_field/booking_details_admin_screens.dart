@@ -1,9 +1,8 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:http/http.dart' as http; 
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+// HAPUS import http dan dotenv karena sudah diurus oleh Service
+import 'package:pbl_app_joglo66/services/booking_service.dart';
 import 'package:pbl_app_joglo66/components/detail_row.dart';
 import 'package:pbl_app_joglo66/components/header_one.dart';
 import 'package:pbl_app_joglo66/components/header_two.dart';
@@ -11,10 +10,7 @@ import 'package:pbl_app_joglo66/components/header_two.dart';
 class BookingDetailsAdminScreen extends StatefulWidget {
   final String bookingId;
 
-  const BookingDetailsAdminScreen({
-    super.key,
-    required this.bookingId,
-  });
+  const BookingDetailsAdminScreen({super.key, required this.bookingId});
 
   @override
   State<BookingDetailsAdminScreen> createState() =>
@@ -33,36 +29,26 @@ class _BookingDetailsAdminScreenState extends State<BookingDetailsAdminScreen> {
     _fetchBookingDetail();
   }
 
-  // Fungsi memanggil API
+  // Fungsi memanggil API menggunakan BookingService
   Future<void> _fetchBookingDetail() async {
     try {
-      String baseUrl = dotenv.env['API_BASE_URL']!;
-      final String apiUrl = '$baseUrl/api/admin/detail-booking/${widget.bookingId}';
+      // Hanya 1 baris pemanggilan Service yang rapi!
+      final data = await BookingService.fetchBookingDetail(widget.bookingId);
 
-      final response = await http.get(
-        Uri.parse(apiUrl),
-        headers: {
-          'Accept': 'application/json',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final jsonResponse = json.decode(response.body);
+      if (mounted) {
         setState(() {
-          bookingData = jsonResponse['data']; 
-          isLoading = false;
-        });
-      } else {
-        setState(() {
-          errorMessage = 'Gagal memuat data (Error Code: ${response.statusCode})';
+          bookingData = data;
           isLoading = false;
         });
       }
     } catch (e) {
-      setState(() {
-        errorMessage = 'Tidak dapat terhubung ke server.\nDetail: $e';
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          // Bersihkan teks "Exception:" agar pesan error lebih rapi dibaca user
+          errorMessage = e.toString().replaceAll('Exception: ', '');
+          isLoading = false;
+        });
+      }
     }
   }
 
@@ -89,6 +75,13 @@ class _BookingDetailsAdminScreenState extends State<BookingDetailsAdminScreen> {
           'bgColor': const Color(0xFFFFF3E0), // Orange muda
           'iconColor': Colors.orange,
           'icon': Icons.update,
+        };
+      case 'field closure':
+        return {
+          'text': 'Affected by Closure',
+          'bgColor': const Color(0xFFFFEBEE), // Merah muda
+          'iconColor': Colors.red,
+          'icon': Icons.warning_amber_rounded,
         };
       case 'waiting':
       default:
@@ -126,24 +119,29 @@ class _BookingDetailsAdminScreenState extends State<BookingDetailsAdminScreen> {
         ),
         title: Text(
           'Booking Details (${widget.bookingId})',
-          style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
-      
+
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : errorMessage.isNotEmpty
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Text(
-                      errorMessage,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(color: Colors.red, fontSize: 16),
-                    ),
-                  ),
-                )
-              : _buildContent(formatRp), // Panggil fungsi pembuat konten jika sukses
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Text(
+                  errorMessage,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.red, fontSize: 16),
+                ),
+              ),
+            )
+          : _buildContent(
+              formatRp,
+            ), // Panggil fungsi pembuat konten jika sukses
     );
   }
 
@@ -170,10 +168,7 @@ class _BookingDetailsAdminScreenState extends State<BookingDetailsAdminScreen> {
                     shape: BoxShape.circle,
                   ),
                   alignment: Alignment.center,
-                  child: Icon(
-                    statusStyle['icon'],
-                    color: Colors.white,
-                  ),
+                  child: Icon(statusStyle['icon'], color: Colors.white),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -182,11 +177,12 @@ class _BookingDetailsAdminScreenState extends State<BookingDetailsAdminScreen> {
                     children: [
                       HeaderTwo(title: 'Status: ${statusStyle['text']}'),
                       const SizedBox(height: 8),
-                      // Catatan tidak ada di API controller Anda, jadi kita beri teks default
                       Text(
-                        bookingData!['status'] == 'cancelled' 
-                            ? 'Pesanan ini telah dibatalkan.' 
-                            : 'Silakan cek pembayaran dengan teliti.',
+                        bookingData!['status'] == 'cancelled'
+                            ? 'Pesanan ini telah dibatalkan.'
+                            : bookingData!['status'] == 'field closure'
+                            ? 'Jadwal ini bertabrakan dengan penutupan lapangan.'
+                            : 'Silakan cek detail pemesanan dengan teliti.',
                       ),
                     ],
                   ),
@@ -216,7 +212,11 @@ class _BookingDetailsAdminScreenState extends State<BookingDetailsAdminScreen> {
                       height: 70,
                       color: const Color(0xFF64B5F6),
                       alignment: Alignment.center,
-                      child: const Icon(Icons.sports_soccer, color: Colors.white, size: 32),
+                      child: const Icon(
+                        Icons.sports_soccer,
+                        color: Colors.white,
+                        size: 32,
+                      ),
                     ),
                     const SizedBox(width: 16),
                     Column(
@@ -241,10 +241,28 @@ class _BookingDetailsAdminScreenState extends State<BookingDetailsAdminScreen> {
 
                 const Divider(height: 32),
 
+                const HeaderTwo(title: 'Customer Info'),
+                DetailRow(
+                  label: 'Name',
+                  value: bookingData!['user_info']['name'],
+                ),
+                DetailRow(
+                  label: 'Team Name',
+                  value: bookingData!['user_info']['team_name'],
+                ),
+                DetailRow(
+                  label: 'Contact',
+                  value:
+                      '${bookingData!['user_info']['email']} / ${bookingData!['user_info']['phone']}',
+                ),
+
+                const Divider(height: 32),
+
                 const HeaderTwo(title: 'Time'),
                 DetailRow(
                   label: 'Play Date',
-                  value: '${bookingData!['time_info']['play_date']} (${bookingData!['time_info']['play_time']})',
+                  value:
+                      '${bookingData!['time_info']['play_date']} (${bookingData!['time_info']['play_time']})',
                 ),
                 DetailRow(
                   label: 'Order Time',
@@ -255,33 +273,44 @@ class _BookingDetailsAdminScreenState extends State<BookingDetailsAdminScreen> {
 
                 const HeaderTwo(title: 'Service'),
                 DetailRow(
-                  label: 'Duration', 
-                  value: '${bookingData!['service_info']['duration']} Hour(s)'
+                  label: 'Duration',
+                  value: '${bookingData!['service_info']['duration']} Hour(s)',
                 ),
                 DetailRow(
-                  label: 'Price Per Hour', 
-                  value: formatRp.format(bookingData!['service_info']['price_per_hour'])
+                  label: 'Price Per Hour',
+                  value: formatRp.format(
+                    bookingData!['service_info']['price_per_hour'],
+                  ),
                 ),
                 DetailRow(
-                  label: 'Total Price', 
-                  value: formatRp.format(bookingData!['service_info']['total_price'])
+                  label: 'Total Price',
+                  value: formatRp.format(
+                    bookingData!['service_info']['total_price'],
+                  ),
                 ),
                 DetailRow(
-                  label: 'Total Down Payment', 
-                  value: formatRp.format(bookingData!['service_info']['total_down_payment'])
+                  label: 'Total Down Payment',
+                  value: formatRp.format(
+                    bookingData!['service_info']['total_down_payment'],
+                  ),
                 ),
 
                 const Divider(height: 32),
 
                 const HeaderTwo(title: 'Payment Details'),
                 DetailRow(
-                  label: 'Total Price', 
-                  value: formatRp.format(bookingData!['payment_details']['total_price'])
+                  label: 'Total Price',
+                  value: formatRp.format(
+                    bookingData!['payment_details']['total_price'],
+                  ),
                 ),
                 DetailRow(
-                  label: 'Payment Method', 
-                  // Uppercase huruf pertama (transfer -> Transfer)
-                  value: toBeginningOfSentenceCase(bookingData!['payment_details']['payment_method']) ?? '-',
+                  label: 'Payment Method',
+                  value:
+                      toBeginningOfSentenceCase(
+                        bookingData!['payment_details']['payment_method'],
+                      ) ??
+                      '-',
                 ),
               ],
             ),
@@ -289,31 +318,33 @@ class _BookingDetailsAdminScreenState extends State<BookingDetailsAdminScreen> {
 
           const SizedBox(height: 24),
 
-          InkWell(
-            onTap: () {
-              context.push('/admin/change-booking/${widget.bookingId}');
-            },
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(
-                vertical: 16,
-                horizontal: 24,
-              ),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFCC80),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              alignment: Alignment.center,
-              child: const Text(
-                'Modify / Cancel Booking',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: Colors.black87,
+          // Sembunyikan tombol modify jika statusnya sudah cancelled
+          if (bookingData!['status'] != 'cancelled')
+            InkWell(
+              onTap: () {
+                context.push('/admin/change-booking/${widget.bookingId}');
+              },
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  vertical: 16,
+                  horizontal: 24,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFCC80),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                alignment: Alignment.center,
+                child: const Text(
+                  'Modify / Cancel Booking',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: Colors.black87,
+                  ),
                 ),
               ),
             ),
-          ),
           const SizedBox(height: 24),
         ],
       ),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:pbl_app_joglo66/services/dashboard_service.dart';
+import 'package:pbl_app_joglo66/services/field_service.dart';
 
 class ListFieldAdminScreens extends StatefulWidget {
   const ListFieldAdminScreens({super.key});
@@ -29,8 +29,11 @@ class _ListFieldAdminScreensState extends State<ListFieldAdminScreens> {
         errorMessage = null;
       });
 
-      // Fetch FIELDS (lapangan), not bookings!
-      final fieldList = await DashboardService.fetchFields();
+      // 1. Ambil data mentah (List<dynamic>) dari Service
+      final rawData = await FieldService.fetchListField();
+      
+      // 2. Konversi (Casting) secara eksplisit menjadi List<Map<String, dynamic>>
+      final fieldList = rawData.map((item) => item as Map<String, dynamic>).toList();
       
       setState(() {
         fields = fieldList;
@@ -41,7 +44,8 @@ class _ListFieldAdminScreensState extends State<ListFieldAdminScreens> {
     } catch (e) {
       print('[ListField] Error loading data: $e');
       setState(() {
-        errorMessage = e.toString();
+        // Membersihkan pesan error jika ada kata "Exception:" dari service
+        errorMessage = e.toString().replaceAll('Exception: ', '');
         isLoading = false;
       });
     }
@@ -60,7 +64,7 @@ class _ListFieldAdminScreensState extends State<ListFieldAdminScreens> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -80,7 +84,7 @@ class _ListFieldAdminScreensState extends State<ListFieldAdminScreens> {
           ),
         ),
         subtitle: Text(
-          'Kategori: ${field['category']?.toString() ?? 'N/A'} • Harga: Rp${field['price']?.toString() ?? '0'}',
+          'Kategori: ${field['category']?.toString() ?? 'N/A'}',
           style: const TextStyle(fontSize: 12),
         ),
         trailing: const Icon(Icons.arrow_forward),

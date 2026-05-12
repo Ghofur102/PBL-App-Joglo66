@@ -5,6 +5,7 @@ import 'package:pbl_app_joglo66/components/header_one.dart';
 import 'package:pbl_app_joglo66/components/info_card_circle.dart';
 import 'package:pbl_app_joglo66/components/menu_grid.dart';
 import 'package:pbl_app_joglo66/services/dashboard_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class DashboardAdminScreens extends StatefulWidget {
   const DashboardAdminScreens({super.key});
@@ -19,10 +20,29 @@ class _DashboardAdminScreensState extends State<DashboardAdminScreens> {
   bool isLoading = true;
   String? errorMessage;
 
+  String debugRole = '';
+  String debugToken = '';
+
   @override
   void initState() {
     super.initState();
+    _checkSavedAuth();
     _loadDashboardData();
+  }
+
+  Future<void> _checkSavedAuth() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    setState(() {
+      debugRole = prefs.getString('user_role') ?? 'Role Kosong';
+      debugToken = prefs.getString('auth_token') ?? 'Token Kosong';
+    });
+
+    // Print ke Debug Console di VS Code / Android Studio
+    print("====== STATUS LOGIN DI MEMORI HP ======");
+    print("Role  : $debugRole");
+    print("Token : $debugToken");
+    print("=======================================");
   }
 
   /// Fetch dashboard data dari API
@@ -34,7 +54,7 @@ class _DashboardAdminScreensState extends State<DashboardAdminScreens> {
       });
 
       final data = await DashboardService.fetchDashboardData();
-      
+
       setState(() {
         dashboardData = data;
         isLoading = false;
@@ -46,7 +66,6 @@ class _DashboardAdminScreensState extends State<DashboardAdminScreens> {
       setState(() {
         errorMessage = e.toString();
         isLoading = false;
-        // Set default data jika error
         dashboardData = {
           'name': 'Joglo66',
           'slotTerisi': 0,
@@ -118,7 +137,9 @@ class _DashboardAdminScreensState extends State<DashboardAdminScreens> {
                         ),
                       ),
                       flexibleSpace: FlexibleSpaceBar(
-                        background: HeaderSection(dashboardData: dashboardData ?? {}),
+                        background: HeaderSection(
+                          dashboardData: dashboardData ?? {},
+                        ),
                       ),
                     ),
 
@@ -142,7 +163,9 @@ class _DashboardAdminScreensState extends State<DashboardAdminScreens> {
                                   children: [
                                     Text(
                                       'Peringatan',
-                                      style: TextStyle(fontWeight: FontWeight.bold),
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                     Text(
                                       errorMessage ?? '',
@@ -154,7 +177,10 @@ class _DashboardAdminScreensState extends State<DashboardAdminScreens> {
                                       icon: Icon(Icons.refresh, size: 16),
                                       label: Text('Coba Lagi'),
                                       style: ElevatedButton.styleFrom(
-                                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 8,
+                                        ),
                                       ),
                                     ),
                                   ],
@@ -163,7 +189,10 @@ class _DashboardAdminScreensState extends State<DashboardAdminScreens> {
                             if (errorMessage != null) SizedBox(height: 16),
 
                             // Title Mini Soccer
-                            HeaderOne(title: dashboardData?['name'] ?? 'Joglo66'),
+                            HeaderOne(
+                              title: dashboardData?['name'] ?? 'Joglo66',
+                            ),
+                           
                             const SizedBox(height: 20),
 
                             // Menu Grid
@@ -181,23 +210,16 @@ class _DashboardAdminScreensState extends State<DashboardAdminScreens> {
     );
   }
 }
+
 class HeaderSection extends StatelessWidget {
   final Map<String, dynamic> dashboardData;
 
-  const HeaderSection({
-    super.key,
-    required this.dashboardData,
-  });
+  const HeaderSection({super.key, required this.dashboardData});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(
-        top: 30,
-        left: 24,
-        right: 24,
-        bottom: 40,
-      ),
+      padding: const EdgeInsets.only(top: 30, left: 24, right: 24, bottom: 40),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -235,13 +257,15 @@ class HeaderSection extends StatelessWidget {
                   // Slot Terisi (atas kiri)
                   InfoCardCircle(
                     title: 'Slot Terisi',
-                    value: '${dashboardData['slotTerisi']}/${dashboardData['totalSlot']}',
+                    value:
+                        '${dashboardData['slotTerisi']}/${dashboardData['totalSlot']}',
                     icon: Icons.check_circle,
                   ),
                   // Slot Kosong (atas kanan)
                   InfoCardCircle(
                     title: 'Slot Kosong',
-                    value: '${dashboardData['slotKosong']}/${dashboardData['totalSlot']}',
+                    value:
+                        '${dashboardData['slotKosong']}/${dashboardData['totalSlot']}',
                     icon: Icons.open_in_full,
                   ),
                 ],

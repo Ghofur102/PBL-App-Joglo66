@@ -1,9 +1,8 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:http/http.dart' as http;
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart'; // <-- Jangan lupa import ini
+import 'package:pbl_app_joglo66/services/field_service.dart';
 import 'package:pbl_app_joglo66/components/detail_row.dart';
 import 'package:pbl_app_joglo66/components/header_two.dart';
 
@@ -30,57 +29,22 @@ class _FieldDetailsAdminScreensState extends State<FieldDetailsAdminScreens> {
 
   Future<void> _fetchFieldDetail() async {
     try {
-      String baseUrl = dotenv.env['API_BASE_URL']!;
-      final String apiUrl = '$baseUrl/api/admin/detail-field/${widget.fieldId}';
+      final data = await FieldService.fetchFieldDetail(widget.fieldId);
 
-      final response = await http.get(
-        Uri.parse(apiUrl),
-        headers: {'Accept': 'application/json'},
-      );
-
-      if (response.statusCode == 200) {
-        final jsonResponse = json.decode(response.body);
+      if (mounted) {
         setState(() {
-          fieldData = jsonResponse['data'];
-          isLoading = false;
-        });
-      } else {
-        setState(() {
-          errorMessage =
-              'Gagal memuat data (Error Code: ${response.statusCode})';
+          fieldData = data;
           isLoading = false;
         });
       }
     } catch (e) {
-      setState(() {
-        errorMessage =
-            'Tidak dapat terhubung ke server Laravel.\nPastikan php artisan serve sudah berjalan.\nDetail: $e';
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          errorMessage = e.toString().replaceAll('Exception: ', '');
+          isLoading = false;
+        });
+      }
     }
-  }
-
-  int _getPrice() {
-    if (fieldData != null &&
-        fieldData!['field_prices'] != null &&
-        fieldData!['field_prices'].isNotEmpty) {
-      return int.tryParse(fieldData!['field_prices'][0]['price'].toString()) ??
-          0;
-    }
-    return 0; // Harga default jika kosong
-  }
-
-  String _getOperationalHours() {
-    if (fieldData != null &&
-        fieldData!['field_prices'] != null &&
-        fieldData!['field_prices'].isNotEmpty) {
-      final firstPrice = fieldData!['field_prices'][0];
-      // Memotong string "08:00:00" menjadi "08:00"
-      final start = firstPrice['start_time'].toString().substring(0, 5);
-      final end = firstPrice['end_time'].toString().substring(0, 5);
-      return '$start - $end';
-    }
-    return 'Belum diatur';
   }
 
   @override
@@ -90,6 +54,25 @@ class _FieldDetailsAdminScreensState extends State<FieldDetailsAdminScreens> {
       symbol: 'Rp ',
       decimalDigits: 0,
     );
+
+    // ========================================================
+    // LOGIKA PINTAR UNTUK URL GAMBAR (Bisa baca dari .env)
+    // ========================================================
+    String baseUrl = dotenv.env['API_BASE_URL'] ?? '';
+    String rawImageUrl = fieldData?['image_url'] ?? '';
+    String finalImageUrl = '';
+
+    if (rawImageUrl.isNotEmpty) {
+      if (rawImageUrl.startsWith('http')) {
+        finalImageUrl = rawImageUrl; // Jika data lama masih pakai HTTP utuh, biarkan
+      } else {
+        // Jika data baru (hanya path relatif seperti storage/fields/xxx), gabungkan dengan Base URL
+        finalImageUrl = baseUrl.endsWith('/') 
+            ? '$baseUrl$rawImageUrl' 
+            : '$baseUrl/$rawImageUrl';
+      }
+    }
+    // ========================================================
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -137,22 +120,46 @@ class _FieldDetailsAdminScreensState extends State<FieldDetailsAdminScreens> {
                     decoration: BoxDecoration(
                       color: const Color(0xFF64B5F6),
                       borderRadius: BorderRadius.circular(12),
-                      image: DecorationImage(
-                        image: NetworkImage(fieldData!['image_url'] ?? ''),
-                        fit: BoxFit.cover,
-                      ),
                     ),
-                    alignment: Alignment.center,
-                    child: const Text(
-                      'FIELD PHOTO',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
+                    // Menggunakan ClipRRect agar gambar yang dimuat mengikuti border radius container
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      // Gunakan finalImageUrl hasil olahan dari .env
+                      child: finalImageUrl.isEmpty
+                        ? const Center(
+                            child: Text(
+                              'FIELD PHOTO',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          )
+                        : Image.network(
+                            finalImageUrl, // <--- Ini Kuncinya
+                            fit: BoxFit.cover,
+                            // --- TAMBAHAN: Error Builder jika gambar gagal dimuat ---
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                color: Colors.grey[300],
+                                child: const Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.broken_image, color: Colors.grey, size: 40),
+                                      SizedBox(height: 8),
+                                      Text('Gagal memuat gambar', style: TextStyle(color: Colors.grey)),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
                     ),
                   ),
 
+                  // --- Container Field Information ---
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(20),
@@ -175,20 +182,62 @@ class _FieldDetailsAdminScreensState extends State<FieldDetailsAdminScreens> {
                           label: 'Field Type',
                           value: fieldData!['category'] ?? '-',
                         ),
-                        const SizedBox(height: 8),
-                        DetailRow(
-                          label: 'Price Per Hour',
-                          value: formatRp.format(_getPrice()), // Harga otomatis
+                        
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 12.0),
+                          child: Divider(color: Colors.white, thickness: 2),
                         ),
-                        const SizedBox(height: 8),
-                        DetailRow(
-                          label: 'Operational Hours',
-                          value: _getOperationalHours(), // Jam otomatis
+                        
+                        const Text(
+                          'Pricing & Schedule:',
+                          style: TextStyle(
+                            fontSize: 14, 
+                            fontWeight: FontWeight.bold, 
+                            color: Colors.black54
+                          ),
                         ),
+                        const SizedBox(height: 12),
+                        
+                        if (fieldData!['field_prices'] == null || (fieldData!['field_prices'] as List).isEmpty)
+                          const Text(
+                            'Belum ada jadwal dan harga yang diatur.',
+                            style: TextStyle(color: Colors.red, fontStyle: FontStyle.italic),
+                          )
+                        else
+                          ...((fieldData!['field_prices'] as List).map((priceItem) {
+                            String day = priceItem['day_type'].toString().toUpperCase();
+                            String st = priceItem['start_time'].toString().substring(0, 5);
+                            String et = priceItem['end_time'].toString().substring(0, 5);
+                            String price = formatRp.format(int.parse(priceItem['price'].toString()));
+                            
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 8.0),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.access_time, size: 14, color: Colors.black54),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        '$day ($st - $et)',
+                                        style: const TextStyle(fontSize: 13, color: Colors.black87, fontWeight: FontWeight.w600),
+                                      ),
+                                    ],
+                                  ),
+                                  Text(
+                                    price,
+                                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.green.shade700),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList()),
                       ],
                     ),
                   ),
 
+                  // --- Container Location ---
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(20),
@@ -203,13 +252,14 @@ class _FieldDetailsAdminScreensState extends State<FieldDetailsAdminScreens> {
                         HeaderTwo(title: 'Location'),
                         SizedBox(height: 16),
                         Text(
-                          'Banyuwangi, East Java', // Di-hardcode karena tidak ada kolom di database
+                          'Banyuwangi, East Java', 
                           style: TextStyle(color: Colors.black87),
                         ),
                       ],
                     ),
                   ),
 
+                  // --- Container Description ---
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(20),
@@ -234,15 +284,17 @@ class _FieldDetailsAdminScreensState extends State<FieldDetailsAdminScreens> {
                     ),
                   ),
 
+                  // --- Tombol Edit ---
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 8.0),
                     child: SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: () {
-                          context.push(
+                        onPressed: () async { 
+                          await context.push(
                             '/admin/edit-field-details/${widget.fieldId}',
                           );
+                          _fetchFieldDetail(); 
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFFFCC80),

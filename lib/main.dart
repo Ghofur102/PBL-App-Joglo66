@@ -7,6 +7,7 @@ void main() async {
   await initializeDateFormatting('id_ID', null);
   try {
     await dotenv.load(fileName: ".env");
+    await authService.checkLoginStatus();
     print("Berhasil memuat file .env");
   } catch (e) {
     print("GAGAL MEMUAT .env: $e");

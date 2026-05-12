@@ -1,14 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart'; 
+
 class SuccessfulPaymentAdminScreen extends StatelessWidget {
-  const SuccessfulPaymentAdminScreen({super.key});
+  final bool isSuccess;
+  final String message;
+
+  const SuccessfulPaymentAdminScreen({
+    super.key,
+    // Secara default kita anggap sukses jika tidak ada parameter yang dikirim
+    this.isSuccess = true, 
+    this.message = 'Pembayaran dari customer telah dikonfirmasi dengan sukses',
+  });
 
   @override
   Widget build(BuildContext context) {
+    // --- TENTUKAN WARNA & IKON SECARA DINAMIS ---
+    final Color mainColor = isSuccess ? Colors.green.shade600 : Colors.red.shade600;
+    final Color bgColor = isSuccess ? Colors.green.shade50 : Colors.red.shade50;
+    final Color borderColor = isSuccess ? Colors.green.shade300 : Colors.red.shade300;
+    final IconData icon = isSuccess ? Icons.check_circle : Icons.cancel;
+    final String title = isSuccess ? 'Pembayaran Berhasil' : 'Pembayaran Gagal';
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Pembayaran Berhasil'),
+        title: Text(title),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
@@ -20,37 +36,37 @@ class SuccessfulPaymentAdminScreen extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // SUCCESS ICON
+              // --- IKON STATUS ---
               Container(
                 width: 120,
                 height: 120,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.green[50],
+                  color: bgColor,
                   border: Border.all(
-                    color: Colors.green[300]!,
+                    color: borderColor,
                     width: 2,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.green.withOpacity(0.2),
+                      color: mainColor.withOpacity(0.2),
                       blurRadius: 20,
                       offset: const Offset(0, 8),
                     ),
                   ],
                 ),
                 child: Icon(
-                  Icons.check_circle,
+                  icon,
                   size: 80,
-                  color: Colors.green[600],
+                  color: mainColor,
                 ),
               ),
               const SizedBox(height: 32),
 
-              // TITLE
-              const Text(
-                'Pembayaran Berhasil',
-                style: TextStyle(
+              // --- JUDUL ---
+              Text(
+                title,
+                style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                   color: Colors.black87,
@@ -59,9 +75,9 @@ class SuccessfulPaymentAdminScreen extends StatelessWidget {
               ),
               const SizedBox(height: 12),
 
-              // SUBTITLE
+              // --- PESAN DINAMIS DARI API ---
               Text(
-                'Pembayaran dari customer telah dikonfirmasi dengan sukses',
+                message,
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.grey[600],
@@ -71,24 +87,34 @@ class SuccessfulPaymentAdminScreen extends StatelessWidget {
               ),
               const SizedBox(height: 40),
 
-              // BUTTON
+              // --- TOMBOL KEMBALI ---
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green[600],
+                    backgroundColor: mainColor, // Warna tombol ikut dinamis
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                     elevation: 2,
                   ),
-                  onPressed: () {
-                    context.go('/admin/list-booking');
+                  onPressed: () async { 
+                    ScaffoldMessenger.of(context).clearSnackBars();
+                    
+                    await Future.delayed(const Duration(milliseconds: 50));
+
+                    if (!context.mounted) return;
+
+                    if (isSuccess) {
+                      context.go('/admin/dashboard');
+                    } else {
+                      context.pop();
+                    }
                   },
-                  child: const Text(
-                    'Kembali ke Daftar Pembayaran',
-                    style: TextStyle(
+                  child: Text(
+                    isSuccess ? 'Kembali' : 'Coba Lagi',
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: Colors.white,

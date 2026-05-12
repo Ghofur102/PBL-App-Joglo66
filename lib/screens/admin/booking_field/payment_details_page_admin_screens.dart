@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:pbl_app_joglo66/screens/admin/booking_field/waiting_payment_admins_screens.dart';
-import 'package:pbl_app_joglo66/components/button.dart';
-import 'package:pbl_app_joglo66/services/booking_service.dart';
+import 'package:pbl_app_joglo66/services/payment_service.dart'; // Hanya butuh PaymentService
+import 'package:go_router/go_router.dart';
 
 class PaymentDetailsPageAdminScreens extends StatefulWidget {
   final String nameField;
@@ -46,40 +45,55 @@ class _PaymentDetailsPageAdminScreensState
 
     try {
       print('[PaymentDetailsPage] Processing payment...');
-      print('[PaymentDetailsPage] BookingId: ${widget.bookingId}');
-      print('[PaymentDetailsPage] Amount: ${widget.paymentAmount}');
 
-      // Determine payment type based on statusEarly
-      final paymentType = widget.statusEarly == 'DP' ? 'down payment' : 'final payment';
+      final paymentType = widget.statusEarly == 'DP'
+          ? 'down payment'
+          : 'final payment';
 
-      final paymentResult = await BookingService.processCashPayment(
+      final paymentResult = await PaymentService.processPayment(
+        method: 'cash',
         bookingId: widget.bookingId,
         amount: widget.paymentAmount,
         paymentType: paymentType,
+        // Jika Anda ingin mengirim detail ID (opsional, karena bisa lebih dari 1 jam):
+        // bookingDetailId: 1,
       );
 
-      if (paymentResult['success'] == true) {
-        print('[PaymentDetailsPage] Payment successful: ${paymentResult['payment_id']}');
+      // JIKA KODE MENCAPAI BARIS INI, BERARTI PEMBAYARAN 100% SUKSES DI SERVER
+      print(
+        '[PaymentDetailsPage] Payment successful: ${paymentResult['payment_id']}',
+      );
 
-        if (mounted) {
-          // Navigate to success page
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => WaitingPaymentAdminsScreen(),
-            ),
-          );
-        }
+      if (mounted) {
+        context.push(
+          '/admin/payment-status',
+          extra: {
+            'isSuccess': true,
+            'message':
+                'Pembayaran dari customer telah dikonfirmasi dengan sukses! Anda dapat mengecek di daftar penyewaan lapangan.',
+          },
+        );
       }
     } catch (e) {
       print('[PaymentDetailsPage] Error: $e');
+      // Jika GAGAL (masuk ke blok catch), panggil layar merah
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
+        context.push(
+          '/admin/payment-status',
+          extra: {
+            'isSuccess': false,
+            'message': e.toString().replaceAll(
+              'Exception: ',
+              '',
+            ), // Menampilkan pesan error asli dari Laravel
+          },
         );
       }
     } finally {
-      setState(() => isLoading = false);
+      if (mounted) {
+        // Matikan loading di tombol
+        setState(() => isLoading = false);
+      }
     }
   }
 
@@ -90,11 +104,13 @@ class _PaymentDetailsPageAdminScreensState
       'EEEE, dd MMMM yyyy',
       'id_ID',
     ).format(widget.selectedDate);
+
     final String strTotal = NumberFormat.currency(
       locale: 'id_ID',
       symbol: 'Rp ',
       decimalDigits: 0,
     ).format(widget.totalPrice);
+
     final String strDp = NumberFormat.currency(
       locale: 'id_ID',
       symbol: 'Rp ',
@@ -115,7 +131,7 @@ class _PaymentDetailsPageAdminScreensState
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Informasi Pemesanan',
+              'Informasi Pemesanan Lapangan',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
@@ -174,8 +190,7 @@ class _PaymentDetailsPageAdminScreensState
                       label: 'Total Harga Sewa (${widget.duration} jam)',
                       value: strTotal,
                     ),
-                    // Jika status lunas, mungkin info DP tidak perlu terlalu ditonjolkan,
-                    // tapi kita tetap tampilkan sesuai permintaan awal
+                    // Menampilkan DP jika dipilih DP
                     _InfoRow(label: 'Total Harga DP', value: strDp),
                   ],
                 ),
@@ -283,8 +298,9 @@ class _PaymentDetailsPageAdminScreensState
                           height: 16,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
                           ),
                         )
                       : const Text(
