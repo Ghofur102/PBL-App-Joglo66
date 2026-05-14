@@ -18,19 +18,16 @@ import 'package:pbl_app_joglo66/screens/admin/profile_screen.dart';
 import 'package:pbl_app_joglo66/screens/auth/login_screens.dart';
 import 'package:pbl_app_joglo66/screens/auth/register_screens.dart';
 import 'package:pbl_app_joglo66/services/auth_service.dart';
+import 'package:pbl_app_joglo66/screens/admin/dashboard_admin_screens.dart'; 
 
-// --- TAMBAHAN IMPORT UNTUK DASHBOARD & PROFILE ---
-import 'package:pbl_app_joglo66/screens/admin/dashboard_admin_screens.dart'; // Sesuaikan lokasi file dashboard Anda
+final authService = AuthService();
 
-final authService = AuthService(); // Buat instance global
-
-// KUNCI NAVIGASI: Membedakan mana yang full screen, mana yang di dalam Shell
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<NavigatorState> _shellNavigatorKey = GlobalKey<NavigatorState>();
 
 final GoRouter appRouter = GoRouter(
-  navigatorKey: _rootNavigatorKey, // Jadikan ini root navigator
-  initialLocation: '/admin/dashboard', // Lebih baik arahkan langsung ke dashboard, redirect akan mengurus sisanya
+  navigatorKey: _rootNavigatorKey, 
+  initialLocation: '/admin/dashboard', 
   refreshListenable: authService,
 
   redirect: (context, state) {
@@ -68,16 +65,13 @@ final GoRouter appRouter = GoRouter(
     ShellRoute(
       navigatorKey: _shellNavigatorKey,
       builder: (context, state, child) {
-        // CustomBottomNavPage sekarang berfungsi sebagai PEMBUNGKUS (Shell)
-        // Kita oper 'child' (halaman yang sedang aktif) ke dalamnya
         return CustomBottomNavPage(child: child); 
       },
       routes: [
         GoRoute(
           path: '/admin/dashboard',
           builder: (context, state) {
-            // Tampilkan HANYA isi dashboardnya di sini, bukan BottomNav-nya
-            return const DashboardAdminScreens(); // <-- Pastikan ini memanggil Screen Dashboard Anda
+            return const DashboardAdminScreens(); 
           },
         ),
         GoRoute(
@@ -103,7 +97,7 @@ final GoRouter appRouter = GoRouter(
         GoRoute(
           path: '/admin/profile',
           builder: (context, state) {
-            return const ProfileScreen(); // Screen profil yang tadi kita buat
+            return const ProfileScreen();
           },
         ),
       ],
@@ -117,7 +111,7 @@ final GoRouter appRouter = GoRouter(
       parentNavigatorKey: _rootNavigatorKey, 
       builder: (context, state) {
         return ProtectedRoute(
-          allowedRoles: ['worker'], // Sesuaikan hak aksesnya
+          allowedRoles: ['worker'], 
           currentRole: authService.role,
           child: const CheckSlotAvailabilityAdminScreens(), 
         );
@@ -126,7 +120,7 @@ final GoRouter appRouter = GoRouter(
     
     GoRoute(
       path: '/admin/field-details/:field_id',
-      parentNavigatorKey: _rootNavigatorKey, // Kunci agar menutupi Bottom Nav
+      parentNavigatorKey: _rootNavigatorKey, 
       builder: (context, state) {
         final String currentFieldId = state.pathParameters['field_id']!;
         return ProtectedRoute(
