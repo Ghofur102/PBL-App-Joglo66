@@ -106,6 +106,30 @@ class _DashboardAdminScreensState extends State<DashboardAdminScreens> {
           );
         },
       },
+      {
+        'icon': Icons.inventory_2,
+        'label': 'Master Atribut',
+        'color': Colors.purple,
+        'onTap': () {
+          context.push('/admin/list-attribute');
+        },
+      },
+      {
+        'icon': Icons.shopping_cart,
+        'label': 'Sewa Atribut',
+        'color': Colors.teal,
+        'onTap': () {
+          context.push('/admin/rent-attribute');
+        },
+      },
+      {
+        'icon': Icons.receipt_long,
+        'label': 'Riwayat Atribut',
+        'color': Colors.indigo,
+        'onTap': () {
+          context.push('/admin/history-rent-attribute');
+        },
+      },
     ];
 
     return Scaffold(
