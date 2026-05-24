@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pbl_app_joglo66/components/foot_navigation.dart';
 import 'package:pbl_app_joglo66/router/protected_route.dart';
+import 'package:pbl_app_joglo66/screens/admin/attribute_field/list_attribute.dart';
 import 'package:pbl_app_joglo66/screens/admin/booking_field/booking_details_admin_screens.dart';
 import 'package:pbl_app_joglo66/screens/admin/booking_field/change_booking_admin_screens.dart';
 import 'package:pbl_app_joglo66/screens/admin/booking_field/check_slot_availability_admin_screens.dart';
@@ -100,6 +101,12 @@ final GoRouter appRouter = GoRouter(
             return const ProfileScreen();
           },
         ),
+        GoRoute(
+          path: '/admin/list-attribute',
+          builder: (context, state) {
+            return const ListAttributeScreens();
+          }
+        )
       ],
     ),
 
