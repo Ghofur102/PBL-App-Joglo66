@@ -15,24 +15,25 @@ class DetailRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
             flex: 2,
             child: Text(
-              '$label: ',
-              style: const TextStyle(fontWeight: FontWeight.w500),
+              label,
+              style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.grey),
             ),
           ),
           Expanded(
             flex: 3,
             child: Text(
               value,
+              textAlign: TextAlign.right,
               style: isBoldValue
-                  ? const TextStyle(fontWeight: FontWeight.bold)
-                  : null,
+                  ? const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)
+                  : const TextStyle(color: Colors.black87),
             ),
           ),
         ],

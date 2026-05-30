@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pbl_app_joglo66/components/input_field.dart';
 import 'package:pbl_app_joglo66/services/attribute_field.dart';
 import 'package:pbl_app_joglo66/services/field_service.dart';
 
@@ -43,16 +44,12 @@ class _AddAttributeScreensState extends State<AddAttributeScreens> {
       final extra = GoRouterState.of(context).extra;
       if (extra != null && extra is Map<String, dynamic>) {
         _isEditMode = true;
-        _editId = extra['id'] is int
-            ? extra['id'] as int
-            : int.tryParse(extra['id'].toString()) ?? 0;
+        _editId = int.tryParse(extra['id']?.toString() ?? '0');
         _nameController.text = extra['name']?.toString() ?? '';
         _selectedType = extra['type']?.toString() ?? 'lainnya';
         _stockController.text = extra['stock']?.toString() ?? '';
         _priceController.text = extra['price_hour']?.toString() ?? '';
-        _selectedFieldId = extra['fk_field_id'] is int
-            ? extra['fk_field_id'] as int
-            : int.tryParse(extra['fk_field_id'].toString()) ?? 0;
+        _selectedFieldId = int.tryParse(extra['fk_field_id']?.toString() ?? '0');
       }
     }
   }
@@ -68,7 +65,6 @@ class _AddAttributeScreensState extends State<AddAttributeScreens> {
   Future<void> _loadFields() async {
     try {
       final rawData = await FieldService.fetchListField();
-      print('[AddAttribute] Fields API response count: ${rawData.length}');
       final list = rawData.map((item) => item as Map<String, dynamic>).toList();
 
       if (mounted) {
@@ -77,15 +73,11 @@ class _AddAttributeScreensState extends State<AddAttributeScreens> {
           _isLoadingFields = false;
 
           if (_fields.isNotEmpty && _selectedFieldId == null) {
-            _selectedFieldId =
-                _fields.first['id'] is int
-                    ? _fields.first['id'] as int
-                    : int.tryParse(_fields.first['id'].toString()) ?? 0;
+            _selectedFieldId = int.tryParse(_fields.first['id']?.toString() ?? '0');
           }
         });
       }
     } catch (e) {
-      print('[AddAttribute] Error loading fields: $e');
       if (mounted) {
         setState(() {
           _isLoadingFields = false;
@@ -100,10 +92,7 @@ class _AddAttributeScreensState extends State<AddAttributeScreens> {
 
     if (_selectedFieldId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Lapangan wajib dipilih.'),
-          backgroundColor: Colors.orange,
-        ),
+        const SnackBar(content: Text('Lapangan wajib dipilih.'), backgroundColor: Colors.orange),
       );
       return;
     }
@@ -126,10 +115,7 @@ class _AddAttributeScreensState extends State<AddAttributeScreens> {
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Data atribut berhasil diperbarui.'),
-              backgroundColor: Colors.green,
-            ),
+            const SnackBar(content: Text('Data atribut berhasil diperbarui.'), backgroundColor: Colors.green),
           );
           context.pop();
         }
@@ -144,10 +130,7 @@ class _AddAttributeScreensState extends State<AddAttributeScreens> {
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Data atribut berhasil disimpan.'),
-              backgroundColor: Colors.green,
-            ),
+            const SnackBar(content: Text('Data atribut berhasil disimpan.'), backgroundColor: Colors.green),
           );
           context.pop();
         }
@@ -155,10 +138,7 @@ class _AddAttributeScreensState extends State<AddAttributeScreens> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString().replaceAll('Exception: ', '')),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -166,25 +146,46 @@ class _AddAttributeScreensState extends State<AddAttributeScreens> {
     }
   }
 
+  InputDecoration _dropdownDecoration(String hint) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+      filled: true,
+      fillColor: const Color(0xFFF8FAFC),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFF406093), width: 1.5),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final title = _isEditMode ? 'Edit Atribut' : 'Tambah Atribut';
-
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF1E293B)),
           onPressed: () => context.pop(),
         ),
         title: Text(
-          title,
-          style: const TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-          ),
+          _isEditMode ? 'Edit Atribut' : 'Tambah Atribut',
+          style: const TextStyle(color: Color(0xFF1E293B), fontWeight: FontWeight.bold),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: const Color(0xFFE2E8F0), height: 1),
         ),
       ),
       body: _isLoadingFields
@@ -192,23 +193,16 @@ class _AddAttributeScreensState extends State<AddAttributeScreens> {
           : _fieldsError != null
               ? Center(
                   child: Padding(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(32),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         const Icon(Icons.error_outline, size: 48, color: Colors.red),
                         const SizedBox(height: 16),
-                        const Text(
-                          'Gagal memuat data lapangan',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
+                        const Text('Gagal Memuat Data', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
                         const SizedBox(height: 8),
-                        Text(
-                          _fieldsError!,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(color: Colors.red, fontSize: 13),
-                        ),
-                        const SizedBox(height: 20),
+                        Text(_fieldsError!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.red, fontSize: 13)),
+                        const SizedBox(height: 24),
                         ElevatedButton.icon(
                           onPressed: () {
                             setState(() {
@@ -219,212 +213,141 @@ class _AddAttributeScreensState extends State<AddAttributeScreens> {
                           },
                           icon: const Icon(Icons.refresh, size: 18),
                           label: const Text('Coba Lagi'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF406093),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
                         ),
                       ],
                     ),
                   ),
                 )
               : SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (!_isEditMode) ...[
-                      const Text(
-                        'Pilih Lapangan',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      DropdownButtonFormField<int>(
-                        value: _selectedFieldId,
-                        decoration: InputDecoration(
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                  padding: const EdgeInsets.all(20),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (!_isEditMode) ...[
+                          const Text(
+                            'Pilih Lapangan',
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
                           ),
-                          filled: true,
-                          fillColor: Colors.grey[50],
-                        ),
-                        items: _fields.map((f) {
-                          final fId = f['id'] is int
-                              ? f['id'] as int
-                              : int.tryParse(f['id'].toString()) ?? 0;
-                          return DropdownMenuItem(
-                            value: fId,
-                            child: Text(f['name']?.toString() ?? ''),
-                          );
-                        }).toList(),
-                        onChanged: (v) => setState(() => _selectedFieldId = v),
-                        validator: (v) => v == null ? 'Pilih lapangan' : null,
-                      ),
-                      const SizedBox(height: 20),
-                    ],
-                    const Text(
-                      'Nama Atribut',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: _nameController,
-                      decoration: InputDecoration(
-                        hintText: 'Contoh: Sepatu Futsal',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        filled: true,
-                        fillColor: Colors.grey[50],
-                      ),
-                      validator: (v) =>
-                          v == null || v.trim().isEmpty ? 'Nama atribut wajib diisi' : null,
-                    ),
-                    const SizedBox(height: 20),
-                    const Text(
-                      'Jenis Atribut',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    DropdownButtonFormField<String>(
-                      value: _selectedType,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        filled: true,
-                        fillColor: Colors.grey[50],
-                      ),
-                      items: _types.map((t) {
-                        final label = t[0].toUpperCase() + t.substring(1);
-                        IconData icon;
-                        switch (t) {
-                          case 'sepatu':
-                            icon = Icons.shopping_bag;
-                            break;
-                          case 'rompi':
-                            icon = Icons.checkroom;
-                            break;
-                          default:
-                            icon = Icons.sports_tennis;
-                        }
-                        return DropdownMenuItem(
-                          value: t,
-                          child: Row(
-                            children: [
-                              Icon(icon, size: 18, color: const Color(0xFF406093)),
-                              const SizedBox(width: 8),
-                              Text(label),
-                            ],
+                          const SizedBox(height: 8),
+                          DropdownButtonFormField<int>(
+                            value: _selectedFieldId,
+                            decoration: _dropdownDecoration('Pilih lapangan untuk atribut ini'),
+                            icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF64748B)),
+                            items: _fields.map((f) {
+                              final fId = int.tryParse(f['id']?.toString() ?? '0') ?? 0;
+                              return DropdownMenuItem(
+                                value: fId,
+                                child: Text(f['name']?.toString() ?? '', style: const TextStyle(fontSize: 14, color: Color(0xFF334155))),
+                              );
+                            }).toList(),
+                            onChanged: (v) => setState(() => _selectedFieldId = v),
+                            validator: (v) => v == null ? 'Pilih lapangan' : null,
                           ),
-                        );
-                      }).toList(),
-                      onChanged: (v) {
-                        if (v != null) setState(() => _selectedType = v);
-                      },
-                    ),
-                    const SizedBox(height: 20),
-                    const Text(
-                      'Harga Sewa (per Jam)',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: _priceController,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        hintText: 'Contoh: 25000',
-                        prefixText: 'Rp ',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          const SizedBox(height: 20),
+                        ],
+                        InputField(
+                          label: 'Nama Atribut',
+                          hint: 'Contoh: Sepatu Futsal Specs',
+                          controller: _nameController,
+                          icon: Icons.inventory_2_outlined,
+                          validator: (v) => v == null || v.trim().isEmpty ? 'Nama atribut wajib diisi' : null,
                         ),
-                        filled: true,
-                        fillColor: Colors.grey[50],
-                      ),
-                      validator: (v) {
-                        if (v == null || v.trim().isEmpty) return 'Harga sewa wajib diisi';
-                        if (int.tryParse(v.trim()) == null) return 'Format input harus berupa angka';
-                        if (int.parse(v.trim()) < 0) return 'Harga sewa tidak boleh negatif';
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 20),
-                    const Text(
-                      'Jumlah Stok',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: _stockController,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        hintText: 'Contoh: 10',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                        const SizedBox(height: 20),
+                        const Text(
+                          'Jenis Atribut',
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
                         ),
-                        filled: true,
-                        fillColor: Colors.grey[50],
-                      ),
-                      validator: (v) {
-                        if (v == null || v.trim().isEmpty) return 'Jumlah stok wajib diisi';
-                        if (int.tryParse(v.trim()) == null) return 'Format input harus berupa angka';
-                        if (int.parse(v.trim()) < 0) return 'Stok tidak boleh negatif';
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 32),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _isSaving ? null : _save,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF406093),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: _isSaving
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Text(
-                                'Simpan Data',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                        const SizedBox(height: 8),
+                        DropdownButtonFormField<String>(
+                          value: _selectedType,
+                          decoration: _dropdownDecoration('Pilih jenis atribut'),
+                          icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF64748B)),
+                          items: _types.map((t) {
+                            IconData icon = t == 'sepatu' ? Icons.shopping_bag_outlined : (t == 'rompi' ? Icons.checkroom_outlined : Icons.sports_tennis_outlined);
+                            return DropdownMenuItem(
+                              value: t,
+                              child: Row(
+                                children: [
+                                  Icon(icon, size: 18, color: const Color(0xFF406093)),
+                                  const SizedBox(width: 10),
+                                  Text(t[0].toUpperCase() + t.substring(1), style: const TextStyle(fontSize: 14, color: Color(0xFF334155))),
+                                ],
                               ),
-                      ),
+                            );
+                          }).toList(),
+                          onChanged: (v) {
+                            if (v != null) setState(() => _selectedType = v);
+                          },
+                        ),
+                        const SizedBox(height: 20),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              flex: 3,
+                              child: InputField(
+                                label: 'Harga Sewa (per Jam)',
+                                hint: '0',
+                                controller: _priceController,
+                                keyboardType: TextInputType.number,
+                                prefixText: 'Rp ',
+                                validator: (v) {
+                                  if (v == null || v.trim().isEmpty) return 'Harga wajib diisi';
+                                  if (int.tryParse(v.trim()) == null) return 'Harus angka';
+                                  if (int.parse(v.trim()) < 0) return 'Tidak boleh negatif';
+                                  return null;
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              flex: 2,
+                              child: InputField(
+                                label: 'Jumlah Stok',
+                                hint: '0',
+                                controller: _stockController,
+                                keyboardType: TextInputType.number,
+                                icon: Icons.format_list_numbered_rounded,
+                                validator: (v) {
+                                  if (v == null || v.trim().isEmpty) return 'Wajib diisi';
+                                  if (int.tryParse(v.trim()) == null) return 'Harus angka';
+                                  if (int.parse(v.trim()) < 0) return 'Tidak boleh negatif';
+                                  return null;
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 36),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: _isSaving ? null : _save,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF406093),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            child: _isSubmitting()
+                                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                : const Text('Simpan Atribut', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
     );
   }
+
+  bool _isSubmitting() => _isSaving;
 }

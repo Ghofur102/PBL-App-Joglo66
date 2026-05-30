@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pbl_app_joglo66/components/foot_navigation.dart';
 import 'package:pbl_app_joglo66/router/protected_route.dart';
+import 'package:pbl_app_joglo66/screens/admin/attribute_booking/add_attribute_booking.dart';
+import 'package:pbl_app_joglo66/screens/admin/attribute_booking/confirmation_attribute_booking.dart';
+import 'package:pbl_app_joglo66/screens/admin/attribute_booking/history_attribute_booking.dart';
 import 'package:pbl_app_joglo66/screens/admin/attribute_field/list_attribute.dart';
+import 'package:pbl_app_joglo66/screens/admin/attribute_field/add_attribute.dart';
 import 'package:pbl_app_joglo66/screens/admin/booking_field/booking_details_admin_screens.dart';
 import 'package:pbl_app_joglo66/screens/admin/booking_field/change_booking_admin_screens.dart';
 import 'package:pbl_app_joglo66/screens/admin/booking_field/check_slot_availability_admin_screens.dart';
@@ -10,6 +14,9 @@ import 'package:pbl_app_joglo66/screens/admin/booking_field/form_input_booking.d
 import 'package:pbl_app_joglo66/screens/admin/booking_field/list_booking_admin_screens.dart';
 import 'package:pbl_app_joglo66/screens/admin/booking_field/payment_details_page_admin_screens.dart';
 import 'package:pbl_app_joglo66/screens/admin/booking_field/successful_payment_admin_screens.dart';
+import 'package:pbl_app_joglo66/screens/admin/expense_field/add_expense.dart';
+import 'package:pbl_app_joglo66/screens/admin/expense_field/detail_expense.dart';
+import 'package:pbl_app_joglo66/screens/admin/expense_field/list_expense.dart';
 import 'package:pbl_app_joglo66/screens/admin/field/field_details_admin_screens.dart';
 import 'package:pbl_app_joglo66/screens/admin/field/form_close_field_admin_screens.dart';
 import 'package:pbl_app_joglo66/screens/admin/field/form_edit_field_admin_screens.dart';
@@ -106,7 +113,59 @@ final GoRouter appRouter = GoRouter(
           builder: (context, state) {
             return const ListAttributeScreens();
           }
-        )
+        ),
+        GoRoute(
+          path: '/admin/add-attribute',
+          builder: (context, state) {
+            return const AddAttributeScreens();
+          }
+        ),
+        GoRoute(
+          path: '/admin/rent-attribute',
+          builder: (context, state) {
+            return const AddAttributeBookingScreens();
+          }
+        ),
+        GoRoute(
+          path: '/admin/confirmation-rent-attribute',
+          builder: (context, state) {
+            final extra = state.extra as Map<String, dynamic>? ?? {};
+
+            return ConfirmationAttributeBookingScreens(
+              fkBookingId: extra['fkBookingId'] as int? ?? 0,
+              items: (extra['items'] as List<dynamic>?)?.map((e) => e as Map<String, dynamic>).toList() ?? [],
+              customerName: extra['customerName'] as String? ?? '',
+              customerPhone: extra['customerPhone'] as String? ?? '',
+              durationHours: extra['durationHours'] as int? ?? 1,
+              transactionDate: extra['transactionDate'] as String? ?? '',
+              totalPrice: extra['totalPrice'] as int? ?? 0,
+            );
+          },
+        ),
+        GoRoute(
+          path: '/admin/history-rent-attribute',
+          builder: (context, state) {
+            return const HistoryAttributeBookingScreens();
+          }
+        ),
+        GoRoute(
+          path: '/admin/list-expense-field',
+          builder: (context, state) {
+            return const ListExpensePage();
+          }
+        ),
+        GoRoute(
+          path: '/admin/add-expense-field',
+          builder: (context, state) {
+            return const AddExpensePage();
+          }
+        ),
+        GoRoute(
+          path: '/admin/detail-expense-field',
+          builder: (context, state) {
+            return const DetailExpensePage(expenseData: {},);
+          }
+        ),
       ],
     ),
 

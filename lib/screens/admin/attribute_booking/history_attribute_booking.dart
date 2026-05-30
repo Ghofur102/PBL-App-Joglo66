@@ -7,14 +7,13 @@ class HistoryAttributeBookingScreens extends StatefulWidget {
   const HistoryAttributeBookingScreens({super.key});
 
   @override
-  State<HistoryAttributeBookingScreens> createState() =>
-      _HistoryAttributeBookingScreensState();
+  State<HistoryAttributeBookingScreens> createState() => _HistoryAttributeBookingScreensState();
 }
 
-class _HistoryAttributeBookingScreensState
-    extends State<HistoryAttributeBookingScreens> {
+class _HistoryAttributeBookingScreensState extends State<HistoryAttributeBookingScreens> {
   List<Map<String, dynamic>> _rentals = [];
   bool isLoading = true;
+  bool _isActionProcessing = false;
   String? errorMessage;
 
   final _searchController = TextEditingController();
@@ -45,26 +44,25 @@ class _HistoryAttributeBookingScreensState
       });
 
       final result = await AttributeBookingService.fetchHistory(
-        search: _searchController.text.isNotEmpty
-            ? _searchController.text
-            : null,
-        startDate:
-            _startDateController.text.isNotEmpty ? _startDateController.text : null,
-        endDate:
-            _endDateController.text.isNotEmpty ? _endDateController.text : null,
+        search: _searchController.text.isNotEmpty ? _searchController.text : null,
+        startDate: _startDateController.text.isNotEmpty ? _startDateController.text : null,
+        endDate: _endDateController.text.isNotEmpty ? _endDateController.text : null,
         status: _selectedStatus,
       );
 
       final rawData = result['data'] ?? [];
-      final List<Map<String, dynamic>> list =
-          (rawData is List) ? rawData.map((e) => e as Map<String, dynamic>).toList() : [];
+      final List<Map<String, dynamic>> list = (rawData is List)
+          ? rawData.map((e) => e as Map<String, dynamic>).toList()
+          : ((rawData is Map && rawData['data'] is List)
+              ? List<Map<String, dynamic>>.from(rawData['data'])
+              : []);
 
       int revenue = 0;
       for (final r in list) {
-        final total = r['total'] is int
-            ? r['total'] as int
-            : int.tryParse(r['total']?.toString() ?? '0') ?? 0;
-        revenue += total;
+        final total = int.tryParse(r['total']?.toString() ?? '0') ?? 0;
+        if (r['status']?.toString() == 'dikembalikan' || r['status']?.toString() == 'dipinjam') {
+          revenue += total;
+        }
       }
 
       if (mounted) {
@@ -84,95 +82,145 @@ class _HistoryAttributeBookingScreensState
     }
   }
 
+  Future<void> _processReturnItem(int rentalId, String customerName, String itemName) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Konfirmasi Pengembalian', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: Text('Apakah Anda yakin atribut "$itemName" yang disewa oleh "$customerName" sudah dikembalikan?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Batal', style: TextStyle(color: Color(0xFF64748B))),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF10B981),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: const Text('Ya, Kembalikan', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    setState(() => _isActionProcessing = true);
+    try {
+      await AttributeBookingService.returnItem(rentalId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Atribut berhasil dikembalikan, stok otomatis bertambah.'), backgroundColor: Colors.green),
+        );
+        _loadData();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isActionProcessing = false);
+    }
+  }
+
   String _formatPrice(int? price) {
-    final format =
-        NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+    final format = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
     return format.format(price ?? 0);
   }
 
   Color _statusColor(String? status) {
-    switch (status) {
+    switch (status?.toLowerCase()) {
       case 'dipinjam':
-        return Colors.blue;
+        return const Color(0xFF3B82F6);
       case 'dikembalikan':
-        return Colors.green;
+        return const Color(0xFF10B981);
       case 'terlambat':
-        return Colors.red;
+        return const Color(0xFFEF4444);
       default:
-        return Colors.grey;
+        return const Color(0xFF64748B);
     }
   }
 
   String _statusLabel(String? status) {
-    switch (status) {
+    switch (status?.toLowerCase()) {
       case 'dipinjam':
-        return 'Dipinjam';
+        return 'DIPINJAM';
       case 'dikembalikan':
-        return 'Dikembalikan';
+        return 'DIKEMBALIKAN';
       case 'terlambat':
-        return 'Terlambat';
+        return 'TERLAMBAT';
       default:
-        return '-';
+        return status?.toUpperCase() ?? '-';
     }
+  }
+
+  InputDecoration _filterInputDecoration(String hint, IconData icon) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+      prefixIcon: Icon(icon, size: 18, color: const Color(0xFF94A3B8)),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+      filled: true,
+      fillColor: const Color(0xFFF8FAFC),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF1E293B)),
           onPressed: () => context.pop(),
         ),
         title: const Text(
-          'Riwayat Penyewaan',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          'Riwayat Penyewaan Atribut',
+          style: TextStyle(color: Color(0xFF1E293B), fontWeight: FontWeight.bold),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: const Color(0xFFE2E8F0), height: 1),
         ),
       ),
       body: Column(
         children: [
           Container(
             color: Colors.white,
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            padding: const EdgeInsets.all(16),
             child: Column(
               children: [
                 TextField(
                   controller: _searchController,
                   decoration: InputDecoration(
-                    hintText: 'Cari penyewa...',
-                    prefixIcon: const Icon(Icons.search),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
+                    hintText: 'Cari nama penyewa...',
+                    hintStyle: const TextStyle(fontSize: 14, color: Color(0xFF94A3B8)),
+                    prefixIcon: const Icon(Icons.search, color: Color(0xFF94A3B8)),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
                     filled: true,
-                    fillColor: Colors.grey[100],
+                    fillColor: const Color(0xFFF8FAFC),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                   onChanged: (_) => _loadData(),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(
                       child: TextField(
                         controller: _startDateController,
                         readOnly: true,
-                        decoration: InputDecoration(
-                          hintText: 'Dari tgl',
-                          prefixIcon:
-                              const Icon(Icons.date_range, size: 18),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          filled: true,
-                          fillColor: Colors.grey[100],
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 10),
-                        ),
+                        decoration: _filterInputDecoration('Dari tgl', Icons.calendar_today_outlined),
                         onTap: () async {
                           final picked = await showDatePicker(
                             context: context,
@@ -181,34 +229,18 @@ class _HistoryAttributeBookingScreensState
                             lastDate: DateTime(2030),
                           );
                           if (picked != null) {
-                            _startDateController.text =
-                                DateFormat('yyyy-MM-dd').format(picked);
+                            _startDateController.text = DateFormat('yyyy-MM-dd').format(picked);
                             _loadData();
                           }
                         },
                       ),
                     ),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 8),
-                      child: Text('-'),
-                    ),
+                    const Padding(padding: EdgeInsets.symmetric(horizontal: 6), child: Text('s/d', style: TextStyle(color: Colors.grey))),
                     Expanded(
                       child: TextField(
                         controller: _endDateController,
                         readOnly: true,
-                        decoration: InputDecoration(
-                          hintText: 'Sampai tgl',
-                          prefixIcon:
-                              const Icon(Icons.date_range, size: 18),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          filled: true,
-                          fillColor: Colors.grey[100],
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 10),
-                        ),
+                        decoration: _filterInputDecoration('Sampai tgl', Icons.calendar_today_outlined),
                         onTap: () async {
                           final picked = await showDatePicker(
                             context: context,
@@ -217,67 +249,66 @@ class _HistoryAttributeBookingScreensState
                             lastDate: DateTime(2030),
                           );
                           if (picked != null) {
-                            _endDateController.text =
-                                DateFormat('yyyy-MM-dd').format(picked);
+                            _endDateController.text = DateFormat('yyyy-MM-dd').format(picked);
                             _loadData();
                           }
                         },
                       ),
                     ),
+                    if (_startDateController.text.isNotEmpty || _endDateController.text.isNotEmpty) ...[
+                      const SizedBox(width: 8),
+                      IconButton(
+                        icon: const Icon(Icons.refresh_rounded, color: Colors.red),
+                        onPressed: () {
+                          _startDateController.clear();
+                          _endDateController.clear();
+                          _loadData();
+                        },
+                      )
+                    ]
                   ],
                 ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    _buildFilterChip('Semua', null),
-                    const SizedBox(width: 8),
-                    _buildFilterChip('Dipinjam', 'dipinjam'),
-                    const SizedBox(width: 8),
-                    _buildFilterChip('Dikembalikan', 'dikembalikan'),
-                    const SizedBox(width: 8),
-                    _buildFilterChip('Terlambat', 'terlambat'),
-                  ],
+                const SizedBox(height: 12),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _buildFilterChip('Semua', null),
+                      const SizedBox(width: 6),
+                      _buildFilterChip('Dipinjam', 'dipinjam'),
+                      const SizedBox(width: 6),
+                      _buildFilterChip('Dikembalikan', 'dikembalikan'),
+                      const SizedBox(width: 6),
+                      _buildFilterChip('Terlambat', 'terlambat'),
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
           Expanded(
-            child: isLoading
+            child: isLoading || _isActionProcessing
                 ? const Center(child: CircularProgressIndicator())
                 : RefreshIndicator(
                     onRefresh: _loadData,
                     child: ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
                       padding: const EdgeInsets.all(16),
                       children: [
-                        if (_totalRevenue != null && _rentals.isNotEmpty)
+                        if (_totalRevenue != null && _rentals.isNotEmpty && _selectedStatus == null)
                           Container(
                             padding: const EdgeInsets.all(16),
                             margin: const EdgeInsets.only(bottom: 16),
                             decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFF406093), Color(0xFF5A7BB5)],
-                              ),
-                              borderRadius: BorderRadius.circular(12),
+                              gradient: const LinearGradient(colors: [Color(0xFF406093), Color(0xFF2B4366)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [BoxShadow(color: const Color(0xFF406093).withOpacity(0.2), blurRadius: 10, offset: const Offset(0, 4))],
                             ),
                             child: Row(
-                              mainAxisAlignment:
-                                  MainAxisAlignment.spaceBetween,
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text(
-                                  'Total Pendapatan Atribut',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                Text(
-                                  _formatPrice(_totalRevenue),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
+                                const Text('Total Omset Atribut', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500, fontSize: 14)),
+                                Text(_formatPrice(_totalRevenue), style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                               ],
                             ),
                           ),
@@ -285,42 +316,24 @@ class _HistoryAttributeBookingScreensState
                           Container(
                             padding: const EdgeInsets.all(12),
                             margin: const EdgeInsets.only(bottom: 16),
-                            decoration: BoxDecoration(
-                              color: Colors.orange[100],
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Column(
-                              children: [
-                                Text(errorMessage!,
-                                    style:
-                                        const TextStyle(fontSize: 12)),
-                                const SizedBox(height: 8),
-                                ElevatedButton.icon(
-                                  onPressed: _loadData,
-                                  icon: const Icon(Icons.refresh, size: 16),
-                                  label: const Text('Coba Lagi'),
-                                ),
-                              ],
-                            ),
+                            decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.red.shade200)),
+                            child: Text(errorMessage!, style: TextStyle(color: Colors.red.shade700, fontSize: 13)),
                           ),
                         if (_rentals.isEmpty && errorMessage == null)
-                          Center(
-                            child: Padding(
-                              padding: const EdgeInsets.all(32),
-                              child: Column(
-                                children: [
-                                  Icon(Icons.receipt_long,
-                                      size: 48, color: Colors.grey[400]),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    'Belum ada transaksi penyewaan',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.grey[600],
-                                    ),
-                                  ),
-                                ],
-                              ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(vertical: 80),
+                            child: Column(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: const BoxDecoration(color: Color(0xFFE2E8F0), shape: BoxShape.circle),
+                                  child: const Icon(Icons.receipt_long_rounded, size: 40, color: Color(0xFF94A3B8)),
+                                ),
+                                const SizedBox(height: 16),
+                                const Text('Riwayat Kosong', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
+                                const SizedBox(height: 4),
+                                const Text('Tidak ada data penyewaan yang ditemukan.', style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8))),
+                              ],
                             ),
                           ),
                         ..._rentals.map((item) => _buildCard(item)),
@@ -341,45 +354,40 @@ class _HistoryAttributeBookingScreensState
         _loadData();
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(
-          color: isActive ? const Color(0xFF406093) : Colors.grey[200],
+          color: isActive ? const Color(0xFF406093) : const Color(0xFFE2E8F0),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
           label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: isActive ? Colors.white : Colors.black87,
-          ),
+          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: isActive ? Colors.white : const Color(0xFF475569)),
         ),
       ),
     );
   }
 
   Widget _buildCard(Map<String, dynamic> item) {
+    final int rentalId = int.tryParse(item['id']?.toString() ?? '0') ?? 0;
     final attr = item['attribute'] as Map<String, dynamic>?;
     final attrName = attr?['name']?.toString() ?? '-';
-    final qty = item['quantity'] is int
-        ? item['quantity'] as int
-        : int.tryParse(item['quantity']?.toString() ?? '0') ?? 0;
-    final total = item['total'] is int
-        ? item['total'] as int
-        : int.tryParse(item['total']?.toString() ?? '0') ?? 0;
-    final status = item['status']?.toString() ?? '';
-    final customer = item['customer_name']?.toString() ?? '-';
-    final date = item['transaction_date']?.toString() ?? '';
-    final duration = item['duration_hours'] is int
-        ? item['duration_hours'] as int
-        : int.tryParse(item['duration_hours']?.toString() ?? '0') ?? 0;
+    final int qty = int.tryParse(item['quantity']?.toString() ?? '0') ?? 0;
+    final int total = int.tryParse(item['total']?.toString() ?? '0') ?? 0;
+    final String status = item['status']?.toString() ?? 'dipinjam';
+    final String customer = item['customer_name']?.toString() ?? '-';
+    final String date = item['transaction_date']?.toString() ?? '-';
+    final int duration = int.tryParse(item['duration_hours']?.toString() ?? '0') ?? 0;
+
+    final statusLower = status.toLowerCase();
+    final bool showReturnButton = statusLower == 'dipinjam' || statusLower == 'terlambat';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE0E0E0)),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -389,67 +397,67 @@ class _HistoryAttributeBookingScreensState
             Row(
               children: [
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: _statusColor(status).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(6),
-                    border: Border.all(
-                        color: _statusColor(status).withOpacity(0.5)),
+                    border: Border.all(color: _statusColor(status).withOpacity(0.3)),
                   ),
                   child: Text(
                     _statusLabel(status),
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      color: _statusColor(status),
-                    ),
+                    style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: _statusColor(status), letterSpacing: 0.5),
                   ),
                 ),
                 const Spacer(),
                 Text(
                   _formatPrice(total),
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green[700],
-                  ),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E293B)),
                 ),
+              ],
+            ),
+            const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Divider(height: 1, color: Color(0xFFF1F5F9))),
+            Row(
+              children: [
+                const Icon(Icons.person_outline_rounded, size: 16, color: Color(0xFF64748B)),
+                const SizedBox(width: 8),
+                Text(customer, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1E293B))),
               ],
             ),
             const SizedBox(height: 8),
             Row(
               children: [
-                const Icon(Icons.person, size: 14, color: Colors.grey),
-                const SizedBox(width: 4),
-                Text(customer,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w600, fontSize: 14)),
+                const Icon(Icons.layers_outlined, size: 14, color: Color(0xFF94A3B8)),
+                const SizedBox(width: 6),
+                Text('$attrName ($qty Pcs)', style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w500)),
+                const SizedBox(width: 16),
+                const Icon(Icons.schedule_rounded, size: 14, color: Color(0xFF94A3B8)),
+                const SizedBox(width: 6),
+                Text('$duration Jam', style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w500)),
               ],
             ),
             const SizedBox(height: 4),
             Row(
               children: [
-                const Icon(Icons.sports_tennis, size: 13, color: Colors.grey),
-                const SizedBox(width: 4),
-                Text('$attrName x$qty',
-                    style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                const SizedBox(width: 16),
-                const Icon(Icons.access_time, size: 13, color: Colors.grey),
-                const SizedBox(width: 4),
-                Text('$duration jam',
-                    style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                const Icon(Icons.calendar_today_outlined, size: 13, color: Color(0xFF94A3B8)),
+                const SizedBox(width: 6),
+                Text(date, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w500)),
               ],
             ),
-            if (date.isNotEmpty) ...[
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  const Icon(Icons.calendar_today, size: 13, color: Colors.grey),
-                  const SizedBox(width: 4),
-                  Text(date,
-                      style:
-                          const TextStyle(fontSize: 12, color: Colors.grey)),
-                ],
+            if (showReturnButton) ...[
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => _processReturnItem(rentalId, customer, attrName),
+                  icon: const Icon(Icons.assignment_return_rounded, size: 16, color: Colors.white),
+                  label: const Text('Kembalikan Atribut', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF10B981),
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
               ),
             ],
           ],

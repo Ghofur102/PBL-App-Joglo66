@@ -2,12 +2,11 @@ import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pbl_app_joglo66/services/api_client.dart'; 
+
 class BookingService {
-  // Mengambil Base URL dari .env, dengan fallback ke localhost emulator
   static final String _baseUrl = dotenv.env['API_BASE_URL']!;
   static SharedPreferences? _prefs;
 
-  // 1. Inisialisasi SharedPreferences untuk mengambil Token Sanctum
   static Future<void> _initializePrefs() async {
     _prefs ??= await SharedPreferences.getInstance();
   }
@@ -16,8 +15,7 @@ class BookingService {
     return _prefs?.getString('auth_token') ?? '';
   }
 
-  // Helper untuk membuat header yang konsisten
-  static Map<String, String> get _headers {
+  static Map<String, String> get headers {
     return {
       'Authorization': 'Bearer $_token',
       'Accept': 'application/json',
@@ -25,9 +23,6 @@ class BookingService {
     };
   }
 
-  /// =====================================================================
-  /// 1. GET: /api/admin/list-booking 
-  /// =====================================================================
   static Future<Map<String, dynamic>> fetchListBooking({
     int? fieldId,
     String? search,
@@ -45,8 +40,7 @@ class BookingService {
       String queryString = queryParams.isNotEmpty ? '?${queryParams.join('&')}' : '';
       final url = Uri.parse('$_baseUrl/api/admin/list-booking$queryString');
 
-      // MENGGUNAKAN API CLIENT (Otomatis handle 401 & Timeout)
-      final response = await ApiClient.get(url, headers: _headers);
+      final response = await ApiClient.get(url, headers: headers);
 
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
@@ -59,9 +53,6 @@ class BookingService {
     }
   }
 
-  /// =====================================================================
-  /// 2. POST: /api/admin/create-booking 
-  /// =====================================================================
   static Future<Map<String, dynamic>> createBooking({
     required int userId,
     required int fieldId,
@@ -81,10 +72,9 @@ class BookingService {
     try {
       final url = Uri.parse('$_baseUrl/api/admin/create-booking');
       
-      // MENGGUNAKAN API CLIENT
       final response = await ApiClient.post(
         url,
-        headers: _headers,
+        headers: headers,
         body: jsonEncode({
           'user_id': userId,
           'field_id': fieldId,
@@ -109,16 +99,12 @@ class BookingService {
     }
   }
 
-  /// =====================================================================
-  /// 3. GET: /api/admin/detail-booking/{id} 
-  /// =====================================================================
   static Future<Map<String, dynamic>> fetchBookingDetail(String detailBookingId) async {
     await _initializePrefs();
     try {
       final url = Uri.parse('$_baseUrl/api/admin/detail-booking/$detailBookingId');
       
-      // MENGGUNAKAN API CLIENT
-      final response = await ApiClient.get(url, headers: _headers);
+      final response = await ApiClient.get(url, headers: headers);
 
       final jsonData = json.decode(response.body);
 
@@ -132,9 +118,6 @@ class BookingService {
     }
   }
 
-  /// =====================================================================
-  /// 4. POST: /api/admin/reschedule-booking/{id} 
-  /// =====================================================================
   static Future<Map<String, dynamic>> rescheduleBooking({
     required String detailBookingId,
     required String newPlayDate, 
@@ -148,18 +131,16 @@ class BookingService {
     try {
       final url = Uri.parse('$_baseUrl/api/admin/reschedule-booking/$detailBookingId');
       
-      // PERBAIKAN SYNTAX DART: Menggunakan (if) di dalam MAP
       final body = {
         'new_play_date': newPlayDate,
         'new_start_time': newStartTime,
         'new_end_time': newEndTime,
         'reason': reason,
-        if (fieldClosureId != null) 'fk_field_closure_id': fieldClosureId,
-        if (newPrice != null) 'new_price': newPrice, 
+        'fk_field_closure_id': ?fieldClosureId,
+        'new_price': ?newPrice, 
       };
 
-      // MENGGUNAKAN API CLIENT
-      final response = await ApiClient.post(url, headers: _headers, body: jsonEncode(body));
+      final response = await ApiClient.post(url, headers: headers, body: jsonEncode(body));
 
       final jsonData = json.decode(response.body);
 
@@ -173,9 +154,6 @@ class BookingService {
     }
   }
 
-  /// =====================================================================
-  /// 5. POST: /api/admin/cancel-booking/{id} 
-  /// =====================================================================
   static Future<Map<String, dynamic>> cancelBooking({
     required String detailBookingId,
     required String reason,
@@ -188,12 +166,11 @@ class BookingService {
       
       final body = {
         'reason': reason,
-        if (statusRefund != null) 'status_refund': statusRefund,
-        if (fieldClosureId != null) 'fk_field_closure_id': fieldClosureId,
+        'status_refund': ?statusRefund,
+        'fk_field_closure_id': ?fieldClosureId,
       };
 
-      // MENGGUNAKAN API CLIENT
-      final response = await ApiClient.post(url, headers: _headers, body: jsonEncode(body));
+      final response = await ApiClient.post(url, headers: headers, body: jsonEncode(body));
 
       final jsonData = json.decode(response.body);
 
@@ -207,9 +184,6 @@ class BookingService {
     }
   }
 
-  /// =====================================================================
-  /// 6. GET: /api/admin/list-close-booking 
-  /// =====================================================================
   static Future<Map<String, dynamic>> fetchClosedBookings({
     int? fieldId,
     String? date, 
@@ -223,8 +197,7 @@ class BookingService {
       String queryString = queryParams.isNotEmpty ? '?${queryParams.join('&')}' : '';
       final url = Uri.parse('$_baseUrl/api/admin/list-close-booking$queryString');
 
-      // MENGGUNAKAN API CLIENT
-      final response = await ApiClient.get(url, headers: _headers);
+      final response = await ApiClient.get(url, headers: headers);
 
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);

@@ -11,7 +11,7 @@ class Button extends StatelessWidget {
   final FontWeight? fontWeight;
 
   const Button({
-    Key? key,
+    super.key,
     required this.label,
     required this.onPressed,
     this.backgroundColor,
@@ -20,7 +20,7 @@ class Button extends StatelessWidget {
     this.borderRadius,
     this.fontSize,
     this.fontWeight,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

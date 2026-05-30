@@ -39,8 +39,8 @@ class PaymentService {
         'payment_type': paymentType,
         'method': method,
         'amount': amount,
-        if (bookingDetailId != null) 'booking_detail_id': bookingDetailId,
-        if (referenceId != null) 'reference_id': referenceId,
+        'booking_detail_id': ?bookingDetailId,
+        'reference_id': ?referenceId,
       };
 
       final response = await ApiClient.post(url, headers: _headers, body: jsonEncode(body));

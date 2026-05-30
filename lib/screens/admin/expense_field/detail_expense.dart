@@ -2,8 +2,6 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
-import 'edit_expense.dart';
-
 class DetailExpensePage extends StatefulWidget {
   final Map<String, dynamic> expenseData;
 
@@ -55,14 +53,14 @@ class _DetailExpensePageState extends State<DetailExpensePage> {
     }
   }
 
-  void editExpense() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => EditExpensePage(expenseData: widget.expenseData),
-      ),
-    );
-  }
+  // void editExpense() {
+  //   Navigator.push(
+  //     context,
+  //     MaterialPageRoute(
+  //       builder: (_) => EditExpensePage(expenseData: widget.expenseData),
+  //     ),
+  //   );
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -348,23 +346,23 @@ class _DetailExpensePageState extends State<DetailExpensePage> {
 
             Row(
               children: [
-                Expanded(
-                  child: SizedBox(
-                    height: 46,
-                    child: ElevatedButton(
-                      onPressed: editExpense,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.grey.shade500,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                      child: const Text("Edit Pengeluaran"),
-                    ),
-                  ),
-                ),
+                // Expanded(
+                //   child: SizedBox(
+                //     height: 46,
+                //     child: ElevatedButton(
+                //       onPressed: editExpense,
+                //       style: ElevatedButton.styleFrom(
+                //         backgroundColor: Colors.grey.shade500,
+                //         foregroundColor: Colors.white,
+                //         elevation: 0,
+                //         shape: RoundedRectangleBorder(
+                //           borderRadius: BorderRadius.circular(14),
+                //         ),
+                //       ),
+                //       child: const Text("Edit Pengeluaran"),
+                //     ),
+                //   ),
+                // ),
 
                 const SizedBox(width: 16),
 

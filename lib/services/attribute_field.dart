@@ -13,7 +13,7 @@ class AttributeService {
 
   static String get _token => _prefs?.getString('auth_token') ?? '';
 
-  static Map<String, String> get _headers => {
+  static Map<String, String> get headers => {
         'Authorization': 'Bearer $_token',
         'Accept': 'application/json',
         'Content-Type': 'application/json',
@@ -27,7 +27,7 @@ class AttributeService {
         urlString += '?search=$search';
       }
       final url = Uri.parse(urlString);
-      final response = await ApiClient.get(url, headers: _headers);
+      final response = await ApiClient.get(url, headers: headers);
       final jsonData = json.decode(response.body);
 
       if (response.statusCode == 200 && jsonData['success'] == true) {
@@ -44,7 +44,7 @@ class AttributeService {
     await _initializePrefs();
     try {
       final url = Uri.parse('$_baseUrl/api/admin/detail-attribute/$id');
-      final response = await ApiClient.get(url, headers: _headers);
+      final response = await ApiClient.get(url, headers: headers);
       final jsonData = json.decode(response.body);
 
       if (response.statusCode == 200 && jsonData['success'] == true) {
@@ -69,7 +69,7 @@ class AttributeService {
       final url = Uri.parse('$_baseUrl/api/admin/create-attribute');
       final response = await ApiClient.post(
         url,
-        headers: _headers,
+        headers: headers,
         body: jsonEncode({
           'fk_field_id': fkFieldId,
           'name': name,
@@ -115,7 +115,7 @@ class AttributeService {
 
       final response = await ApiClient.post(
         url,
-        headers: _headers,
+        headers: headers,
         body: jsonEncode(body),
       );
 
@@ -139,7 +139,7 @@ class AttributeService {
     await _initializePrefs();
     try {
       final url = Uri.parse('$_baseUrl/api/admin/delete-attribute/$id');
-      final response = await ApiClient.post(url, headers: _headers);
+      final response = await ApiClient.post(url, headers: headers);
       final jsonData = json.decode(response.body);
 
       if (response.statusCode == 200 && jsonData['success'] == true) {
@@ -156,7 +156,7 @@ class AttributeService {
     await _initializePrefs();
     try {
       final url = Uri.parse('$_baseUrl/api/admin/toggle-attribute-status/$id');
-      final response = await ApiClient.post(url, headers: _headers);
+      final response = await ApiClient.post(url, headers: headers);
       final jsonData = json.decode(response.body);
 
       if (response.statusCode == 200 && jsonData['success'] == true) {

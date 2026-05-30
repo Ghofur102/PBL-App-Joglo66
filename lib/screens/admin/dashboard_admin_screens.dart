@@ -101,9 +101,7 @@ class _DashboardAdminScreensState extends State<DashboardAdminScreens> {
         'label': 'Pengeluaran',
         'color': Colors.orange,
         'onTap': () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Menuju Halaman Pengeluaran')),
-          );
+          context.push('/admin/list-expense-field');
         },
       },
       {

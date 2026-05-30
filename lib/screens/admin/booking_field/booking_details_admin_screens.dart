@@ -1,24 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-// HAPUS import http dan dotenv karena sudah diurus oleh Service
 import 'package:pbl_app_joglo66/services/booking_service.dart';
 import 'package:pbl_app_joglo66/components/detail_row.dart';
-import 'package:pbl_app_joglo66/components/header_one.dart';
-import 'package:pbl_app_joglo66/components/header_two.dart';
+import 'package:pbl_app_joglo66/components/session_card.dart';
 
 class BookingDetailsAdminScreen extends StatefulWidget {
   final String bookingId;
-
   const BookingDetailsAdminScreen({super.key, required this.bookingId});
 
   @override
-  State<BookingDetailsAdminScreen> createState() =>
-      _BookingDetailsAdminScreenState();
+  State<BookingDetailsAdminScreen> createState() => _BookingDetailsAdminScreenState();
 }
 
 class _BookingDetailsAdminScreenState extends State<BookingDetailsAdminScreen> {
-  // Variabel State
   Map<String, dynamic>? bookingData;
   bool isLoading = true;
   String errorMessage = '';
@@ -29,12 +24,9 @@ class _BookingDetailsAdminScreenState extends State<BookingDetailsAdminScreen> {
     _fetchBookingDetail();
   }
 
-  // Fungsi memanggil API menggunakan BookingService
   Future<void> _fetchBookingDetail() async {
     try {
-      // Hanya 1 baris pemanggilan Service yang rapi!
       final data = await BookingService.fetchBookingDetail(widget.bookingId);
-
       if (mounted) {
         setState(() {
           bookingData = data;
@@ -44,7 +36,6 @@ class _BookingDetailsAdminScreenState extends State<BookingDetailsAdminScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          // Bersihkan teks "Exception:" agar pesan error lebih rapi dibaca user
           errorMessage = e.toString().replaceAll('Exception: ', '');
           isLoading = false;
         });
@@ -52,300 +43,78 @@ class _BookingDetailsAdminScreenState extends State<BookingDetailsAdminScreen> {
     }
   }
 
-  Map<String, dynamic> _getStatusStyle(String status) {
-    switch (status) {
-      case 'finish':
-      case 'active':
-        return {
-          'text': status == 'finish' ? 'Booking Finished' : 'Booking Active',
-          'bgColor': const Color(0xFFE8F5E9), // Hijau muda
-          'iconColor': const Color(0xFF4CAF50), // Hijau
-          'icon': Icons.check_circle,
-        };
-      case 'cancelled':
-        return {
-          'text': 'Booking Cancelled',
-          'bgColor': const Color(0xFFFFEBEE), // Merah muda
-          'iconColor': Colors.red,
-          'icon': Icons.cancel,
-        };
-      case 'reschedule':
-        return {
-          'text': 'Rescheduled',
-          'bgColor': const Color(0xFFFFF3E0), // Orange muda
-          'iconColor': Colors.orange,
-          'icon': Icons.update,
-        };
-      case 'field closure':
-        return {
-          'text': 'Affected by Closure',
-          'bgColor': const Color(0xFFFFEBEE), // Merah muda
-          'iconColor': Colors.red,
-          'icon': Icons.warning_amber_rounded,
-        };
-      case 'waiting':
-      default:
-        return {
-          'text': 'Waiting for Payment',
-          'bgColor': const Color(0xFFFFF3E0), // Orange muda
-          'iconColor': Colors.orange,
-          'icon': Icons.access_time,
-        };
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final formatRp = NumberFormat.currency(
-      locale: 'id_ID',
-      symbol: 'Rp ',
-      decimalDigits: 0,
-    );
-
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/');
-            }
-          },
+          onPressed: () => context.canPop() ? context.pop() : context.go('/'),
         ),
-        title: Text(
-          'Booking Details (${widget.bookingId})',
-          style: const TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-          ),
+        title: const Text(
+          'Detail Pesanan',
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
       ),
-
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : errorMessage.isNotEmpty
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Text(
-                  errorMessage,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.red, fontSize: 16),
-                ),
-              ),
-            )
-          : _buildContent(
-              formatRp,
-            ), // Panggil fungsi pembuat konten jika sukses
+              ? Center(child: Text(errorMessage, style: const TextStyle(color: Colors.red)))
+              : _buildBody(),
     );
   }
 
-  Widget _buildContent(NumberFormat formatRp) {
-    final statusStyle = _getStatusStyle(bookingData!['status']);
+  Widget _buildBody() {
+    final formatRp = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+    final sessions = (bookingData!['sessions'] as List?) ?? [];
+    final userInfo = bookingData!['user_info'];
+    final fieldInfo = bookingData!['field_info'];
+    final paymentInfo = bookingData!['payment_details'];
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: statusStyle['bgColor'],
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: statusStyle['iconColor'],
-                    shape: BoxShape.circle,
-                  ),
-                  alignment: Alignment.center,
-                  child: Icon(statusStyle['icon'], color: Colors.white),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      HeaderTwo(title: 'Status: ${statusStyle['text']}'),
-                      const SizedBox(height: 8),
-                      Text(
-                        bookingData!['status'] == 'cancelled'
-                            ? 'Pesanan ini telah dibatalkan.'
-                            : bookingData!['status'] == 'field closure'
-                            ? 'Jadwal ini bertabrakan dengan penutupan lapangan.'
-                            : 'Silakan cek detail pemesanan dengan teliti.',
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
+          _buildSummaryCard(userInfo, fieldInfo, paymentInfo, formatRp),
           const SizedBox(height: 24),
+          const Text('Daftar Sesi', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 12),
+          ...sessions.map((session) => SessionCard(
+                session: session,
+                fieldName: fieldInfo['name'],
+              )),
+        ],
+      ),
+    );
+  }
 
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFFE3F2FD),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const HeaderOne(title: 'Field Booking Details'),
-                const SizedBox(height: 16),
-
-                Row(
-                  children: [
-                    Container(
-                      width: 70,
-                      height: 70,
-                      color: const Color(0xFF64B5F6),
-                      alignment: Alignment.center,
-                      child: const Icon(
-                        Icons.sports_soccer,
-                        color: Colors.white,
-                        size: 32,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          bookingData!['field_info']['name'], // Ambil dari API
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          bookingData!['field_info']['category'], // Ambil dari API
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-
-                const Divider(height: 32),
-
-                const HeaderTwo(title: 'Customer Info'),
-                DetailRow(
-                  label: 'Name',
-                  value: bookingData!['user_info']['name'],
-                ),
-                DetailRow(
-                  label: 'Team Name',
-                  value: bookingData!['user_info']['team_name'],
-                ),
-                DetailRow(
-                  label: 'Contact',
-                  value:
-                      '${bookingData!['user_info']['email']} / ${bookingData!['user_info']['phone']}',
-                ),
-
-                const Divider(height: 32),
-
-                const HeaderTwo(title: 'Time'),
-                DetailRow(
-                  label: 'Play Date',
-                  value:
-                      '${bookingData!['time_info']['play_date']} (${bookingData!['time_info']['play_time']})',
-                ),
-                DetailRow(
-                  label: 'Order Time',
-                  value: bookingData!['time_info']['order_time'],
-                ),
-
-                const Divider(height: 32),
-
-                const HeaderTwo(title: 'Service'),
-                DetailRow(
-                  label: 'Duration',
-                  value: '${bookingData!['service_info']['duration']} Hour(s)',
-                ),
-                DetailRow(
-                  label: 'Price Per Hour',
-                  value: formatRp.format(
-                    bookingData!['service_info']['price_per_hour'],
-                  ),
-                ),
-                DetailRow(
-                  label: 'Total Price',
-                  value: formatRp.format(
-                    bookingData!['service_info']['total_price'],
-                  ),
-                ),
-                DetailRow(
-                  label: 'Total Down Payment',
-                  value: formatRp.format(
-                    bookingData!['service_info']['total_down_payment'],
-                  ),
-                ),
-
-                const Divider(height: 32),
-
-                const HeaderTwo(title: 'Payment Details'),
-                DetailRow(
-                  label: 'Total Price',
-                  value: formatRp.format(
-                    bookingData!['payment_details']['total_price'],
-                  ),
-                ),
-                DetailRow(
-                  label: 'Payment Method',
-                  value:
-                      toBeginningOfSentenceCase(
-                        bookingData!['payment_details']['payment_method'],
-                      ) ??
-                      '-',
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          // Sembunyikan tombol modify jika statusnya sudah cancelled
-          if (bookingData!['status'] != 'cancelled')
-            InkWell(
-              onTap: () {
-                context.push('/admin/change-booking/${widget.bookingId}');
-              },
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  vertical: 16,
-                  horizontal: 24,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFCC80),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                alignment: Alignment.center,
-                child: const Text(
-                  'Modify / Cancel Booking',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: Colors.black87,
-                  ),
-                ),
-              ),
-            ),
-          const SizedBox(height: 24),
+  Widget _buildSummaryCard(Map<String, dynamic> user, Map<String, dynamic> field, Map<String, dynamic> payment, NumberFormat formatRp) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Informasi Pelanggan', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+          const SizedBox(height: 12),
+          DetailRow(label: 'Nama', value: user['name']),
+          DetailRow(label: 'Tim', value: user['team_name']),
+          DetailRow(label: 'Kontak', value: '${user['phone']}'),
+          const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Divider()),
+          const Text('Informasi Lapangan & Pembayaran', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+          const SizedBox(height: 12),
+          DetailRow(label: 'Lapangan', value: field['name'], isBoldValue: true),
+          DetailRow(label: 'Total Tagihan', value: formatRp.format(payment['total_price'])),
+          DetailRow(label: 'Total Dibayar', value: formatRp.format(payment['total_paid'])),
+          DetailRow(label: 'Metode', value: payment['payment_method'].toString().toUpperCase()),
         ],
       ),
     );
