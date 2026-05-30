@@ -1,6 +1,7 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
+import 'package:pbl_app_joglo66/services/expense_field.dart';
 
 class DetailExpensePage extends StatefulWidget {
   final Map<String, dynamic> expenseData;
@@ -12,384 +13,253 @@ class DetailExpensePage extends StatefulWidget {
 }
 
 class _DetailExpensePageState extends State<DetailExpensePage> {
-  String formatCurrency(int value) {
-    return value.toString().replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (Match m) => '${m[1]}.',
-    );
+  bool _isDeleting = false;
+
+  String _formatPrice(int? price) {
+    final format = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+    return format.format(price ?? 0);
   }
 
   void deleteExpense() async {
-    bool? confirmDelete = await showDialog(
+    final int id = int.tryParse(widget.expenseData['id']?.toString() ?? '0') ?? 0;
+
+    bool? confirmDelete = await showDialog<bool>(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text("Hapus Pengeluaran"),
-          content: const Text("Apakah Anda yakin ingin menghapus data ini?"),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text("Hapus Pengeluaran", style: TextStyle(fontWeight: FontWeight.bold)),
+          content: const Text("Apakah Anda yakin ingin menghapus data pengeluaran ini secara permanen?"),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.pop(context, false);
-              },
-              child: const Text("Batal"),
+              onPressed: () => context.pop(false),
+              child: const Text("Batal", style: TextStyle(color: Colors.grey)),
             ),
             ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context, true);
-              },
-              child: const Text("Hapus"),
+              onPressed: () => context.pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFEF4444), 
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))
+              ),
+              child: const Text("Hapus", style: TextStyle(color: Colors.white)),
             ),
           ],
         );
       },
     );
 
-    if (confirmDelete == true) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Data pengeluaran berhasil dihapus")),
-      );
-
-      Navigator.pop(context);
+    if (confirmDelete == true && mounted) {
+      setState(() => _isDeleting = true);
+      try {
+        final success = await ExpenseService.deleteExpense(id);
+        if (success && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Data pengeluaran berhasil dihapus"), backgroundColor: Colors.green),
+          );
+          context.pop();
+        } else {
+          throw Exception("Gagal menghapus data dari server.");
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: Colors.red),
+          );
+        }
+      } finally {
+        if (mounted) setState(() => _isDeleting = false);
+      }
     }
   }
-
-  // void editExpense() {
-  //   Navigator.push(
-  //     context,
-  //     MaterialPageRoute(
-  //       builder: (_) => EditExpensePage(expenseData: widget.expenseData),
-  //     ),
-  //   );
-  // }
 
   @override
   Widget build(BuildContext context) {
     final data = widget.expenseData;
+    final int amount = int.tryParse(data['amount']?.toString() ?? '0') ?? 0;
+    final bool hasProof = data['proof'] == true && data['image'] != null;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FA),
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.grey.shade300,
+        backgroundColor: Colors.white,
         leading: IconButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => context.pop(),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF1E293B)),
         ),
-        centerTitle: true,
         title: const Text(
           "Detail Pengeluaran",
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          style: TextStyle(color: Color(0xFF1E293B), fontWeight: FontWeight.bold),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: const Color(0xFFE2E8F0), height: 1),
         ),
       ),
-
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(14),
-              ),
+      body: _isDeleting
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 22,
-                        backgroundColor: Colors.grey.shade600,
-                        child: const Icon(Icons.payments, color: Colors.white),
-                      ),
-
-                      const SizedBox(width: 12),
-
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
                           children: [
-                            Text(
-                              data['title'] ?? "-",
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 15,
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(color: const Color(0xFFEF4444).withOpacity(0.1), shape: BoxShape.circle),
+                              child: const Icon(Icons.outbox_rounded, color: Color(0xFFEF4444), size: 24),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    data['title'] ?? "-",
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E293B)),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    data['category'] ?? "Operasional",
+                                    style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                                  ),
+                                ],
                               ),
                             ),
-
-                            const SizedBox(height: 4),
-
                             Text(
-                              data['category'] ?? "Pengeluaran Operasional",
-                              style: const TextStyle(fontSize: 11),
+                              _formatPrice(amount),
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFFEF4444)),
                             ),
                           ],
                         ),
-                      ),
-
-                      Text(
-                        "Rp. ${formatCurrency(data['amount'] ?? 0)}",
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 18),
-
-                  Row(
-                    children: [
-                      Expanded(
-                        child: buildInfoColumn(
-                          title: "Tanggal",
-                          value: data['date'] ?? "27 Mei 2026",
-                        ),
-                      ),
-
-                      const SizedBox(width: 20),
-
-                      Expanded(
-                        child: buildInfoColumn(
-                          title: "Status Bukti",
-                          value: data['proof'] == true
-                              ? "Tersedia"
-                              : "Belum Ada",
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 18),
-
-                  Row(
-                    children: [
-                      Expanded(
-                        child: buildInfoColumn(
-                          title: "Kategori",
-                          value: data['category'] ?? "-",
-                        ),
-                      ),
-
-                      const SizedBox(width: 20),
-
-                      Expanded(
-                        child: buildInfoColumn(
-                          title: "Nominal",
-                          value: "Rp. ${formatCurrency(data['amount'] ?? 0)}",
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 14),
-
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Row(
-                    children: [
-                      Icon(Icons.description_outlined),
-                      SizedBox(width: 8),
-                      Text(
-                        "Detail Transaksi",
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 18),
-
-                  Row(
-                    children: [
-                      Expanded(
-                        child: buildInfoColumn(
-                          title: "Nama Pengeluaran",
-                          value: data['title'] ?? "-",
-                        ),
-                      ),
-
-                      const SizedBox(width: 20),
-
-                      Expanded(
-                        child: buildInfoColumn(
-                          title: "Jenis",
-                          value: data['category'] ?? "-",
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 18),
-
-                  Row(
-                    children: [
-                      Expanded(
-                        child: buildInfoColumn(
-                          title: "Tanggal Input",
-                          value: data['date'] ?? "-",
-                        ),
-                      ),
-
-                      const SizedBox(width: 20),
-
-                      Expanded(
-                        child: buildInfoColumn(
-                          title: "Admin",
-                          value: "Administrator",
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 18),
-
-                  buildInfoColumn(
-                    title: "Catatan Tambahan",
-                    value: data['note'] ?? "Tidak ada catatan tambahan",
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 14),
-
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Row(
-                    children: [
-                      Icon(Icons.camera_alt),
-                      SizedBox(width: 8),
-                      Text(
-                        "Bukti Pembayaran",
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  Row(
-                    children: [
-                      Container(
-                        width: 90,
-                        height: 90,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(10),
-                          image: data['image'] != null
-                              ? DecorationImage(
-                                  image: FileImage(File(data['image'])),
-                                  fit: BoxFit.cover,
-                                )
-                              : null,
-                        ),
-                        child: data['image'] == null
-                            ? const Icon(
-                                Icons.image,
-                                size: 40,
-                                color: Colors.grey,
-                              )
-                            : null,
-                      ),
-
-                      const SizedBox(width: 16),
-
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Divider(color: Color(0xFFF1F5F9))),
+                        Row(
                           children: [
-                            buildInfoColumn(
-                              title: "Status Upload",
-                              value: data['proof'] == true
-                                  ? "Bukti tersedia"
-                                  : "Belum upload bukti",
-                            ),
-
-                            const SizedBox(height: 16),
-
-                            buildInfoColumn(
-                              title: "Tanggal Upload",
-                              value: "27 Mei 2026",
-                            ),
+                            Expanded(child: buildInfoColumn(title: "Tanggal Pengeluaran", value: data['date'] ?? "-")),
+                            const SizedBox(width: 16),
+                            Expanded(child: buildInfoColumn(title: "Status Bukti", value: hasProof ? "Tersedia" : "Belum Ada")),
                           ],
                         ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 28),
-
-            Row(
-              children: [
-                // Expanded(
-                //   child: SizedBox(
-                //     height: 46,
-                //     child: ElevatedButton(
-                //       onPressed: editExpense,
-                //       style: ElevatedButton.styleFrom(
-                //         backgroundColor: Colors.grey.shade500,
-                //         foregroundColor: Colors.white,
-                //         elevation: 0,
-                //         shape: RoundedRectangleBorder(
-                //           borderRadius: BorderRadius.circular(14),
-                //         ),
-                //       ),
-                //       child: const Text("Edit Pengeluaran"),
-                //     ),
-                //   ),
-                // ),
-
-                const SizedBox(width: 16),
-
-                Expanded(
-                  child: SizedBox(
-                    height: 46,
-                    child: ElevatedButton(
-                      onPressed: deleteExpense,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red.shade400,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                      child: const Text("Hapus Pengeluaran"),
+                      ],
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 14),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.description_outlined, size: 18, color: Colors.grey.shade600),
+                            const SizedBox(width: 8),
+                            const Text("Detail Transaksi", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(child: buildInfoColumn(title: "Nama Pengeluaran", value: data['title'] ?? "-")),
+                            const SizedBox(width: 16),
+                            Expanded(child: buildInfoColumn(title: "Jenis Kategori", value: data['category'] ?? "-")),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        buildInfoColumn(
+                          title: "Catatan Tambahan", 
+                          value: data['note'] != null && data['note'].toString().isNotEmpty && data['note'].toString() != '-'
+                              ? data['note'] 
+                              : "Tidak ada catatan tambahan"
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.camera_alt_outlined, size: 18, color: Colors.grey.shade600),
+                            const SizedBox(width: 8),
+                            const Text("Bukti Dokumen Pembayaran", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Container(
+                              width: 80,
+                              height: 80,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF8FAFC),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: const Color(0xFFE2E8F0)),
+                                image: hasProof
+                                    ? DecorationImage(image: NetworkImage(data['image'].toString()), fit: BoxFit.cover)
+                                    : null,
+                              ),
+                              child: !hasProof
+                                  ? const Icon(Icons.image_not_supported_outlined, size: 32, color: Color(0xFF94A3B8))
+                                  : null,
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  buildInfoColumn(title: "Status Validasi Dokumen", value: hasProof ? "Bukti Ter-upload" : "Belum Ada Dokumen"),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: deleteExpense,
+                      icon: const Icon(Icons.delete_outline_rounded, color: Colors.white, size: 18),
+                      label: const Text("Hapus Pengeluaran", style: TextStyle(fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFEF4444),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
     );
   }
 
@@ -397,24 +267,9 @@ class _DetailExpensePageState extends State<DetailExpensePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: const TextStyle(fontSize: 12, color: Colors.black54),
-        ),
-
-        const SizedBox(height: 6),
-
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.only(bottom: 6),
-          decoration: const BoxDecoration(
-            border: Border(bottom: BorderSide(color: Colors.black38)),
-          ),
-          child: Text(
-            value,
-            style: const TextStyle(fontWeight: FontWeight.w500),
-          ),
-        ),
+        Text(title, style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8), fontWeight: FontWeight.w500)),
+        const SizedBox(height: 4),
+        Text(value, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF334155))),
       ],
     );
   }

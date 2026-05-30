@@ -26,16 +26,17 @@ import 'package:pbl_app_joglo66/screens/admin/profile_screen.dart';
 import 'package:pbl_app_joglo66/screens/auth/login_screens.dart';
 import 'package:pbl_app_joglo66/screens/auth/register_screens.dart';
 import 'package:pbl_app_joglo66/services/auth_service.dart';
-import 'package:pbl_app_joglo66/screens/admin/dashboard_admin_screens.dart'; 
+import 'package:pbl_app_joglo66/screens/admin/dashboard_admin_screens.dart';
 
 final authService = AuthService();
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
-final GlobalKey<NavigatorState> _shellNavigatorKey = GlobalKey<NavigatorState>();
+final GlobalKey<NavigatorState> _shellNavigatorKey =
+    GlobalKey<NavigatorState>();
 
 final GoRouter appRouter = GoRouter(
-  navigatorKey: _rootNavigatorKey, 
-  initialLocation: '/admin/dashboard', 
+  navigatorKey: _rootNavigatorKey,
+  initialLocation: '/admin/dashboard',
   refreshListenable: authService,
 
   redirect: (context, state) {
@@ -56,9 +57,9 @@ final GoRouter appRouter = GoRouter(
 
   routes: [
     GoRoute(
-      path: '/login', 
+      path: '/login',
       parentNavigatorKey: _rootNavigatorKey,
-      builder: (context, state) => const LoginScreens()
+      builder: (context, state) => const LoginScreens(),
     ),
 
     GoRoute(
@@ -73,13 +74,13 @@ final GoRouter appRouter = GoRouter(
     ShellRoute(
       navigatorKey: _shellNavigatorKey,
       builder: (context, state, child) {
-        return CustomBottomNavPage(child: child); 
+        return CustomBottomNavPage(child: child);
       },
       routes: [
         GoRoute(
           path: '/admin/dashboard',
           builder: (context, state) {
-            return const DashboardAdminScreens(); 
+            return const DashboardAdminScreens();
           },
         ),
         GoRoute(
@@ -112,19 +113,19 @@ final GoRouter appRouter = GoRouter(
           path: '/admin/list-attribute',
           builder: (context, state) {
             return const ListAttributeScreens();
-          }
+          },
         ),
         GoRoute(
           path: '/admin/add-attribute',
           builder: (context, state) {
             return const AddAttributeScreens();
-          }
+          },
         ),
         GoRoute(
           path: '/admin/rent-attribute',
           builder: (context, state) {
             return const AddAttributeBookingScreens();
-          }
+          },
         ),
         GoRoute(
           path: '/admin/confirmation-rent-attribute',
@@ -133,7 +134,11 @@ final GoRouter appRouter = GoRouter(
 
             return ConfirmationAttributeBookingScreens(
               fkBookingId: extra['fkBookingId'] as int? ?? 0,
-              items: (extra['items'] as List<dynamic>?)?.map((e) => e as Map<String, dynamic>).toList() ?? [],
+              items:
+                  (extra['items'] as List<dynamic>?)
+                      ?.map((e) => e as Map<String, dynamic>)
+                      .toList() ??
+                  [],
               customerName: extra['customerName'] as String? ?? '',
               customerPhone: extra['customerPhone'] as String? ?? '',
               durationHours: extra['durationHours'] as int? ?? 1,
@@ -146,25 +151,22 @@ final GoRouter appRouter = GoRouter(
           path: '/admin/history-rent-attribute',
           builder: (context, state) {
             return const HistoryAttributeBookingScreens();
-          }
+          },
         ),
         GoRoute(
           path: '/admin/list-expense-field',
-          builder: (context, state) {
-            return const ListExpensePage();
-          }
+          builder: (context, state) => const ListExpensePage(),
         ),
         GoRoute(
           path: '/admin/add-expense-field',
-          builder: (context, state) {
-            return const AddExpensePage();
-          }
+          builder: (context, state) => const AddExpensePage(),
         ),
         GoRoute(
           path: '/admin/detail-expense-field',
           builder: (context, state) {
-            return const DetailExpensePage(expenseData: {},);
-          }
+            final extra = state.extra as Map<String, dynamic>? ?? {};
+            return DetailExpensePage(expenseData: extra);
+          },
         ),
       ],
     ),
@@ -174,19 +176,19 @@ final GoRouter appRouter = GoRouter(
     // =========================================================================
     GoRoute(
       path: '/admin/check-availability',
-      parentNavigatorKey: _rootNavigatorKey, 
+      parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) {
         return ProtectedRoute(
-          allowedRoles: ['worker'], 
+          allowedRoles: ['worker'],
           currentRole: authService.role,
-          child: const CheckSlotAvailabilityAdminScreens(), 
+          child: const CheckSlotAvailabilityAdminScreens(),
         );
       },
     ),
-    
+
     GoRoute(
       path: '/admin/field-details/:field_id',
-      parentNavigatorKey: _rootNavigatorKey, 
+      parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) {
         final String currentFieldId = state.pathParameters['field_id']!;
         return ProtectedRoute(
@@ -265,7 +267,10 @@ final GoRouter appRouter = GoRouter(
 
         if (bookingId == null || paymentAmount == null) {
           return Scaffold(
-            appBar: AppBar(title: const Text('Error'), backgroundColor: Colors.white),
+            appBar: AppBar(
+              title: const Text('Error'),
+              backgroundColor: Colors.white,
+            ),
             body: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
