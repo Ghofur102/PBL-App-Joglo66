@@ -16,13 +16,19 @@ class _FormKaryawanScreenState extends State<FormKaryawanScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _konfirmasiPasswordController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _addressController = TextEditingController();
+  final _positionController = TextEditingController();
+  final _baseSalaryController = TextEditingController();
 
   bool _isEditMode = false;
   bool _isSaving = false;
   int? _editId;
   String _selectedRole = 'worker';
+  String _selectedStatus = 'active';
 
-  final List<String> _roles = ['admin', 'worker', 'owner', 'treasure'];
+  final List<String> _roles = ['worker', 'manager'];
+  final List<String> _statusOptions = ['active', 'inactive'];
 
   @override
   void initState() {
@@ -33,7 +39,13 @@ class _FormKaryawanScreenState extends State<FormKaryawanScreen> {
       _editId = int.tryParse(data['id']?.toString() ?? '0');
       _namaController.text = data['name']?.toString() ?? '';
       _emailController.text = data['email']?.toString() ?? '';
+      _phoneController.text = data['phone_number']?.toString() ?? '';
+      _addressController.text = data['address']?.toString() ?? '';
+      _positionController.text = data['position']?.toString() ?? '';
+      _baseSalaryController.text = data['base_salary']?.toString() ?? '';
       _selectedRole = data['role']?.toString() ?? 'worker';
+      _selectedStatus = data['status']?.toString() ?? 'active';
+      if (!_roles.contains(_selectedRole)) _selectedRole = 'worker';
     }
   }
 
@@ -43,12 +55,15 @@ class _FormKaryawanScreenState extends State<FormKaryawanScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     _konfirmasiPasswordController.dispose();
+    _phoneController.dispose();
+    _addressController.dispose();
+    _positionController.dispose();
+    _baseSalaryController.dispose();
     super.dispose();
   }
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
-
     setState(() => _isSaving = true);
 
     try {
@@ -56,6 +71,11 @@ class _FormKaryawanScreenState extends State<FormKaryawanScreen> {
         'name': _namaController.text.trim(),
         'email': _emailController.text.trim(),
         'role': _selectedRole,
+        'phone_number': _phoneController.text.trim(),
+        'address': _addressController.text.trim(),
+        'position': _positionController.text.trim(),
+        'base_salary': int.tryParse(_baseSalaryController.text.trim()) ?? 0,
+        'status': _selectedStatus,
       };
 
       final password = _passwordController.text.trim();
@@ -67,37 +87,25 @@ class _FormKaryawanScreenState extends State<FormKaryawanScreen> {
       if (_isEditMode && _editId != null) {
         await KaryawanService.updateKaryawan(_editId!, data);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Karyawan berhasil diperbarui.'), backgroundColor: Colors.green),
-          );
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Karyawan berhasil diperbarui.'), backgroundColor: Colors.green));
           Navigator.pop(context, true);
         }
       } else {
         if (password.isEmpty) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Password wajib diisi untuk karyawan baru.'), backgroundColor: Colors.red),
-            );
-          }
+          if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Password wajib diisi untuk karyawan baru.'), backgroundColor: Colors.red));
           setState(() => _isSaving = false);
           return;
         }
+        data['join_date'] = DateTime.now().toIso8601String().split('T').first;
         await KaryawanService.createKaryawan(data);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Karyawan berhasil ditambahkan.'), backgroundColor: Colors.green),
-          );
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Karyawan berhasil ditambahkan.'), backgroundColor: Colors.green));
           Navigator.pop(context, true);
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString().replaceAll('Exception: ', '')),
-            backgroundColor: Colors.red,
-          ),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: Colors.red));
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -111,18 +119,9 @@ class _FormKaryawanScreenState extends State<FormKaryawanScreen> {
       filled: true,
       fillColor: const Color(0xFFF8FAFC),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFF406093), width: 1.5),
-      ),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF406093), width: 1.5)),
     );
   }
 
@@ -133,18 +132,9 @@ class _FormKaryawanScreenState extends State<FormKaryawanScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF1E293B)),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          _isEditMode ? 'Edit Karyawan' : 'Tambah Karyawan',
-          style: const TextStyle(color: Color(0xFF1E293B), fontWeight: FontWeight.bold),
-        ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(color: const Color(0xFFE2E8F0), height: 1),
-        ),
+        leading: IconButton(icon: const Icon(Icons.arrow_back, color: Color(0xFF1E293B)), onPressed: () => Navigator.pop(context)),
+        title: Text(_isEditMode ? 'Edit Karyawan' : 'Tambah Karyawan', style: const TextStyle(color: Color(0xFF1E293B), fontWeight: FontWeight.bold)),
+        bottom: PreferredSize(preferredSize: const Size.fromHeight(1), child: Container(color: const Color(0xFFE2E8F0), height: 1)),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -153,14 +143,16 @@ class _FormKaryawanScreenState extends State<FormKaryawanScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const Text('Data Akun', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+              const SizedBox(height: 16),
               InputField(
-                label: 'Nama',
+                label: 'Nama Lengkap',
                 hint: 'Masukkan nama karyawan',
                 controller: _namaController,
                 icon: Icons.person_outline,
                 validator: (v) => v == null || v.trim().isEmpty ? 'Nama wajib diisi' : null,
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
               InputField(
                 label: 'Email',
                 hint: 'Masukkan email karyawan',
@@ -173,127 +165,102 @@ class _FormKaryawanScreenState extends State<FormKaryawanScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 20),
-              const Text(
-                'Password',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Role Sistem', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF1E293B))),
+                        const SizedBox(height: 8),
+                        DropdownButtonFormField<String>(
+                          value: _selectedRole,
+                          decoration: _dropdownDecoration('Pilih role'),
+                          items: _roles.map((r) => DropdownMenuItem(value: r, child: Text(r[0].toUpperCase() + r.substring(1)))).toList(),
+                          onChanged: (v) => setState(() => _selectedRole = v ?? 'worker'),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Status', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF1E293B))),
+                        const SizedBox(height: 8),
+                        DropdownButtonFormField<String>(
+                          value: _selectedStatus,
+                          decoration: _dropdownDecoration('Pilih status'),
+                          items: _statusOptions.map((s) => DropdownMenuItem(value: s, child: Text(s == 'active' ? 'Aktif' : 'Nonaktif'))).toList(),
+                          onChanged: (v) => setState(() => _selectedStatus = v ?? 'active'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
+              const SizedBox(height: 16),
+              const Text('Password', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF1E293B))),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _passwordController,
                 obscureText: true,
-                style: const TextStyle(fontSize: 14, color: Color(0xFF334155)),
-                decoration: InputDecoration(
-                  hintText: _isEditMode ? 'Kosongkan jika tidak diubah' : 'Masukkan password',
-                  hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                  prefixIcon: const Icon(Icons.lock_outline, size: 20, color: Color(0xFF64748B)),
-                  filled: true,
-                  fillColor: const Color(0xFFF8FAFC),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFF406093), width: 1.5),
-                  ),
-                  errorBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Colors.red, width: 1),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                ),
+                decoration: _dropdownDecoration(_isEditMode ? 'Kosongkan jika tidak diubah' : 'Masukkan password').copyWith(prefixIcon: const Icon(Icons.lock_outline, size: 20, color: Color(0xFF64748B))),
                 validator: (v) {
                   if (!_isEditMode && (v == null || v.trim().isEmpty)) return 'Password wajib diisi';
-                  if (v != null && v.isNotEmpty && v.length < 6) return 'Password minimal 6 karakter';
+                  if (v != null && v.isNotEmpty && v.length < 8) return 'Password minimal 8 karakter';
                   return null;
                 },
               ),
-              const SizedBox(height: 20),
-              const Text(
-                'Konfirmasi Password',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
-              ),
+              const SizedBox(height: 16),
+              const Text('Konfirmasi Password', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF1E293B))),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _konfirmasiPasswordController,
                 obscureText: true,
-                style: const TextStyle(fontSize: 14, color: Color(0xFF334155)),
-                decoration: InputDecoration(
-                  hintText: 'Ulangi password',
-                  hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                  prefixIcon: const Icon(Icons.lock_outline, size: 20, color: Color(0xFF64748B)),
-                  filled: true,
-                  fillColor: const Color(0xFFF8FAFC),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFF406093), width: 1.5),
-                  ),
-                  errorBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Colors.red, width: 1),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                ),
+                decoration: _dropdownDecoration('Ulangi password').copyWith(prefixIcon: const Icon(Icons.lock_outline, size: 20, color: Color(0xFF64748B))),
                 validator: (v) {
                   if (!_isEditMode && (v == null || v.trim().isEmpty)) return 'Konfirmasi password wajib diisi';
                   if (v != _passwordController.text) return 'Password tidak cocok';
-                  if (v != null && v.isNotEmpty && v != _passwordController.text) return 'Password tidak cocok';
                   return null;
                 },
               ),
-              const SizedBox(height: 20),
-              const Text(
-                'Role',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+              const Divider(height: 48, thickness: 1, color: Color(0xFFE2E8F0)),
+              const Text('Profil Pekerjaan', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+              const SizedBox(height: 16),
+              InputField(
+                label: 'Posisi / Jabatan',
+                hint: 'Misal: Staff Lapangan',
+                controller: _positionController,
+                icon: Icons.work_outline,
+                validator: (v) => v == null || v.trim().isEmpty ? 'Posisi wajib diisi' : null,
               ),
+              const SizedBox(height: 16),
+              InputField(
+                label: 'Gaji Pokok (Base Salary)',
+                hint: '0',
+                controller: _baseSalaryController,
+                icon: Icons.attach_money,
+                keyboardType: TextInputType.number,
+                validator: (v) => v == null || v.trim().isEmpty ? 'Gaji pokok wajib diisi' : null,
+              ),
+              const SizedBox(height: 16),
+              InputField(
+                label: 'Nomor Telepon',
+                hint: '0812xxxx',
+                controller: _phoneController,
+                icon: Icons.phone_outlined,
+                keyboardType: TextInputType.phone,
+              ),
+              const SizedBox(height: 16),
+              const Text('Alamat Domisili', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF1E293B))),
               const SizedBox(height: 8),
-              DropdownButtonFormField<String>(
-                value: _selectedRole,
-                decoration: _dropdownDecoration('Pilih role'),
-                icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF64748B)),
-                items: _roles.map((r) {
-                  IconData icon;
-                  switch (r) {
-                    case 'admin':
-                      icon = Icons.admin_panel_settings;
-                      break;
-                    case 'owner':
-                      icon = Icons.star;
-                      break;
-                    case 'treasure':
-                      icon = Icons.account_balance_wallet;
-                      break;
-                    default:
-                      icon = Icons.person;
-                  }
-                  return DropdownMenuItem(
-                    value: r,
-                    child: Row(
-                      children: [
-                        Icon(icon, size: 18, color: const Color(0xFF406093)),
-                        const SizedBox(width: 10),
-                        Text(r[0].toUpperCase() + r.substring(1), style: const TextStyle(fontSize: 14, color: Color(0xFF334155))),
-                      ],
-                    ),
-                  );
-                }).toList(),
-                onChanged: (v) {
-                  if (v != null) setState(() => _selectedRole = v);
-                },
-                validator: (v) => v == null ? 'Pilih role' : null,
+              TextFormField(
+                controller: _addressController,
+                maxLines: 3,
+                decoration: _dropdownDecoration('Masukkan alamat lengkap'),
               ),
               const SizedBox(height: 36),
               SizedBox(
@@ -309,10 +276,7 @@ class _FormKaryawanScreenState extends State<FormKaryawanScreen> {
                   ),
                   child: _isSaving
                       ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : Text(
-                          _isEditMode ? 'Simpan Perubahan' : 'Simpan',
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
+                      : Text(_isEditMode ? 'Simpan Perubahan' : 'Simpan Karyawan', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
               ),
             ],

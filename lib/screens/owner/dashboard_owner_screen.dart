@@ -18,7 +18,6 @@ class DashboardOwnerScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // --- HEADER PROFILE ---
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -43,8 +42,6 @@ class DashboardOwnerScreen extends StatelessWidget {
             const SizedBox(height: 30),
             const Text('Menu Utama', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF2C2C2A))),
             const SizedBox(height: 16),
-
-            // --- MENU KARYAWAN ---
             _buildMenuCard(
               context,
               title: 'Manajemen Karyawan',
@@ -52,6 +49,15 @@ class DashboardOwnerScreen extends StatelessWidget {
               icon: Icons.people_alt_outlined,
               color: Colors.blue,
               onTap: () => context.push('/owner/karyawan'),
+            ),
+            const SizedBox(height: 16),
+            _buildMenuCard(
+              context,
+              title: 'Laporan Bulanan',
+              subtitle: 'Preview neraca dan unduh PDF.',
+              icon: Icons.picture_as_pdf_outlined,
+              color: Colors.red,
+              onTap: () => context.push('/owner/preview-pdf'),
             ),
           ],
         ),

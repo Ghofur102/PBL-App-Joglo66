@@ -26,6 +26,7 @@ import 'package:pbl_app_joglo66/screens/admin/profile_screen.dart';
 import 'package:pbl_app_joglo66/screens/admin/rekap_harian/rekap_harian_screen.dart';
 import 'package:pbl_app_joglo66/screens/auth/login_screens.dart';
 import 'package:pbl_app_joglo66/screens/auth/register_screens.dart';
+import 'package:pbl_app_joglo66/screens/owner/laporan/preview_pdf_screen.dart';
 import 'package:pbl_app_joglo66/services/auth_service.dart';
 import 'package:pbl_app_joglo66/screens/admin/dashboard_admin_screens.dart';
 import 'package:pbl_app_joglo66/screens/owner/dashboard_owner_screen.dart';
@@ -201,6 +202,14 @@ final GoRouter appRouter = GoRouter(
           ),
         ),
         GoRoute(
+          path: '/owner/preview-pdf',
+          builder: (context, state) => ProtectedRoute(
+            allowedRoles: const ['owner'],
+            currentRole: authService.role,
+            child: const PreviewPdfScreen(),
+          ),
+        ),
+        GoRoute(
           path: '/treasurer/dashboard',
           builder: (context, state) => ProtectedRoute(
             allowedRoles: const ['treasurer'],
@@ -213,7 +222,7 @@ final GoRouter appRouter = GoRouter(
           builder: (context, state) => ProtectedRoute(
             allowedRoles: const ['treasurer'],
             currentRole: authService.role,
-            child: const FormGajiScreen(), 
+            child: const FormGajiScreen(),
           ),
         ),
         GoRoute(
