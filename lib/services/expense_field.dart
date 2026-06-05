@@ -5,7 +5,7 @@ import 'package:pbl_app_joglo66/services/api_client.dart';
 import 'package:http/http.dart' as http;
 
 class ExpenseService {
-  static final String _baseUrl = dotenv.env['API_BASE_URL']!;
+  static final String _baseUrl = dotenv.env['API_BASE_URL']!; 
   static SharedPreferences? _prefs;
 
   static Future<void> _initializePrefs() async {

@@ -1,93 +1,111 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:pbl_app_joglo66/router/app_router.dart';
 
 class CustomBottomNavPage extends StatelessWidget {
-  // Menerima child dari ShellRoute (Isi layarnya)
   final Widget child;
+  final String currentRole;
 
-  const CustomBottomNavPage({super.key, required this.child});
+  const CustomBottomNavPage({
+    super.key,
+    required this.child,
+    required this.currentRole,
+  });
 
-  // Fungsi untuk mengetahui menu ke berapa yang sedang aktif
   int _calculateSelectedIndex(BuildContext context) {
     final String location = GoRouterState.of(context).uri.toString();
-    if (location.startsWith('/admin/dashboard')) return 0;
-    if (location.startsWith('/admin/list-booking')) return 1;
-    if (location.startsWith('/admin/list-field')) return 2;
-    if (location.startsWith('/admin/profile')) return 3;
+    if (location.contains('dashboard')) return 0;
+    if (location.contains('list-booking')) return 1;
+    if (location.contains('list-field')) return 2;
+    if (location.contains('profile')) return 3;
     return 0;
   }
 
-  // Fungsi untuk pindah ke tab menu
-  void _onItemTapped(int index, BuildContext context) {
-    switch (index) {
-      case 0:
-        context.go('/admin/dashboard');
-        break;
-      case 1:
-        context.go('/admin/list-booking');
-        break;
-      case 2:
-        context.go('/admin/list-field');
-        break;
-      case 3:
-        context.go('/admin/profile');
-        break;
+  Future<void> _onItemTapped(int index, BuildContext context) async {
+    if (currentRole == 'admin' || currentRole == 'worker') {
+      switch (index) {
+        case 0:
+          context.go('/admin/dashboard');
+          break;
+        case 1:
+          context.go('/admin/list-booking');
+          break;
+        case 2:
+          context.go('/admin/list-field');
+          break;
+        case 3:
+          context.go('/admin/profile');
+          break;
+      }
+    } else {
+      switch (index) {
+        case 0:
+          context.go('/$currentRole/dashboard');
+          break;
+        case 4:
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.clear();
+
+          try {
+            await authService.logout();
+          } catch (_) {}
+
+          if (context.mounted) {
+            context.go('/login');
+          }
+          break;
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final int currentIndex = _calculateSelectedIndex(context);
+    final bool isAdminOrWorker = currentRole == 'admin' || currentRole == 'worker';
 
     return Scaffold(
-      // --- CHILD INI ADALAH LAYAR YANG BERUBAH-UBAH ---
-      body: child, 
-      
-      // --- TOMBOL PLUS (+) DI TENGAH MENGAMBANG ---
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFF406093),
-        shape: const CircleBorder(), // Membuatnya bulat sempurna
-        elevation: 4,
-        onPressed: () {
-          // Arahkan ke rute layar Cek Ketersediaan Slot Anda.
-          // PASTIKAN nama rutenya sesuai dengan yang ada di app_router.dart Anda
-          context.push('/admin/check-availability'); 
-        },
-        child: const Icon(Icons.add, color: Colors.white, size: 32),
-      ),
-      
-      // Mengunci posisi tombol di tengah bawah
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      
-      // --- BOTTOM NAVIGATION BAR DENGAN CEKUNGAN ---
+      body: child,
+      floatingActionButton: isAdminOrWorker
+          ? FloatingActionButton(
+              backgroundColor: const Color(0xFF406093),
+              shape: const CircleBorder(),
+              elevation: 4,
+              onPressed: () => context.push('/admin/check-availability'),
+              child: const Icon(Icons.add, color: Colors.white, size: 32),
+            )
+          : null,
+      floatingActionButtonLocation:
+          isAdminOrWorker ? FloatingActionButtonLocation.centerDocked : null,
       bottomNavigationBar: BottomAppBar(
-        shape: const CircularNotchedRectangle(), // Memberikan efek cekungan untuk tombol plus
-        notchMargin: 8.0, // Jarak cekungan dengan tombol
+        shape: isAdminOrWorker ? const CircularNotchedRectangle() : null,
+        notchMargin: 8.0,
         color: Colors.white,
         clipBehavior: Clip.antiAlias,
         child: SizedBox(
           height: 60,
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround, // Meratakan jarak antar ikon
-            children: [
-              // Bagian Kiri
-              _buildNavItem(context, Icons.dashboard, 'Dashboard', 0, currentIndex),
-              _buildNavItem(context, Icons.book_online, 'Booking', 1, currentIndex),
-              
-              // Jarak kosong di tengah untuk memberi ruang pada tombol Plus
-              const SizedBox(width: 48), 
-              
-              // Bagian Kanan
-              _buildNavItem(context, Icons.sports_soccer, 'Lapangan', 2, currentIndex),
-              _buildNavItem(context, Icons.person, 'Profil', 3, currentIndex),
-            ],
+            mainAxisAlignment: isAdminOrWorker
+                ? MainAxisAlignment.spaceAround
+                : MainAxisAlignment.spaceEvenly,
+            children: isAdminOrWorker
+                ? [
+                    _buildNavItem(context, Icons.dashboard, 'Dashboard', 0, currentIndex),
+                    _buildNavItem(context, Icons.book_online, 'Booking', 1, currentIndex),
+                    const SizedBox(width: 48),
+                    _buildNavItem(context, Icons.sports_soccer, 'Lapangan', 2, currentIndex),
+                    _buildNavItem(context, Icons.person, 'Profil', 3, currentIndex),
+                  ]
+                : [
+                    _buildNavItem(context, Icons.dashboard, 'Beranda', 0, currentIndex),
+                    _buildNavItem(context, Icons.logout, 'Keluar', 4, currentIndex),
+                  ],
           ),
         ),
       ),
     );
   }
 
-  // Fungsi helper untuk merender setiap Ikon beserta Text-nya
   Widget _buildNavItem(BuildContext context, IconData icon, String label, int index, int currentIndex) {
     final isSelected = currentIndex == index;
     final color = isSelected ? const Color(0xFF406093) : Colors.grey;
@@ -98,7 +116,7 @@ class CustomBottomNavPage extends StatelessWidget {
         onTap: () => _onItemTapped(index, context),
         borderRadius: BorderRadius.circular(50),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
+          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 4.0),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
@@ -108,9 +126,9 @@ class CustomBottomNavPage extends StatelessWidget {
               Text(
                 label,
                 style: TextStyle(
-                  color: color, 
-                  fontSize: 10, 
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal
+                  color: color,
+                  fontSize: 12,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 ),
               ),
             ],

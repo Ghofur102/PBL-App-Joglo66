@@ -128,6 +128,14 @@ class _DashboardAdminScreensState extends State<DashboardAdminScreens> {
           context.push('/admin/history-rent-attribute');
         },
       },
+      {
+        'icon': Icons.book,
+        'label': 'Rekap Harian',
+        'color': Colors.indigo,
+        'onTap': () {
+          context.push('/admin/daily-rekap-transaction');
+        },
+      },
     ];
 
     return Scaffold(
@@ -214,7 +222,7 @@ class _DashboardAdminScreensState extends State<DashboardAdminScreens> {
                             HeaderOne(
                               title: dashboardData?['name'] ?? 'Joglo66',
                             ),
-                           
+
                             const SizedBox(height: 20),
 
                             // Menu Grid

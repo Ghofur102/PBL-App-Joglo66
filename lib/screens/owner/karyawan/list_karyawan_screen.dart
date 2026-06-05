@@ -48,8 +48,13 @@ class _ListKaryawanScreenState extends State<ListKaryawanScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Hapus Karyawan', style: TextStyle(fontWeight: FontWeight.bold)),
-        content: Text('Apakah Anda yakin ingin menghapus "$name"?\nTindakan ini tidak dapat dibatalkan.'),
+        title: const Text(
+          'Hapus Karyawan',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          'Apakah Anda yakin ingin menghapus "$name"?\nTindakan ini tidak dapat dibatalkan.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -59,7 +64,9 @@ class _ListKaryawanScreenState extends State<ListKaryawanScreen> {
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red.shade600,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
             child: const Text('Hapus', style: TextStyle(color: Colors.white)),
           ),
@@ -72,18 +79,19 @@ class _ListKaryawanScreenState extends State<ListKaryawanScreen> {
         await KaryawanService.deleteKaryawan(id);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Karyawan berhasil dihapus.'), backgroundColor: Colors.green),
+            const SnackBar(
+              content: Text('Karyawan berhasil dihapus.'),
+              backgroundColor: Colors.green,
+            ),
           );
           _loadKaryawan();
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(e.toString().replaceAll('Exception: ', '')),
-              backgroundColor: Colors.red,
-            ),
-          );
+          setState(() {
+            _error = e is Exception ? e.toString() : 'Terjadi kesalahan sistem';
+            _isLoading = false;
+          });
         }
       }
     }
@@ -131,7 +139,10 @@ class _ListKaryawanScreenState extends State<ListKaryawanScreen> {
         elevation: 0,
         title: const Text(
           'Data Karyawan',
-          style: TextStyle(color: Color(0xFF1E293B), fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Color(0xFF1E293B),
+            fontWeight: FontWeight.bold,
+          ),
         ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
@@ -149,7 +160,10 @@ class _ListKaryawanScreenState extends State<ListKaryawanScreen> {
           if (result == true) _loadKaryawan();
         },
         icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('Tambah Karyawan', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        label: const Text(
+          'Tambah Karyawan',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
       ),
     );
   }
@@ -181,7 +195,9 @@ class _ListKaryawanScreenState extends State<ListKaryawanScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF406093),
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
               ),
             ],
@@ -201,12 +217,20 @@ class _ListKaryawanScreenState extends State<ListKaryawanScreen> {
                 color: const Color(0xFFE2E8F0),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.people_outline, size: 48, color: Color(0xFF94A3B8)),
+              child: const Icon(
+                Icons.people_outline,
+                size: 48,
+                color: Color(0xFF94A3B8),
+              ),
             ),
             const SizedBox(height: 16),
             const Text(
               'Belum ada data karyawan',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF64748B),
+              ),
             ),
           ],
         ),
@@ -234,14 +258,26 @@ class _ListKaryawanScreenState extends State<ListKaryawanScreen> {
               side: const BorderSide(color: Color(0xFFE2E8F0)),
             ),
             child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 8,
+              ),
               title: Text(
                 name,
-                style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1E293B),
+                ),
               ),
               subtitle: Padding(
                 padding: const EdgeInsets.only(top: 4),
-                child: Text(email, style: const TextStyle(color: Color(0xFF64748B), fontSize: 13)),
+                child: Text(
+                  email,
+                  style: const TextStyle(
+                    color: Color(0xFF64748B),
+                    fontSize: 13,
+                  ),
+                ),
               ),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -267,7 +303,10 @@ class _ListKaryawanScreenState extends State<ListKaryawanScreen> {
                       const PopupMenuItem(value: 'edit', child: Text('Edit')),
                       const PopupMenuItem(
                         value: 'delete',
-                        child: Text('Hapus', style: TextStyle(color: Colors.red)),
+                        child: Text(
+                          'Hapus',
+                          style: TextStyle(color: Colors.red),
+                        ),
                       ),
                     ],
                   ),
