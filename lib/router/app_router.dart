@@ -23,17 +23,15 @@ import 'package:pbl_app_joglo66/screens/admin/field/form_edit_field_admin_screen
 import 'package:pbl_app_joglo66/screens/admin/booking_field/list_closed_booking_admin_screens.dart';
 import 'package:pbl_app_joglo66/screens/admin/field/list_field_admin_screens.dart';
 import 'package:pbl_app_joglo66/screens/admin/profile_screen.dart';
-import 'package:pbl_app_joglo66/screens/admin/rekap_harian/rekap_harian_screen.dart';
 import 'package:pbl_app_joglo66/screens/auth/login_screens.dart';
 import 'package:pbl_app_joglo66/screens/auth/register_screens.dart';
-import 'package:pbl_app_joglo66/screens/owner/laporan/preview_pdf_screen.dart';
 import 'package:pbl_app_joglo66/services/auth_service.dart';
 import 'package:pbl_app_joglo66/screens/admin/dashboard_admin_screens.dart';
 import 'package:pbl_app_joglo66/screens/owner/dashboard_owner_screen.dart';
 import 'package:pbl_app_joglo66/screens/owner/karyawan/list_karyawan_screen.dart';
 import 'package:pbl_app_joglo66/screens/treasure/dashboard_treasure_screen.dart';
 import 'package:pbl_app_joglo66/screens/treasure/gaji/form_gaji_screen.dart';
-import 'package:pbl_app_joglo66/screens/treasure/laporan_bulanan/laporan_bulanan_screen.dart';
+import 'package:pbl_app_joglo66/screens/laporan_bulanan_screen.dart';
 
 final authService = AuthService();
 
@@ -63,7 +61,12 @@ final GoRouter appRouter = GoRouter(
     final bool isGoingToAdmin = location.startsWith('/admin');
     final bool isGoingToOwner = location.startsWith('/owner');
     final bool isGoingToTreasurer = location.startsWith('/treasurer');
+    final bool isGlobalRoute = location.startsWith('/laporan-bulanan');
 
+    if (isGlobalRoute) {
+      return null;
+    }
+    
     if (currentRole == 'treasurer' && !isGoingToTreasurer) {
       return '/treasurer/dashboard';
     }
@@ -76,13 +79,14 @@ final GoRouter appRouter = GoRouter(
       return '/admin/dashboard';
     }
 
+
     return null;
   },
   routes: [
     GoRoute(
       path: '/login',
       parentNavigatorKey: _rootNavigatorKey,
-      builder: (context, state) => const LoginScreens(),
+      builder: (context, state) => const LoginScreen(),
     ),
     GoRoute(
       path: '/register',
@@ -182,10 +186,6 @@ final GoRouter appRouter = GoRouter(
           },
         ),
         GoRoute(
-          path: '/admin/daily-rekap-transaction',
-          builder: (context, state) => const RekapHarianScreen(),
-        ),
-        GoRoute(
           path: '/owner/dashboard',
           builder: (context, state) => ProtectedRoute(
             allowedRoles: const ['owner'],
@@ -199,14 +199,6 @@ final GoRouter appRouter = GoRouter(
             allowedRoles: const ['owner'],
             currentRole: authService.role,
             child: const ListKaryawanScreen(),
-          ),
-        ),
-        GoRoute(
-          path: '/owner/preview-pdf',
-          builder: (context, state) => ProtectedRoute(
-            allowedRoles: const ['owner'],
-            currentRole: authService.role,
-            child: const PreviewPdfScreen(),
           ),
         ),
         GoRoute(
@@ -225,15 +217,16 @@ final GoRouter appRouter = GoRouter(
             child: const FormGajiScreen(),
           ),
         ),
-        GoRoute(
-          path: '/treasurer/laporan',
-          builder: (context, state) => ProtectedRoute(
-            allowedRoles: const ['treasurer'],
-            currentRole: authService.role,
-            child: const LaporanBulananScreen(),
-          ),
-        ),
       ],
+    ),
+    GoRoute(
+      path: '/laporan-bulanan',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => ProtectedRoute(
+        allowedRoles: const ['treasurer', 'owner', 'worker'],
+        currentRole: authService.role,
+        child: const LaporanBulananScreen(),
+      ),
     ),
     GoRoute(
       path: '/admin/check-availability',

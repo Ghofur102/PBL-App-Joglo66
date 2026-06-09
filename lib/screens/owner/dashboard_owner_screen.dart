@@ -57,7 +57,7 @@ class DashboardOwnerScreen extends StatelessWidget {
               subtitle: 'Preview neraca dan unduh PDF.',
               icon: Icons.picture_as_pdf_outlined,
               color: Colors.red,
-              onTap: () => context.push('/owner/preview-pdf'),
+              onTap: () => context.push('/laporan-bulanan'),
             ),
           ],
         ),

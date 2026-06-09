@@ -11,6 +11,7 @@ class ApiClient {
 
     final headers = {
       'Accept': 'application/json',
+    
     };
 
     if (token.isNotEmpty) {

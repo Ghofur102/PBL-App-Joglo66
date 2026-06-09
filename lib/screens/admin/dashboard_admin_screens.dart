@@ -133,7 +133,7 @@ class _DashboardAdminScreensState extends State<DashboardAdminScreens> {
         'label': 'Rekap Harian',
         'color': Colors.indigo,
         'onTap': () {
-          context.push('/admin/daily-rekap-transaction');
+          context.push('/laporan-bulanan');
         },
       },
     ];

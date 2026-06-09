@@ -90,11 +90,14 @@ class _FormGajiScreenState extends State<FormGajiScreen> {
     }
   }
 
+  int _safeParseInt(dynamic val) {
+    if (val == null) return 0;
+    if (val is num) return val.toInt();
+    return int.tryParse(val.toString()) ?? 0;
+  }
+
   String _formatRupiah(dynamic amount) {
-    if (amount == null) return 'Rp 0';
-    final int val = (amount is num)
-        ? amount.toInt()
-        : int.tryParse(amount.toString()) ?? 0;
+    final int val = _safeParseInt(amount);
     final reg = RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))');
     return 'Rp ${val.toString().replaceAllMapped(reg, (Match m) => '${m[1]}.')}';
   }
@@ -395,131 +398,132 @@ class _FormGajiScreenState extends State<FormGajiScreen> {
                     child: CircularProgressIndicator(color: _primaryBlue),
                   )
                 : _errorMessage != null
-                ? Center(
-                    child: Text(
-                      _errorMessage!,
-                      style: const TextStyle(color: Colors.red),
-                    ),
-                  )
-                : _employees.isEmpty
-                ? const Center(child: Text('Tidak ada data karyawan aktif.'))
-                : RefreshIndicator(
-                    onRefresh: _fetchData,
-                    child: ListView.builder(
-                      padding: const EdgeInsets.all(14),
-                      itemCount: _employees.length,
-                      itemBuilder: (ctx, i) {
-                        final emp = _employees[i] as Map<String, dynamic>;
-                        final isEdited = emp['is_edited'] == true;
-                        final total =
-                            (emp['amount_paid'] as int) +
-                            (emp['bonus'] as int) -
-                            (emp['deduction'] as int);
+                    ? Center(
+                        child: Text(
+                          _errorMessage!,
+                          style: const TextStyle(color: Colors.red),
+                        ),
+                      )
+                    : _employees.isEmpty
+                        ? const Center(child: Text('Tidak ada data karyawan aktif.'))
+                        : RefreshIndicator(
+                            onRefresh: _fetchData,
+                            child: ListView.builder(
+                              padding: const EdgeInsets.all(14),
+                              itemCount: _employees.length,
+                              itemBuilder: (ctx, i) {
+                                final emp = _employees[i] as Map<String, dynamic>;
+                                final isEdited = emp['is_edited'] == true;
 
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: const BorderSide(color: _borderColor),
-                          ),
-                          elevation: 0,
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      emp['name'],
-                                      style: const TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.bold,
-                                        color: Color(0xFF2C2C2A),
-                                      ),
-                                    ),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 4,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: isEdited
-                                            ? Colors.green.withOpacity(0.1)
-                                            : Colors.orange.withOpacity(0.1),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Text(
-                                        isEdited
-                                            ? 'Tersimpan'
-                                            : 'Belum Disinkronisasi',
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.bold,
-                                          color: isEdited
-                                              ? Colors.green
-                                              : Colors.orange,
+                                final amountPaid = _safeParseInt(emp['amount_paid']);
+                                final bonus = _safeParseInt(emp['bonus']);
+                                final deduction = _safeParseInt(emp['deduction']);
+                                final total = amountPaid + bonus - deduction;
+
+                                return Card(
+                                  margin: const EdgeInsets.only(bottom: 12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    side: const BorderSide(color: _borderColor),
+                                  ),
+                                  elevation: 0,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
+                                              emp['name'],
+                                              style: const TextStyle(
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.bold,
+                                                color: Color(0xFF2C2C2A),
+                                              ),
+                                            ),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(
+                                                horizontal: 8,
+                                                vertical: 4,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: isEdited
+                                                    ? Colors.green.withOpacity(0.1)
+                                                    : Colors.orange.withOpacity(0.1),
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: Text(
+                                                isEdited
+                                                    ? 'Tersimpan'
+                                                    : 'Belum Disinkronisasi',
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: isEdited
+                                                      ? Colors.green
+                                                      : Colors.orange,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                      ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          emp['position'],
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                        const Divider(height: 24),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            const Text(
+                                              'Total Diterima',
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                color: Colors.grey,
+                                              ),
+                                            ),
+                                            Text(
+                                              _formatRupiah(total),
+                                              style: const TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.bold,
+                                                color: _primaryBlue,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 12),
+                                        SizedBox(
+                                          width: double.infinity,
+                                          child: OutlinedButton.icon(
+                                            onPressed: _isFutureDate
+                                                ? null
+                                                : () => _showEditDialog(emp),
+                                            icon: const Icon(Icons.edit, size: 16),
+                                            label: const Text('Edit Gaji Bulan Ini'),
+                                            style: OutlinedButton.styleFrom(
+                                              foregroundColor: _primaryBlue,
+                                              side: const BorderSide(
+                                                color: _primaryBlue,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  emp['position'],
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey,
                                   ),
-                                ),
-                                const Divider(height: 24),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text(
-                                      'Total Diterima',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                                    Text(
-                                      _formatRupiah(total),
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                        color: _primaryBlue,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: OutlinedButton.icon(
-                                    onPressed: _isFutureDate
-                                        ? null
-                                        : () => _showEditDialog(emp),
-                                    icon: const Icon(Icons.edit, size: 16),
-                                    label: const Text('Edit Gaji Bulan Ini'),
-                                    style: OutlinedButton.styleFrom(
-                                      foregroundColor: _primaryBlue,
-                                      side: const BorderSide(
-                                        color: _primaryBlue,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
+                                );
+                              },
                             ),
                           ),
-                        );
-                      },
-                    ),
-                  ),
           ),
         ],
       ),

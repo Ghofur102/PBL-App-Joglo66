@@ -82,23 +82,21 @@ class CustomBottomNavPage extends StatelessWidget {
         notchMargin: 8.0,
         color: Colors.white,
         clipBehavior: Clip.antiAlias,
+        padding: EdgeInsets.zero,
         child: SizedBox(
-          height: 60,
+          height: 64,
           child: Row(
-            mainAxisAlignment: isAdminOrWorker
-                ? MainAxisAlignment.spaceAround
-                : MainAxisAlignment.spaceEvenly,
             children: isAdminOrWorker
                 ? [
-                    _buildNavItem(context, Icons.dashboard, 'Dashboard', 0, currentIndex),
-                    _buildNavItem(context, Icons.book_online, 'Booking', 1, currentIndex),
-                    const SizedBox(width: 48),
-                    _buildNavItem(context, Icons.sports_soccer, 'Lapangan', 2, currentIndex),
-                    _buildNavItem(context, Icons.person, 'Profil', 3, currentIndex),
+                    Expanded(child: _buildNavItem(context, Icons.dashboard, 'Dashboard', 0, currentIndex)),
+                    Expanded(child: _buildNavItem(context, Icons.book_online, 'Booking', 1, currentIndex)),
+                    const SizedBox(width: 60),
+                    Expanded(child: _buildNavItem(context, Icons.sports_soccer, 'Lapangan', 2, currentIndex)),
+                    Expanded(child: _buildNavItem(context, Icons.person, 'Profil', 3, currentIndex)),
                   ]
                 : [
-                    _buildNavItem(context, Icons.dashboard, 'Beranda', 0, currentIndex),
-                    _buildNavItem(context, Icons.logout, 'Keluar', 4, currentIndex),
+                    Expanded(child: _buildNavItem(context, Icons.dashboard, 'Beranda', 0, currentIndex)),
+                    Expanded(child: _buildNavItem(context, Icons.logout, 'Keluar', 4, currentIndex)),
                   ],
           ),
         ),
@@ -114,25 +112,23 @@ class CustomBottomNavPage extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: () => _onItemTapped(index, context),
-        borderRadius: BorderRadius.circular(50),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 4.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: color, size: 24),
-              const SizedBox(height: 2),
-              Text(
-                label,
-                style: TextStyle(
-                  color: color,
-                  fontSize: 12,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: color, size: 22),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: color,
+                fontSize: 11,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

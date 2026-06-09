@@ -50,17 +50,24 @@ class _HistoryAttributeBookingScreensState extends State<HistoryAttributeBooking
         status: _selectedStatus,
       );
 
-      final rawData = result['data'] ?? [];
-      final List<Map<String, dynamic>> list = (rawData is List)
-          ? rawData.map((e) => e as Map<String, dynamic>).toList()
-          : ((rawData is Map && rawData['data'] is List)
-              ? List<Map<String, dynamic>>.from(rawData['data'])
-              : []);
+      // --- LOGIKA PARSING PAGINASI YANG JAUH LEBIH AMAN ---
+      List<Map<String, dynamic>> list = [];
+      if (result.containsKey('data')) {
+        // Jika backend mengirimkan objek Paginator Laravel
+        if (result['data'] is List) {
+          list = List<Map<String, dynamic>>.from(result['data']);
+        }
+      } else if (result is List) {
+        list = List<Map<String, dynamic>>.from(result as Iterable<dynamic>);
+      }
 
       int revenue = 0;
       for (final r in list) {
         final total = int.tryParse(r['total']?.toString() ?? '0') ?? 0;
-        if (r['status']?.toString() == 'dikembalikan' || r['status']?.toString() == 'dipinjam') {
+        final status = r['status']?.toString().toLowerCase();
+
+        // Pemasukan dihitung hanya untuk barang yang sukses disewa
+        if (status == 'dikembalikan' || status == 'dipinjam' || status == 'terlambat') {
           revenue += total;
         }
       }
@@ -185,7 +192,7 @@ class _HistoryAttributeBookingScreensState extends State<HistoryAttributeBooking
         ),
         title: const Text(
           'Riwayat Penyewaan Atribut',
-          style: TextStyle(color: Color(0xFF1E293B), fontWeight: FontWeight.bold),
+          style: TextStyle(color: Color(0xFF1E293B), fontWeight: FontWeight.bold, fontSize: 16),
         ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),

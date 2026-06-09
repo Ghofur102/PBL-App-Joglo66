@@ -24,7 +24,7 @@ class LaporanService {
   }
 
   static Future<Map<String, dynamic>> fetchMonthlyLaporan(int month, int year) async {
-    final uri = Uri.parse('$_baseUrl/api/treasurer/laporan-bulanan').replace(queryParameters: {
+    final uri = Uri.parse('$_baseUrl/api/laporan-bulanan').replace(queryParameters: {
       'bulan': month.toString(),
       'tahun': year.toString(),
     });

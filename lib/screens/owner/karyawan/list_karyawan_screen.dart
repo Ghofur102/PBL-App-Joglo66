@@ -92,26 +92,38 @@ class _ListKaryawanScreenState extends State<ListKaryawanScreen> {
     return 'Rp ${val.toString().replaceAllMapped(reg, (Match m) => '${m[1]}.')}';
   }
 
-  Color _roleColor(String role) {
+  Color _roleColor(String? role) {
+    if (role == null || role.isEmpty) return Colors.grey.shade600; // Warna untuk Karyawan Non-Sistem
     switch (role) {
-      case 'admin': return Colors.blue;
-      case 'manager': return Colors.purple;
+      case 'owner': return Colors.red;
+      case 'treasurer': return Colors.purple;
       case 'worker': return Colors.teal;
       default: return Colors.grey;
     }
   }
 
-  Widget _buildRoleBadge(String role) {
+  Widget _buildRoleBadge(String? role) {
+    final String displayText = (role == null || role.isEmpty)
+        ? 'Non-Sistem'
+        : role[0].toUpperCase() + role.substring(1);
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(color: _roleColor(role).withAlpha(30), borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(
+        color: _roleColor(role).withAlpha(30),
+        borderRadius: BorderRadius.circular(12)
+      ),
       child: Text(
-        role[0].toUpperCase() + role.substring(1),
-        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: _roleColor(role)),
+        displayText,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+          color: _roleColor(role)
+        ),
       ),
     );
   }
-
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(

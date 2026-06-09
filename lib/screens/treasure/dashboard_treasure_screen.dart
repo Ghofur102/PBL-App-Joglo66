@@ -61,7 +61,7 @@ class DashboardTreasureScreen extends StatelessWidget {
               subtitle: 'Pantau neraca, laba, dan unduh PDF.',
               icon: Icons.analytics_outlined,
               color: Colors.orange,
-              onTap: () => context.push('/treasurer/laporan'),
+              onTap: () => context.push('/laporan-bulanan'),
             ),
           ],
         ),
