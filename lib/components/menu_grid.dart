@@ -1,17 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:pbl_app_joglo66/constants/app_theme_constants.dart';
 
 class MenuGrid extends StatelessWidget {
   final List<Map<String, dynamic>> menuItems;
 
-  const MenuGrid({
-    super.key,
-    required this.menuItems,
-  });
+  const MenuGrid({super.key, required this.menuItems});
 
   @override
   Widget build(BuildContext context) {
-    return GridView.builder(
+    final gridView = GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -24,14 +22,15 @@ class MenuGrid extends StatelessWidget {
       itemBuilder: (context, index) {
         final item = menuItems[index];
         return MenuGridItem(
-          icon: item['icon'],
-          label: item['label'],
-          color: item['color'],
-          // Mengambil fungsi onTap dari data, jika null berikan fungsi kosong agar tidak error
-          onTap: item['onTap'] ?? () {}, 
+          icon: item['icon'] as IconData,
+          label: item['label'] as String,
+          color: item['color'] as Color,
+          onTap: (item['onTap'] as VoidCallback?) ?? () {},
         );
       },
     );
+
+    return gridView;
   }
 }
 
@@ -51,46 +50,33 @@ class MenuGridItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    final itemWidget = GestureDetector(
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          borderRadius: BorderRadius.circular(AppThemeConstants.radiusLarge),
+          border: Border.all(color: AppThemeConstants.borderGrey),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Icon
             Container(
               width: 50,
               height: 50,
               decoration: BoxDecoration(
                 color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(AppThemeConstants.radiusMedium),
               ),
-              child: Icon(
-                icon,
-                color: color,
-                size: 28,
-              ),
+              child: Icon(icon, color: color, size: 28),
             ),
             const SizedBox(height: 12),
-
-            // Label
             Text(
               label,
               style: GoogleFonts.poppins(
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: FontWeight.w600,
-                color: Colors.black87,
+                color: AppThemeConstants.textPrimary,
               ),
               textAlign: TextAlign.center,
             ),
@@ -98,5 +84,7 @@ class MenuGridItem extends StatelessWidget {
         ),
       ),
     );
+
+    return itemWidget;
   }
 }

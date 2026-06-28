@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pbl_app_joglo66/constants/app_theme_constants.dart';
 
 class TabButton extends StatelessWidget {
   final String title;
@@ -21,28 +22,31 @@ class TabButton extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           color: isActive
-              ? activeColor ?? Theme.of(context).primaryColor
-              : Colors.grey[300],
-          borderRadius: BorderRadius.circular(8),
+              ? (activeColor ?? AppThemeConstants.accentBlue)
+              : Colors.grey[200],
+          borderRadius: BorderRadius.circular(AppThemeConstants.radiusMedium),
         ),
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (icon != null)
+            if (icon != null) ...[
               Icon(
                 icon,
-                color: isActive ? Colors.white : Colors.black87,
-                size: 20,
+                color: isActive ? Colors.white : AppThemeConstants.textSecondary,
+                size: 18,
               ),
-            if (icon != null) const SizedBox(width: 8),
+              const SizedBox(width: 8),
+            ],
             Text(
               title,
               style: TextStyle(
-                color: isActive ? Colors.white : Colors.black87,
-                fontWeight: FontWeight.w600,
+                color: isActive ? Colors.white : AppThemeConstants.textPrimary,
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
               ),
             ),
           ],

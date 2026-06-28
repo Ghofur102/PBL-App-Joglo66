@@ -19,7 +19,6 @@ class InfoCardCircle extends StatelessWidget {
       width: 115,
       height: 105,
       decoration: BoxDecoration(
-        // Oval shape (ellipse) MENYAMPING dengan warna biru cerah
         color: Colors.blue.shade300,
         borderRadius: BorderRadius.circular(40),
         border: Border.all(
@@ -30,34 +29,17 @@ class InfoCardCircle extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Icon
-          Icon(
-            icon,
-            color: Colors.white,
-            size: 26,
-          ),
+          Icon(icon, color: Colors.white, size: 26),
           const SizedBox(height: 6),
-
-          // Value
           Text(
             value,
-            style: GoogleFonts.poppins(
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
+            style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 2),
-
-          // Title
           Text(
             title,
-            style: GoogleFonts.poppins(
-              fontSize: 9,
-              color: Colors.white,
-              fontWeight: FontWeight.w500,
-            ),
+            style: GoogleFonts.poppins(fontSize: 9, color: Colors.white, fontWeight: FontWeight.w500),
             textAlign: TextAlign.center,
           ),
         ],

@@ -1,5 +1,7 @@
+import 'attributes_model.dart';
+
 class RentalItemModel {
-  Map<String, dynamic> attribute;
+  final Attribute attribute;
   int? selectedAttributeId;
   int quantity;
 
@@ -9,9 +11,9 @@ class RentalItemModel {
     this.quantity = 1,
   });
 
-  int get id => int.tryParse(attribute['id']?.toString() ?? '0') ?? 0;
-  String get name => attribute['name']?.toString() ?? '-';
-  int get price => int.tryParse(attribute['price_hour']?.toString() ?? '0') ?? 0;
-  int get stock => int.tryParse(attribute['stock']?.toString() ?? '0') ?? 0;
-  int get fieldId => int.tryParse(attribute['fk_field_id']?.toString() ?? '0') ?? 0;
+  int get id => attribute.id;
+  String get name => attribute.name;
+  int get price => attribute.priceHour;
+  int get stock => attribute.stock;
+  int get fieldId => attribute.fkFieldId;
 }

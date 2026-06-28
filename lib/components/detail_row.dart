@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pbl_app_joglo66/constants/app_theme_constants.dart';
 
 class DetailRow extends StatelessWidget {
   final String label;
@@ -23,7 +24,7 @@ class DetailRow extends StatelessWidget {
             flex: 2,
             child: Text(
               label,
-              style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.grey),
+              style: const TextStyle(fontWeight: FontWeight.w500, color: AppThemeConstants.textSecondary),
             ),
           ),
           Expanded(
@@ -31,9 +32,10 @@ class DetailRow extends StatelessWidget {
             child: Text(
               value,
               textAlign: TextAlign.right,
-              style: isBoldValue
-                  ? const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)
-                  : const TextStyle(color: Colors.black87),
+              style: TextStyle(
+                fontWeight: isBoldValue ? FontWeight.bold : FontWeight.normal,
+                color: AppThemeConstants.textPrimary,
+              ),
             ),
           ),
         ],

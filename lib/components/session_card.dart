@@ -12,7 +12,7 @@ class SessionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final formatRp = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
-    final statusLower = session['status'].toString().toLowerCase();
+    final String statusLower = session['status'].toString().toLowerCase();
 
     final bool canModify = ['active', 'reschedule', 'waiting', 'success', 'field closure', 'closed field reschedule'].contains(statusLower);
     final bool isInactive = !canModify && (statusLower.contains('cancel') || statusLower.contains('closure'));
@@ -37,8 +37,8 @@ class SessionCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(session['play_date'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                  StatusBadge(status: session['status']),
+                  Text(session['play_date'] ?? '-', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  StatusBadge(status: session['status'] ?? 'waiting'),
                 ],
               ),
               const SizedBox(height: 12),
@@ -56,7 +56,7 @@ class SessionCard extends StatelessWidget {
                   const SizedBox(width: 8),
                   Text(fieldName, style: const TextStyle(color: Colors.grey)),
                   const Spacer(),
-                  Text(formatRp.format(session['price']), style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
+                  Text(formatRp.format(int.tryParse(session['price']?.toString() ?? '0') ?? 0), style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
                 ],
               ),
               if (canModify) ...[

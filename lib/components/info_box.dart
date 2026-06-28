@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pbl_app_joglo66/constants/app_theme_constants.dart';
 
 class InfoBox extends StatelessWidget {
   final String message;
@@ -18,10 +19,10 @@ class InfoBox extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppThemeConstants.paddingLarge),
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppThemeConstants.radiusMedium),
       ),
       child: Row(
         children: [

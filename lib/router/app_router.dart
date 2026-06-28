@@ -1,42 +1,44 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:pbl_app_joglo66/components/foot_navigation.dart';
+import 'package:pbl_app_joglo66/components/custom_bottom_nav_page.dart';
 import 'package:pbl_app_joglo66/router/protected_route.dart';
-import 'package:pbl_app_joglo66/screens/admin/attribute_booking/add_attribute_booking.dart';
-import 'package:pbl_app_joglo66/screens/admin/attribute_booking/confirmation_attribute_booking.dart';
-import 'package:pbl_app_joglo66/screens/admin/attribute_booking/history_attribute_booking.dart';
-import 'package:pbl_app_joglo66/screens/admin/attribute_field/list_attribute.dart';
-import 'package:pbl_app_joglo66/screens/admin/attribute_field/add_attribute.dart';
-import 'package:pbl_app_joglo66/screens/admin/booking_field/booking_details_admin_screens.dart';
-import 'package:pbl_app_joglo66/screens/admin/booking_field/change_booking_admin_screens.dart';
-import 'package:pbl_app_joglo66/screens/admin/booking_field/check_slot_availability_admin_screens.dart';
-import 'package:pbl_app_joglo66/screens/admin/booking_field/form_input_booking.dart';
-import 'package:pbl_app_joglo66/screens/admin/booking_field/list_booking_admin_screens.dart';
-import 'package:pbl_app_joglo66/screens/admin/booking_field/payment_details_page_admin_screens.dart';
-import 'package:pbl_app_joglo66/screens/admin/booking_field/successful_payment_admin_screens.dart';
-import 'package:pbl_app_joglo66/screens/admin/expense_field/add_expense.dart';
-import 'package:pbl_app_joglo66/screens/admin/expense_field/detail_expense.dart';
-import 'package:pbl_app_joglo66/screens/admin/expense_field/list_expense.dart';
-import 'package:pbl_app_joglo66/screens/admin/field/field_details_admin_screens.dart';
-import 'package:pbl_app_joglo66/screens/admin/field/form_close_field_admin_screens.dart';
-import 'package:pbl_app_joglo66/screens/admin/field/form_edit_field_admin_screens.dart';
-import 'package:pbl_app_joglo66/screens/admin/booking_field/list_closed_booking_admin_screens.dart';
-import 'package:pbl_app_joglo66/screens/admin/field/list_field_admin_screens.dart';
-import 'package:pbl_app_joglo66/screens/admin/profile_screen.dart';
-import 'package:pbl_app_joglo66/screens/auth/login_screens.dart';
-import 'package:pbl_app_joglo66/screens/auth/register_screens.dart';
-import 'package:pbl_app_joglo66/services/auth_service.dart';
-import 'package:pbl_app_joglo66/screens/admin/dashboard_admin_screens.dart';
+import 'package:pbl_app_joglo66/screens/admin/attribute_booking/add_attribute_booking_admin_screen.dart';
+import 'package:pbl_app_joglo66/screens/admin/attribute_booking/confirmation_attribute_booking_admin_screen.dart';
+import 'package:pbl_app_joglo66/screens/admin/attribute_booking/history_attribute_booking_admin_screen.dart';
+import 'package:pbl_app_joglo66/screens/admin/attribute_field/add_attribute_admin_screen.dart';
+import 'package:pbl_app_joglo66/screens/admin/attribute_field/list_attribute_admin_screen.dart';
+import 'package:pbl_app_joglo66/screens/admin/booking_field/booking_details_admin_screen.dart';
+import 'package:pbl_app_joglo66/screens/admin/booking_field/change_booking_admin_screen.dart';
+import 'package:pbl_app_joglo66/screens/admin/booking_field/check_slot_availability_admin_screen.dart';
+import 'package:pbl_app_joglo66/screens/admin/booking_field/form_input_booking_admin_screen.dart';
+import 'package:pbl_app_joglo66/screens/admin/booking_field/list_booking_admin_screen.dart';
+import 'package:pbl_app_joglo66/screens/admin/booking_field/list_closed_booking_admin_screen.dart';
+import 'package:pbl_app_joglo66/screens/admin/booking_field/payment_details_admin_screen.dart';
+import 'package:pbl_app_joglo66/screens/admin/booking_field/successful_payment_admin_screen.dart';
+import 'package:pbl_app_joglo66/screens/admin/dashboard_admin_screen.dart';
+import 'package:pbl_app_joglo66/screens/admin/expense_field/add_expense_admin_screen.dart';
+import 'package:pbl_app_joglo66/screens/admin/expense_field/detail_expense_admin_screen.dart';
+import 'package:pbl_app_joglo66/screens/admin/expense_field/list_expense_admin_screen.dart';
+import 'package:pbl_app_joglo66/screens/admin/field/field_details_admin_screen.dart';
+import 'package:pbl_app_joglo66/screens/admin/field/form_close_field_admin_screen.dart';
+import 'package:pbl_app_joglo66/screens/admin/field/form_edit_field_admin_screen.dart';
+import 'package:pbl_app_joglo66/screens/admin/field/list_field_admin_screen.dart';
+import 'package:pbl_app_joglo66/screens/admin/profile_admin_screen.dart';
+import 'package:pbl_app_joglo66/screens/auth/login_auth_screen.dart';
+import 'package:pbl_app_joglo66/screens/monthly_report_screen.dart';
 import 'package:pbl_app_joglo66/screens/owner/dashboard_owner_screen.dart';
-import 'package:pbl_app_joglo66/screens/owner/karyawan/list_karyawan_screen.dart';
-import 'package:pbl_app_joglo66/screens/treasure/dashboard_treasure_screen.dart';
-import 'package:pbl_app_joglo66/screens/treasure/gaji/form_gaji_screen.dart';
-import 'package:pbl_app_joglo66/screens/laporan_bulanan_screen.dart';
+import 'package:pbl_app_joglo66/screens/owner/employee/employee_list_owner_screen.dart';
+import 'package:pbl_app_joglo66/screens/treasurer/dashboard_treasurer_screen.dart';
+import 'package:pbl_app_joglo66/screens/treasurer/salary/salary_form_treasurer_screen.dart';
+import 'package:pbl_app_joglo66/services/auth_service.dart';
 
 final authService = AuthService();
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<NavigatorState> _shellNavigatorKey = GlobalKey<NavigatorState>();
+
+const List<String> _adminWorkerRoles = ['worker'];
+const List<String> _allManagementRoles = ['owner', 'treasurer', 'worker'];
 
 final GoRouter appRouter = GoRouter(
   navigatorKey: _rootNavigatorKey,
@@ -46,7 +48,7 @@ final GoRouter appRouter = GoRouter(
     final bool loggedIn = authService.isLoggedIn;
     final String currentRole = authService.role;
     final String location = state.uri.toString();
-    final bool isGoingToAuth = location == '/login' || location == '/register';
+    final bool isGoingToAuth = location == '/login';
 
     if (!loggedIn) {
       return isGoingToAuth ? null : '/login';
@@ -66,7 +68,7 @@ final GoRouter appRouter = GoRouter(
     if (isGlobalRoute) {
       return null;
     }
-    
+
     if (currentRole == 'treasurer' && !isGoingToTreasurer) {
       return '/treasurer/dashboard';
     }
@@ -79,19 +81,13 @@ final GoRouter appRouter = GoRouter(
       return '/admin/dashboard';
     }
 
-
     return null;
   },
   routes: [
     GoRoute(
       path: '/login',
       parentNavigatorKey: _rootNavigatorKey,
-      builder: (context, state) => const LoginScreen(),
-    ),
-    GoRoute(
-      path: '/register',
-      parentNavigatorKey: _rootNavigatorKey,
-      builder: (context, state) => const RegisterScreens(),
+      builder: (context, state) => const LoginAuthScreen(),
     ),
     ShellRoute(
       navigatorKey: _shellNavigatorKey,
@@ -101,88 +97,114 @@ final GoRouter appRouter = GoRouter(
       routes: [
         GoRoute(
           path: '/admin/dashboard',
-          builder: (context, state) {
-            return const DashboardAdminScreens();
-          },
+          builder: (context, state) => ProtectedRoute(
+            allowedRoles: _adminWorkerRoles,
+            currentRole: authService.role,
+            child: const DashboardAdminScreen(),
+          ),
         ),
         GoRoute(
           path: '/admin/list-field',
-          builder: (context, state) {
-            return ProtectedRoute(
-              allowedRoles: const ['worker'],
-              currentRole: authService.role,
-              child: const ListFieldAdminScreens(),
-            );
-          },
+          builder: (context, state) => ProtectedRoute(
+            allowedRoles: _adminWorkerRoles,
+            currentRole: authService.role,
+            child: const ListFieldAdminScreen(),
+          ),
         ),
         GoRoute(
           path: '/admin/list-booking',
-          builder: (context, state) {
-            return ProtectedRoute(
-              allowedRoles: const ['worker'],
-              currentRole: authService.role,
-              child: const ListBookingAdminScreens(),
-            );
-          },
+          builder: (context, state) => ProtectedRoute(
+            allowedRoles: _adminWorkerRoles, // FIXED ROLE
+            currentRole: authService.role,
+            child: const ListBookingAdminScreen(),
+          ),
         ),
         GoRoute(
           path: '/admin/profile',
-          builder: (context, state) {
-            return const ProfileScreen();
-          },
+          builder: (context, state) => ProtectedRoute(
+            allowedRoles: _allManagementRoles,
+            currentRole: authService.role,
+            child: const ProfileAdminScreen(),
+          ),
         ),
         GoRoute(
           path: '/admin/list-attribute',
-          builder: (context, state) {
-            return const ListAttributeScreens();
-          },
+          builder: (context, state) => ProtectedRoute(
+            allowedRoles: _adminWorkerRoles,
+            currentRole: authService.role,
+            child: const ListAttributeAdminScreen(),
+          ),
         ),
         GoRoute(
           path: '/admin/add-attribute',
-          builder: (context, state) {
-            return const AddAttributeScreens();
-          },
+          builder: (context, state) => ProtectedRoute(
+            allowedRoles: _adminWorkerRoles, // FIXED ROLE
+            currentRole: authService.role,
+            child: const AddAttributeAdminScreen(),
+          ),
         ),
         GoRoute(
           path: '/admin/rent-attribute',
-          builder: (context, state) {
-            return const AddAttributeBookingScreens();
-          },
+          builder: (context, state) => ProtectedRoute(
+            allowedRoles: _adminWorkerRoles, // FIXED ROLE
+            currentRole: authService.role,
+            child: const AddAttributeBookingAdminScreen(),
+          ),
         ),
         GoRoute(
           path: '/admin/confirmation-rent-attribute',
           builder: (context, state) {
             final extra = state.extra as Map<String, dynamic>? ?? {};
-            return ConfirmationAttributeBookingScreens(
-              fkBookingId: extra['fkBookingId'] as int? ?? 0,
-              items: (extra['items'] as List<dynamic>?)?.map((e) => e as Map<String, dynamic>).toList() ?? [],
-              customerName: extra['customerName'] as String? ?? '',
-              customerPhone: extra['customerPhone'] as String? ?? '',
-              durationHours: extra['durationHours'] as int? ?? 1,
-              transactionDate: extra['transactionDate'] as String? ?? '',
-              totalPrice: extra['totalPrice'] as int? ?? 0,
+            return ProtectedRoute(
+              allowedRoles: _adminWorkerRoles, // FIXED ROLE
+              currentRole: authService.role,
+              child: ConfirmationAttributeBookingAdminScreen(
+                fkBookingId: extra['fkBookingId'] as int? ?? 0,
+                items: (extra['items'] as List<dynamic>?)
+                        ?.map((e) => e as Map<String, dynamic>)
+                        .toList() ?? [],
+                customerName: extra['customerName'] as String? ?? '',
+                customerPhone: extra['customerPhone'] as String? ?? '',
+                durationHours: extra['durationHours'] as int? ?? 1,
+                transactionDate: extra['transactionDate'] as String? ?? '',
+                totalPrice: extra['totalPrice'] as int? ?? 0,
+              ),
             );
           },
         ),
         GoRoute(
           path: '/admin/history-rent-attribute',
-          builder: (context, state) {
-            return const HistoryAttributeBookingScreens();
-          },
+          builder: (context, state) => ProtectedRoute(
+            allowedRoles: _adminWorkerRoles,
+            currentRole: authService.role,
+            child: const HistoryAttributeBookingAdminScreen(),
+          ),
         ),
         GoRoute(
           path: '/admin/list-expense-field',
-          builder: (context, state) => const ListExpensePage(),
+          builder: (context, state) => ProtectedRoute(
+            allowedRoles: _adminWorkerRoles, // FIXED ROLE
+            currentRole: authService.role,
+            child: const ListExpenseAdminScreen(),
+          ),
         ),
         GoRoute(
           path: '/admin/add-expense-field',
-          builder: (context, state) => const AddExpensePage(),
+          builder: (context, state) => ProtectedRoute(
+            allowedRoles: _adminWorkerRoles, // FIXED ROLE
+            currentRole: authService.role,
+            child: const AddExpenseAdminScreen(),
+          ),
         ),
         GoRoute(
           path: '/admin/detail-expense-field',
           builder: (context, state) {
             final extra = state.extra as Map<String, dynamic>? ?? {};
-            return DetailExpensePage(expenseData: extra);
+            return ProtectedRoute(
+              allowedRoles: _adminWorkerRoles, // FIXED ROLE
+              currentRole: authService.role,
+              child: DetailExpenseAdminScreen(expenseData: extra),
+            );
           },
         ),
         GoRoute(
@@ -198,7 +220,7 @@ final GoRouter appRouter = GoRouter(
           builder: (context, state) => ProtectedRoute(
             allowedRoles: const ['owner'],
             currentRole: authService.role,
-            child: const ListKaryawanScreen(),
+            child: const EmployeeListOwnerScreen(),
           ),
         ),
         GoRoute(
@@ -206,7 +228,7 @@ final GoRouter appRouter = GoRouter(
           builder: (context, state) => ProtectedRoute(
             allowedRoles: const ['treasurer'],
             currentRole: authService.role,
-            child: const DashboardTreasureScreen(),
+            child: const DashboardTreasurerScreen(),
           ),
         ),
         GoRoute(
@@ -214,7 +236,7 @@ final GoRouter appRouter = GoRouter(
           builder: (context, state) => ProtectedRoute(
             allowedRoles: const ['treasurer'],
             currentRole: authService.role,
-            child: const FormGajiScreen(),
+            child: const SalaryFormTreasurerScreen(),
           ),
         ),
       ],
@@ -223,21 +245,19 @@ final GoRouter appRouter = GoRouter(
       path: '/laporan-bulanan',
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) => ProtectedRoute(
-        allowedRoles: const ['treasurer', 'owner', 'worker'],
+        allowedRoles: _allManagementRoles, // FIXED ROLE: Menjamin Admin & Worker juga bisa melihat laporan bulanan
         currentRole: authService.role,
-        child: const LaporanBulananScreen(),
+        child: const MonthlyReportScreen(),
       ),
     ),
     GoRoute(
       path: '/admin/check-availability',
       parentNavigatorKey: _rootNavigatorKey,
-      builder: (context, state) {
-        return ProtectedRoute(
-          allowedRoles: const ['worker'],
-          currentRole: authService.role,
-          child: const CheckSlotAvailabilityAdminScreens(),
-        );
-      },
+      builder: (context, state) => ProtectedRoute(
+        allowedRoles: _adminWorkerRoles, // FIXED ROLE
+        currentRole: authService.role,
+        child: const CheckSlotAvailabilityAdminScreen(),
+      ),
     ),
     GoRoute(
       path: '/admin/field-details/:field_id',
@@ -245,9 +265,9 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) {
         final String currentFieldId = state.pathParameters['field_id']!;
         return ProtectedRoute(
-          allowedRoles: const ['worker'],
+          allowedRoles: _adminWorkerRoles, // FIXED ROLE
           currentRole: authService.role,
-          child: FieldDetailsAdminScreens(fieldId: currentFieldId),
+          child: FieldDetailsAdminScreen(fieldId: currentFieldId),
         );
       },
     ),
@@ -257,9 +277,9 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) {
         final String currentFieldId = state.pathParameters['field_id']!;
         return ProtectedRoute(
-          allowedRoles: const ['worker'],
+          allowedRoles: _adminWorkerRoles, // FIXED ROLE
           currentRole: authService.role,
-          child: FormEditFieldAdminScreens(fieldId: currentFieldId),
+          child: FormEditFieldAdminScreen(fieldId: currentFieldId),
         );
       },
     ),
@@ -269,38 +289,36 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) {
         final String currentFieldId = state.pathParameters['field_id']!;
         return ProtectedRoute(
-          allowedRoles: const ['worker'],
+          allowedRoles: _adminWorkerRoles, // FIXED ROLE
           currentRole: authService.role,
-          child: FormCloseFieldAdminScreens(fieldId: currentFieldId),
+          child: FormCloseFieldAdminScreen(fieldId: currentFieldId),
         );
       },
     ),
     GoRoute(
       path: '/admin/list-closed-booking',
       parentNavigatorKey: _rootNavigatorKey,
-      builder: (context, state) {
-        return ProtectedRoute(
-          allowedRoles: const ['worker'],
-          currentRole: authService.role,
-          child: ListClosedBookingAdminScreens(),
-        );
-      },
+      builder: (context, state) => ProtectedRoute(
+        allowedRoles: _adminWorkerRoles, // FIXED ROLE
+        currentRole: authService.role,
+        child: const ListClosedBookingAdminScreen(),
+      ),
     ),
     GoRoute(
       path: '/admin/form-input-booking',
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) {
-        final data = state.extra as Map<String, dynamic>;
+        final data = state.extra as Map<String, dynamic>? ?? {};
         return ProtectedRoute(
-          allowedRoles: const ['worker'],
+          allowedRoles: _adminWorkerRoles, // FIXED ROLE
           currentRole: authService.role,
-          child: FormInputBooking(
-            nameField: data['nameField'] as String,
-            fieldId: data['fieldId'] as int,
+          child: FormInputBookingAdminScreen(
+            nameField: data['nameField'] as String? ?? '-',
+            fieldId: data['fieldId'] as int? ?? 0,
             selectedDate: data['selectedDate'],
-            hours: data['hours'] as String,
-            duration: data['duration'] as int,
-            fieldPrice: data['fieldPrice'] as int,
+            hours: data['hours'] as String? ?? '',
+            duration: data['duration'] as int? ?? 1,
+            fieldPrice: data['fieldPrice'] as int? ?? 0,
           ),
         );
       },
@@ -309,25 +327,22 @@ final GoRouter appRouter = GoRouter(
       path: '/admin/payment-details',
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) {
-        final data = state.extra as Map<String, dynamic>;
+        final data = state.extra as Map<String, dynamic>? ?? {};
         final bookingId = data['bookingId'] as int?;
         final paymentAmount = data['paymentAmount'] as int?;
 
         if (bookingId == null || paymentAmount == null) {
           return Scaffold(
-            appBar: AppBar(title: const Text('Error'), backgroundColor: Colors.white),
+            appBar: AppBar(title: const Text('Data Eror'), backgroundColor: Colors.white),
             body: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.error, size: 48, color: Colors.red),
+                  const Icon(Icons.error_outline_rounded, size: 54, color: Colors.red),
                   const SizedBox(height: 16),
-                  const Text('Data booking tidak lengkap'),
+                  const Text('Struktur payload data booking tidak valid/lengkap.'),
                   const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Kembali'),
-                  ),
+                  ElevatedButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Kembali')),
                 ],
               ),
             ),
@@ -335,17 +350,17 @@ final GoRouter appRouter = GoRouter(
         }
 
         return ProtectedRoute(
-          allowedRoles: const ['worker'],
+          allowedRoles: _adminWorkerRoles, // FIXED ROLE
           currentRole: authService.role,
-          child: PaymentDetailsPageAdminScreens(
-            nameField: data['nameField'] as String,
-            nameTenant: data['nameTenant'] as String,
+          child: PaymentDetailsAdminScreen(
+            nameField: data['nameField'] as String? ?? '-',
+            nameTenant: data['nameTenant'] as String? ?? '-',
             selectedDate: data['selectedDate'],
-            hours: data['hours'],
-            duration: data['duration'] as int,
-            totalPrice: data['totalPrice'] as int,
-            downPaymentPrice: data['downPaymentPrice'] as int,
-            statusEarly: data['statusEarly'],
+            hours: data['hours'] ?? '',
+            duration: data['duration'] as int? ?? 1,
+            totalPrice: data['totalPrice'] as int? ?? 0,
+            downPaymentPrice: data['downPaymentPrice'] as int? ?? 0,
+            statusEarly: data['statusEarly'] ?? 'pending',
             bookingId: bookingId,
             paymentAmount: paymentAmount,
           ),
@@ -357,9 +372,13 @@ final GoRouter appRouter = GoRouter(
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) {
         final extra = state.extra as Map<String, dynamic>? ?? {};
-        return SuccessfulPaymentAdminScreen(
-          isSuccess: extra['isSuccess'] ?? true,
-          message: extra['message'] ?? 'Pembayaran berhasil dikonfirmasi.',
+        return ProtectedRoute(
+          allowedRoles: _adminWorkerRoles,
+          currentRole: authService.role,
+          child: SuccessfulPaymentAdminScreen(
+            isSuccess: extra['isSuccess'] as bool? ?? true,
+            message: extra['message'] as String? ?? 'Pembayaran berhasil dikonfirmasi.',
+          ),
         );
       },
     ),
@@ -369,7 +388,7 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) {
         final String currentBookingId = state.pathParameters['booking_id']!;
         return ProtectedRoute(
-          allowedRoles: const ['worker'],
+          allowedRoles: _adminWorkerRoles, // FIXED ROLE
           currentRole: authService.role,
           child: BookingDetailsAdminScreen(bookingId: currentBookingId),
         );
@@ -381,9 +400,9 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) {
         final String currentBookingId = state.pathParameters['booking_id']!;
         return ProtectedRoute(
-          allowedRoles: const ['worker'],
+          allowedRoles: _adminWorkerRoles, // FIXED ROLE
           currentRole: authService.role,
-          child: ChangeBookingAdminScreens(bookingId: currentBookingId),
+          child: ChangeBookingAdminScreen(bookingId: currentBookingId),
         );
       },
     ),

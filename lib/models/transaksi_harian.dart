@@ -1,12 +1,14 @@
+import 'payments_model.dart';
+
 class TransaksiHarian {
   final int id;
-  final String namaCustomer; // dari bookings.team_name
-  final String jenisTransaksi; // payments.payment_type
-  final String status; // payments.status
-  final int nominal; // payments.amount
-  final DateTime? waktu; // payments.paid_at
-  final String? referenceId; // payments.reference_id
-  final String? fieldName; // dari relasi field
+  final String namaCustomer;
+  final String jenisTransaksi;
+  final String status;
+  final int nominal;
+  final DateTime? waktu;
+  final String? referenceId;
+  final String? fieldName;
 
   const TransaksiHarian({
     required this.id,
@@ -21,16 +23,27 @@ class TransaksiHarian {
 
   factory TransaksiHarian.fromJson(Map<String, dynamic> json) {
     return TransaksiHarian(
-      id: json['id'] as int,
-      namaCustomer: json['team_name'] as String? ?? '-',
-      jenisTransaksi: json['payment_type'] as String? ?? '-',
-      status: json['status'] as String? ?? 'pending',
-      nominal: (json['amount'] as num?)?.toInt() ?? 0,
-      waktu: json['paid_at'] != null
-          ? DateTime.tryParse(json['paid_at'] as String)
-          : null,
-      referenceId: json['reference_id'] as String?,
-      fieldName: json['field_name'] as String?,
+      id: int.tryParse(json['id'].toString()) ?? 0,
+      namaCustomer: json['team_name']?.toString() ?? json['booking']?['team_name']?.toString() ?? '-',
+      jenisTransaksi: json['payment_type']?.toString() ?? '-',
+      status: json['status']?.toString() ?? 'pending',
+      nominal: int.tryParse(json['amount'].toString()) ?? 0,
+      waktu: json['paid_at'] != null ? DateTime.tryParse(json['paid_at'].toString()) : null,
+      referenceId: json['reference_id']?.toString(),
+      fieldName: json['field_name']?.toString() ?? json['booking']?['field']?['name']?.toString() ?? '-',
+    );
+  }
+
+  factory TransaksiHarian.fromPayment(Payment payment) {
+    return TransaksiHarian(
+      id: payment.id,
+      namaCustomer: payment.booking?.teamName ?? '-',
+      jenisTransaksi: payment.paymentType,
+      status: payment.status,
+      nominal: payment.amount,
+      waktu: payment.paidAt,
+      referenceId: payment.referenceId,
+      fieldName: payment.booking?.field?.name ?? '-',
     );
   }
 }
