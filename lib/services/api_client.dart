@@ -1,11 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:pbl_app_joglo66/providers/auth_provider.dart';
 
 class ApiClient {
   static const int _timeoutSeconds = 30;
-
-  static final AuthProvider authProvider = AuthProvider();
+  static VoidCallback? onUnauthorized;
 
   static Future<Map<String, String>> getHeaders(Map<String, String>? customHeaders) async {
     final prefs = await SharedPreferences.getInstance();
@@ -53,7 +52,7 @@ class ApiClient {
 
   static void _interceptUnauthorized(int statusCode) {
     if (statusCode == 401) {
-      authProvider.logout();
+      onUnauthorized?.call();
       throw const FormatException('Sesi Anda telah habis (401). Silakan login kembali.');
     }
   }

@@ -16,6 +16,7 @@ class PaymentDetailsAdminScreen extends StatefulWidget {
   final int downPaymentPrice;
   final String statusEarly;
   final int bookingId;
+  final int? bookingDetailId;
   final int paymentAmount;
 
   const PaymentDetailsAdminScreen({
@@ -29,6 +30,7 @@ class PaymentDetailsAdminScreen extends StatefulWidget {
     required this.downPaymentPrice,
     required this.statusEarly,
     required this.bookingId,
+    this.bookingDetailId,
     required this.paymentAmount,
   });
 
@@ -47,6 +49,7 @@ class _PaymentDetailsAdminScreenState extends State<PaymentDetailsAdminScreen> {
       await PaymentService.processPayment(
         method: 'cash',
         bookingId: widget.bookingId,
+        bookingDetailId: widget.bookingDetailId,
         amount: widget.paymentAmount,
         paymentType: paymentType,
       );
@@ -62,11 +65,12 @@ class _PaymentDetailsAdminScreenState extends State<PaymentDetailsAdminScreen> {
       }
     } catch (e) {
       if (mounted) {
+        final String cleanErrorMessage = e is FormatException ? e.message : e.toString().replaceAll('Exception: ', '');
         context.push(
           '/admin/payment-status',
           extra: {
             'isSuccess': false,
-            'message': e.toString().replaceAll('Exception: ', ''),
+            'message': cleanErrorMessage,
           },
         );
       }

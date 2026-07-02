@@ -64,7 +64,7 @@ class BookingService {
       final response = await ApiClient.get(Uri.parse('${ApiEndpoints.detailBooking}/$detailBookingId'));
       final jsonData = json.decode(response.body);
 
-      if (response.statusCode == 200 && jsonData['status'] == 'success') {
+      if (response.statusCode == 200 && jsonData['success'] == true) {
         return jsonData['data'];
       }
       throw FormatException(jsonData['message'] ?? 'Data booking tidak ditemukan');
@@ -79,8 +79,9 @@ class BookingService {
     required String newStartTime,
     required String newEndTime,
     required String reason,
-    int? fieldClosureId,
-    int? newPrice,
+    required int newPrice,
+    required String financialAction,
+    required int reconciledAmount,
   }) async {
     try {
       final body = {
@@ -88,20 +89,25 @@ class BookingService {
         'new_start_time': newStartTime,
         'new_end_time': newEndTime,
         'reason': reason,
-        if (fieldClosureId != null) 'fk_field_closure_id': fieldClosureId,
-        if (newPrice != null) 'new_price': newPrice,
+        'new_price': newPrice,
+        'financial_action': financialAction,
+        'reconciled_amount': reconciledAmount,
       };
 
       final response = await ApiClient.post(
         Uri.parse('${ApiEndpoints.rescheduleBooking}/$detailBookingId'),
         body: jsonEncode(body),
       );
+
       final jsonData = json.decode(response.body);
 
+      // 🟢 PERBAIKAN: Validasi ketat status HTTP dan key JSON dari Laravel
       if (response.statusCode == 200 && jsonData['status'] == 'success') {
         return jsonData;
       }
-      throw FormatException(jsonData['message'] ?? 'Gagal mereschedule jadwal');
+
+      // Jika server mengembalikan status 404, 422, atau 500, lemparkan sebagai eror ke UI
+      throw FormatException(jsonData['message'] ?? 'Gagal mereschedule jadwal (Code: ${response.statusCode})');
     } catch (e) {
       rethrow;
     }
@@ -110,26 +116,29 @@ class BookingService {
   static Future<Map<String, dynamic>> cancelBooking({
     required String detailBookingId,
     required String reason,
-    String? statusRefund,
-    int? fieldClosureId,
+    required String statusRefund,
+    required int refundAmount,
   }) async {
     try {
       final body = {
         'reason': reason,
-        if (statusRefund != null) 'status_refund': statusRefund,
-        if (fieldClosureId != null) 'fk_field_closure_id': fieldClosureId,
+        'status_refund': statusRefund,
+        'refund_amount': refundAmount,
       };
 
       final response = await ApiClient.post(
         Uri.parse('${ApiEndpoints.cancelBooking}/$detailBookingId'),
         body: jsonEncode(body),
       );
+
       final jsonData = json.decode(response.body);
 
+      // 🟢 PERBAIKAN: Validasi ketat status untuk pembatalan sewa
       if (response.statusCode == 200 && jsonData['status'] == 'success') {
         return jsonData;
       }
-      throw FormatException(jsonData['message'] ?? 'Gagal membatalkan booking');
+
+      throw FormatException(jsonData['message'] ?? 'Gagal membatalkan booking (Code: ${response.statusCode})');
     } catch (e) {
       rethrow;
     }

@@ -13,9 +13,8 @@ class AuthService extends ChangeNotifier {
   bool get isLoggedIn => _isLoggedIn;
   String get role => _role;
   String? get token => _token;
-  int? get userId => _userId; 
+  int? get userId => _userId;
 
-  // URL aman dengan fallback
   String get _baseUrl => dotenv.env['API_BASE_URL']!;
 
   Future<void> checkLoginStatus() async {
@@ -23,14 +22,8 @@ class AuthService extends ChangeNotifier {
     _token = prefs.getString('auth_token');
     _role = prefs.getString('user_role') ?? 'guest';
     _userId = prefs.getInt('user_id');
+    _isLoggedIn = _token != null && _token!.isNotEmpty;
 
-    if (_token != null && _token!.isNotEmpty) {
-      _isLoggedIn = true;
-    } else {
-      _isLoggedIn = false;
-    }
-    
-    // BUNGKUS DENGAN MICROTASK UNTUK MENCEGAH BUG FREEZE GOROUTER
     Future.microtask(() {
       notifyListeners();
     });
@@ -42,17 +35,16 @@ class AuthService extends ChangeNotifier {
         Uri.parse('$_baseUrl/api/login'),
         headers: {
           'Accept': 'application/json',
-          'Content-Type': 'application/json', 
+          'Content-Type': 'application/json',
         },
         body: jsonEncode({
-          'email': email, 
+          'email': email,
           'password': password
         }),
       );
 
       final data = json.decode(response.body);
 
-      // JIKA SUKSES
       if (response.statusCode == 200) {
         _token = data['token'];
         _role = data['user']['role'];
@@ -64,26 +56,20 @@ class AuthService extends ChangeNotifier {
         await prefs.setInt('user_id', _userId!);
 
         _isLoggedIn = true;
-        
+
         Future.microtask(() {
           notifyListeners();
         });
 
         return {'success': true, 'message': 'Login berhasil'};
-      } 
-      // JIKA VALIDASI GAGAL (Contoh: format email salah)
-      else if (response.statusCode == 422) {
-         String specificError = 'Validasi gagal.';
-         if (data['errors'] != null) {
-           final errors = data['errors'] as Map<String, dynamic>;
-           specificError = errors.values.first[0];
-         }
-         return {'success': false, 'message': specificError};
-      } 
-      // JIKA PASSWORD/EMAIL SALAH (401 Unauthorized)
-      else {
-        // CATATAN: Di sini 401 BUKAN berarti sesi habis, melainkan salah sandi. 
-        // Jadi tidak perlu auto-logout.
+      } else if (response.statusCode == 422) {
+        String specificError = 'Validasi gagal.';
+        if (data['errors'] != null) {
+          final errors = data['errors'] as Map<String, dynamic>;
+          specificError = errors.values.first[0];
+        }
+        return {'success': false, 'message': specificError};
+      } else {
         return {
           'success': false,
           'message': data['message'] ?? 'Login gagal. Silakan coba lagi.',
@@ -99,13 +85,11 @@ class AuthService extends ChangeNotifier {
     final token = prefs.getString('auth_token');
 
     if (token == null || token.isEmpty) {
-      // Jika token memang tidak ada di memori, tendang langsung
       await logout();
-      throw Exception('Sesi telah habis. Silakan login kembali.');
+      throw const FormatException('Sesi telah habis. Silakan login kembali.');
     }
 
-    final baseUrl = dotenv.env['API_BASE_URL']!;
-    final url = Uri.parse('$baseUrl/api/admin/profile');
+    final url = Uri.parse('$_baseUrl/api/admin/profile');
 
     try {
       final response = await http.get(
@@ -118,15 +102,13 @@ class AuthService extends ChangeNotifier {
 
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
-        return jsonData['data']; 
+        return jsonData['data'];
       } else if (response.statusCode == 401) {
-        await logout(); 
-        throw Exception('Sesi Anda telah berakhir. Silakan login kembali.');
-      } 
-      // ========================================================
-      else {
+        await logout();
+        throw const FormatException('Sesi Anda telah berakhir. Silakan login kembali.');
+      } else {
         final errorData = json.decode(response.body);
-        throw Exception(errorData['message'] ?? 'Gagal mengambil data profil');
+        throw FormatException(errorData['message'] ?? 'Gagal mengambil data profil');
       }
     } catch (e) {
       rethrow;
@@ -137,11 +119,9 @@ class AuthService extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('auth_token');
 
-    // 1. Beritahu Laravel untuk menghancurkan token di database
     if (token != null) {
       try {
         final String apiUrl = '$_baseUrl/api/admin/logout';
-
         await http.post(
           Uri.parse(apiUrl),
           headers: {
@@ -150,24 +130,18 @@ class AuthService extends ChangeNotifier {
             'Content-Type': 'application/json',
           },
         );
-        print("Token berhasil dihancurkan di server Laravel.");
-      } catch (e) {
-        // Jika gagal konek internet saat logout, biarkan saja, yang penting data di HP dihapus.
-        print("Gagal menghubungi server saat logout: $e");
-      }
+      } catch (_) {}
     }
 
-    // 2. Hapus data dari memori HP secara total
     await prefs.remove('auth_token');
     await prefs.remove('user_role');
-    await prefs.remove('user_id'); 
+    await prefs.remove('user_id');
 
     _isLoggedIn = false;
     _role = 'guest';
     _token = null;
-    _userId = null; 
+    _userId = null;
 
-    // 3. Bangunkan UI & GoRouter agar langsung berpindah ke halaman Login
     Future.microtask(() {
       notifyListeners();
     });

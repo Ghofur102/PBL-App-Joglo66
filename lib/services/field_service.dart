@@ -4,21 +4,31 @@ import 'package:pbl_app_joglo66/constants/api_endpoints.dart';
 import 'package:pbl_app_joglo66/services/api_client.dart';
 
 class FieldService {
-  static Future<List<dynamic>> fetchListField({String? search, int? limit}) async {
+  static Future<List<dynamic>> fetchListField({
+    String? search,
+    int? limit,
+  }) async {
     try {
       final List<String> queryParams = [];
-      if (search != null && search.isNotEmpty) queryParams.add('search=$search');
+      if (search != null && search.isNotEmpty)
+        queryParams.add('search=$search');
       if (limit != null) queryParams.add('limit=$limit');
 
-      final String queryString = queryParams.isNotEmpty ? '?${queryParams.join('&')}' : '';
-      final response = await ApiClient.get(Uri.parse('${ApiEndpoints.listField}$queryString'));
+      final String queryString = queryParams.isNotEmpty
+          ? '?${queryParams.join('&')}'
+          : '';
+      final response = await ApiClient.get(
+        Uri.parse('${ApiEndpoints.listField}$queryString'),
+      );
 
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
         if (jsonData['success'] == true) {
           return jsonData['data'];
         }
-        throw FormatException(jsonData['message'] ?? 'Gagal memuat daftar lapangan');
+        throw FormatException(
+          jsonData['message'] ?? 'Gagal memuat daftar lapangan',
+        );
       }
       throw FormatException('Error server (Code: ${response.statusCode})');
     } catch (e) {
@@ -28,13 +38,20 @@ class FieldService {
 
   static Future<Map<String, dynamic>> fetchFieldDetail(String fieldId) async {
     try {
-      final response = await ApiClient.get(Uri.parse('${ApiEndpoints.detailField}/$fieldId'));
+      final response = await ApiClient.get(
+        Uri.parse('${ApiEndpoints.detailField}/$fieldId'),
+      );
       final jsonData = json.decode(response.body);
 
-      if (response.statusCode == 200 && jsonData['status'] == 'success') {
-        return jsonData['data'];
+      if (response.statusCode == 200 &&
+          (jsonData['success'] == true || jsonData.containsKey('data'))) {
+        return jsonData['data'] as Map<String, dynamic>;
       }
-      throw FormatException(jsonData['message'] ?? 'Data lapangan tidak ditemukan');
+
+      throw FormatException(
+        jsonData['message'] ?? 'Data lapangan tidak ditemukan',
+        response.statusCode,
+      );
     } catch (e) {
       rethrow;
     }
@@ -49,7 +66,10 @@ class FieldService {
     List<Map<String, dynamic>>? pricingRules,
   }) async {
     try {
-      final request = http.MultipartRequest('POST', Uri.parse(ApiEndpoints.updateField));
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse(ApiEndpoints.updateField),
+      );
 
       request.fields['id'] = id.toString();
       if (name != null) request.fields['name'] = name;
@@ -61,18 +81,23 @@ class FieldService {
       }
 
       if (imagePath != null && imagePath.isNotEmpty) {
-        request.files.add(await http.MultipartFile.fromPath('image', imagePath));
+        request.files.add(
+          await http.MultipartFile.fromPath('image', imagePath),
+        );
       }
 
       final response = await ApiClient.sendMultipart(request);
       final jsonData = json.decode(response.body);
 
-      if (response.statusCode == 200 && (jsonData['status'] == 'success' || jsonData['success'] == true)) {
+      if (response.statusCode == 200 &&
+          (jsonData['status'] == 'success' || jsonData['success'] == true)) {
         return jsonData['field'] ?? {};
       }
 
       if (response.statusCode == 422) {
-        throw const FormatException('Validasi gagal. Cek kembali jadwal harga agar tidak bentrok.');
+        throw const FormatException(
+          'Validasi gagal. Cek kembali jadwal harga agar tidak bentrok.',
+        );
       }
       throw FormatException(jsonData['message'] ?? 'Gagal mengupdate lapangan');
     } catch (e) {
@@ -80,15 +105,24 @@ class FieldService {
     }
   }
 
-  static Future<List<dynamic>> checkAvailability({required int fieldId, required String date}) async {
+  static Future<List<dynamic>> checkAvailability({
+    required int fieldId,
+    required String date,
+  }) async {
     try {
-      final response = await ApiClient.get(Uri.parse('${ApiEndpoints.checkSlot}/$fieldId/$date'));
+      final response = await ApiClient.get(
+        Uri.parse('${ApiEndpoints.checkSlot}/$fieldId/$date'),
+      );
       final jsonData = json.decode(response.body);
 
-      if (response.statusCode == 200 && jsonData['status'] == 'success') {
-        return jsonData['available_slots'];
+      if (response.statusCode == 200 && jsonData['success'] == true) {
+        final slotsContainer = jsonData['available_slots'];
+        if (slotsContainer is Map &&
+            slotsContainer.containsKey('available_slots')) {
+          return slotsContainer['available_slots'] as List<dynamic>;
+        }
       }
-      throw FormatException(jsonData['message'] ?? 'Gagal mengecek ketersediaan jadwal');
+      throw FormatException(jsonData['message'] ?? 'Gagal memuat jadwal');
     } catch (e) {
       rethrow;
     }
@@ -108,7 +142,10 @@ class FieldService {
         'reason': reason,
       };
 
-      final response = await ApiClient.post(Uri.parse(ApiEndpoints.closeField), body: json.encode(body));
+      final response = await ApiClient.post(
+        Uri.parse(ApiEndpoints.closeField),
+        body: json.encode(body),
+      );
       final jsonData = json.decode(response.body);
 
       if (response.statusCode == 200 && jsonData['status'] == 'success') {
@@ -122,7 +159,9 @@ class FieldService {
         }
         throw const FormatException('Format tanggal/waktu tidak valid');
       }
-      throw FormatException(jsonData['message'] ?? 'Gagal melakukan penutupan lapangan');
+      throw FormatException(
+        jsonData['message'] ?? 'Gagal melakukan penutupan lapangan',
+      );
     } catch (e) {
       rethrow;
     }

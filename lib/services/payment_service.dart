@@ -21,23 +21,43 @@ class PaymentService {
         if (referenceId != null) 'reference_id': referenceId,
       };
 
-      final response = await ApiClient.post(Uri.parse(ApiEndpoints.rentAttribute), body: jsonEncode(body));
+      // 🟢 LOG 1: Pantau data yang dikirim dari Flutter
+      print("🚀 [PAYMENT REQ] Mengirim Payload ke Laravel: $body");
+
+      final response = await ApiClient.post(
+        Uri.parse(ApiEndpoints.paymentBooking),
+        body: jsonEncode(body)
+      );
+
+      // 🟢 LOG 2: Cetak BALIKAN MURNI dari Laravel secara transparan di terminal
+      print("============= RAW PAYMENT RESPONSE FROM LARAVEL =============");
+      print("HTTP Status Code : ${response.statusCode}");
+      print("Raw Response Body: ${response.body}");
+      print("=============================================================");
+
       final jsonData = json.decode(response.body);
 
-      if (response.statusCode == 200 && jsonData['success'] == true) {
-        return jsonData['data'];
+      if (response.statusCode == 200 && (jsonData['success'] == true || jsonData['status'] == 'success')) {
+        return (jsonData['data'] ?? jsonData) as Map<String, dynamic>;
       }
 
+      // Menangani Eror Validasi Form (422)
       if (response.statusCode == 422) {
         final errors = jsonData['errors'] as Map<String, dynamic>?;
         if (errors != null && errors.isNotEmpty) {
           throw FormatException(errors.values.first[0]);
         }
-        throw const FormatException('Validasi pembayaran gagal. Periksa kembali data Anda.');
+        throw FormatException(jsonData['message'] ?? 'Validasi pembayaran gagal.');
       }
 
-      throw FormatException(jsonData['message'] ?? 'Gagal memproses pembayaran');
-    } catch (e) {
+      // 🟢 IMPROVEMENT: Sertakan pesan asli dari Laravel + Status Code agar tidak menjadi pesan generic
+      final String serverMessage = jsonData['message'] ?? 'Gagal memproses pembayaran';
+      throw FormatException('$serverMessage (Status: ${response.statusCode})');
+
+    } catch (e, stacktrace) {
+      // 🟢 LOG 3: Menangkap crash internal Dart atau hilangnya koneksi internet
+      print("🔴 [CRITICAL ERROR] Terjadi kegagalan di PaymentService: $e");
+      print("📜 [STACKTRACE LENGKAP]:\n$stacktrace");
       rethrow;
     }
   }

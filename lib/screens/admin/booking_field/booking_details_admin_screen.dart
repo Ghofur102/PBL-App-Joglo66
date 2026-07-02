@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:pbl_app_joglo66/components/detail_row.dart';
-import 'package:pbl_app_joglo66/components/session_card.dart';
 import 'package:pbl_app_joglo66/constants/app_theme_constants.dart';
 import 'package:pbl_app_joglo66/services/booking_service.dart';
 
@@ -72,20 +71,132 @@ class _BookingDetailsAdminScreenState extends State<BookingDetailsAdminScreen> {
     final fieldInfo = _bookingData!['field_info'] as Map<String, dynamic>? ?? {};
     final paymentInfo = _bookingData!['payment_details'] as Map<String, dynamic>? ?? {};
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSummaryCard(userInfo, fieldInfo, paymentInfo, formatRp),
-          const SizedBox(height: 24),
-          const Text('Daftar Sesi', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppThemeConstants.textPrimary)),
-          const SizedBox(height: 12),
-          ...sessions.map((session) => SessionCard(
-                session: session as Map<String, dynamic>,
-                fieldName: fieldInfo['name']?.toString() ?? '-',
-              )),
-        ],
+    return RefreshIndicator(
+      onRefresh: _fetchBookingDetail,
+      color: AppThemeConstants.primaryBlue,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildSummaryCard(userInfo, fieldInfo, paymentInfo, formatRp),
+            const SizedBox(height: 24),
+            const Text('Daftar Sesi Jadwal', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppThemeConstants.textPrimary)),
+            const SizedBox(height: 4),
+            const Text('*Klik pada kartu sesi untuk memproses modifikasi, reschedule, atau pelunasan kasir.', style: TextStyle(fontSize: 11, color: AppThemeConstants.textSecondary, fontStyle: FontStyle.italic)),
+            const SizedBox(height: 12),
+
+            ...sessions.map((sessionItem) {
+              final session = sessionItem as Map<String, dynamic>;
+              final int remainingPayment = int.tryParse(session['remaining_payment']?.toString() ?? '0') ?? 0;
+              final bool isLunas = remainingPayment <= 0;
+              final String opStatus = (session['status'] ?? 'WAITING').toString().toUpperCase();
+
+              Color opBadgeColor = AppThemeConstants.warningAmber;
+              Color opBgColor = AppThemeConstants.lightAmber;
+              if (opStatus == 'ACTIVE') {
+                opBadgeColor = AppThemeConstants.successGreen;
+                opBgColor = AppThemeConstants.lightGreen;
+              } else if (opStatus.contains('CANCEL')) {
+                opBadgeColor = AppThemeConstants.errorRed;
+                opBgColor = AppThemeConstants.lightRed;
+              }
+
+              return InkWell(
+                onTap: () {
+                  context.push('/admin/change-booking/${session['id']}').then((_) => _fetchBookingDetail());
+                },
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: isLunas ? AppThemeConstants.borderGrey.withOpacity(0.6) : AppThemeConstants.warningAmber.withOpacity(0.4)),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 6, offset: const Offset(0, 2)),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.calendar_today_rounded, size: 16, color: AppThemeConstants.primaryBlue),
+                              const SizedBox(width: 8),
+                              Text(session['play_date'] ?? '-', style: const TextStyle(fontWeight: FontWeight.bold, color: AppThemeConstants.textPrimary)),
+                            ],
+                          ),
+                          Text(formatRp.format(int.tryParse(session['price']?.toString() ?? '0') ?? 0), style: const TextStyle(fontWeight: FontWeight.bold, color: AppThemeConstants.textPrimary)),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          const Icon(Icons.access_time_rounded, size: 16, color: AppThemeConstants.textSecondary),
+                          const SizedBox(width: 8),
+                          Text('${session['start_time']} - ${session['end_time']}', style: const TextStyle(color: AppThemeConstants.textSecondary, fontWeight: FontWeight.w500)),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      const Divider(height: 1, color: AppThemeConstants.borderGrey),
+                      const SizedBox(height: 12),
+
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(color: opBgColor, borderRadius: BorderRadius.circular(6)),
+                            child: Text(
+                              opStatus,
+                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: opBadgeColor),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: isLunas ? AppThemeConstants.lightGreen : AppThemeConstants.lightRed,
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: isLunas ? AppThemeConstants.successGreen : AppThemeConstants.errorRed, width: 0.5),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  isLunas ? Icons.check_circle_outline_rounded : Icons.info_outline_rounded,
+                                  size: 13,
+                                  color: isLunas ? AppThemeConstants.successGreen : AppThemeConstants.errorRed,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  isLunas ? 'LUNAS' : 'BELUM LUNAS (-${formatRp.format(remainingPayment)})',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: isLunas ? AppThemeConstants.successGreen : AppThemeConstants.errorRed,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Spacer(),
+                          const Icon(Icons.chevron_right_rounded, color: Colors.grey, size: 20),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+          ],
+        ),
       ),
     );
   }

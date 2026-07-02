@@ -37,7 +37,7 @@ class _FormInputBookingAdminScreenState extends State<FormInputBookingAdminScree
 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController(); // Kontroler email aktif
   final TextEditingController _noteController = TextEditingController();
 
   Map<String, String> _parseTimeRange(String timeRange) {
@@ -54,7 +54,44 @@ class _FormInputBookingAdminScreenState extends State<FormInputBookingAdminScree
   }
 
   Future<void> _nextPage() async {
-    if (_nameController.text.trim().isEmpty || !_isAgreed || _paymentStatusOption.isEmpty) return;
+    print('========= MEMULAI VALIDASI FORM BOOKING =========');
+    print('Nama Penyewa : "${_nameController.text}" (Kosong? ${_nameController.text.trim().isEmpty})');
+    print('Email Penyewa: "${_emailController.text}" (Kosong? ${_emailController.text.trim().isEmpty})');
+    print('Opsi Pembayaran: "$_paymentStatusOption" (Kosong? ${_paymentStatusOption.isEmpty})');
+    print('Centang Validasi: $_isAgreed (Disetujui? $_isAgreed)');
+    print('==================================================');
+
+    if (_nameController.text.trim().isEmpty) {
+      print('⚠️ WARN: Input Nama Penyewa kosong.');
+      _showWarningSnackBar('Nama tim atau penyewa wajib diisi!');
+      return;
+    }
+
+    if (_emailController.text.trim().isEmpty) {
+      print('⚠️ WARN: Input Email Penyewa kosong.');
+      _showWarningSnackBar('Email penyewa wajib diisi untuk keperluan data sewa!');
+      return;
+    }
+
+    if (!RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+").hasMatch(_emailController.text.trim())) {
+      print('⚠️ WARN: Format email tidak sesuai standar.');
+      _showWarningSnackBar('Format email penyewa tidak valid!');
+      return;
+    }
+
+    if (_paymentStatusOption.isEmpty) {
+      print('⚠️ WARN: Opsi jenis pembayaran belum dipilih.');
+      _showWarningSnackBar('Silakan pilih metode pembayaran (Lunas/DP)!');
+      return;
+    }
+
+    if (!_isAgreed) {
+      print('⚠️ WARN: Kotak centang belum dicentang.');
+      _showWarningSnackBar('Anda harus mencentang konfirmasi validitas data!');
+      return;
+    }
+
+    print('✅ SUCCESS: Seluruh validasi UI lolos. Masuk ke blok pemrosesan data...');
 
     setState(() => _isLoading = true);
     try {
@@ -68,6 +105,7 @@ class _FormInputBookingAdminScreenState extends State<FormInputBookingAdminScree
       List<Map<String, dynamic>> bookingDetailsArray = [];
       List<String> selectedSlots = widget.hours.split(', ');
 
+      print('ℹ️ DIAGNOSTIK: Memproses konversi string jam sesi: ${widget.hours}');
       for (String slot in selectedSlots) {
         final timeRange = _parseTimeRange(slot);
         bookingDetailsArray.add({
@@ -81,7 +119,11 @@ class _FormInputBookingAdminScreenState extends State<FormInputBookingAdminScree
       final prefs = await SharedPreferences.getInstance();
       final int? currentUserId = prefs.getInt('user_id');
 
-      if (currentUserId == null) throw const FormatException('Sesi internal user ID kosong.');
+      if (currentUserId == null) {
+        throw const FormatException('Sesi internal user ID kosong. Silakan login kembali.');
+      }
+
+      print('🚀 MENEMBAK API KE BACKEND: BookingService.createBooking()...');
 
       final bookingResult = await BookingService.createBooking(
         userId: currentUserId,
@@ -90,29 +132,64 @@ class _FormInputBookingAdminScreenState extends State<FormInputBookingAdminScree
         bookingDate: currentBookingDate,
         details: bookingDetailsArray,
         customerPhone: _phoneController.text.isNotEmpty ? _phoneController.text : null,
-        customerEmail: _emailController.text.isNotEmpty ? _emailController.text : null,
+        customerEmail: _emailController.text.trim(),
         notes: _noteController.text.isNotEmpty ? _noteController.text : null,
       );
 
-      if (bookingResult['success'] == true && mounted) {
-        context.push('/admin/payment-details', extra: {
-          'nameField': widget.nameField,
-          'nameTenant': _nameController.text,
-          'selectedDate': widget.selectedDate,
-          'hours': widget.hours,
-          'duration': widget.duration,
-          'totalPrice': totalHarga,
-          'downPaymentPrice': dpHarga,
-          'statusEarly': _paymentStatusOption,
-          'bookingId': int.parse(bookingResult['data']['booking_id'].toString()),
-          'paymentAmount': paymentAmount,
-        });
+      print('📥 KELUARAN API BERHASIL DITERIMA: $bookingResult');
+
+      final bool isSuccess = bookingResult['success'] == true || bookingResult['status'] == 'success';
+
+      if (isSuccess) {
+        print('🎉 EXCELLENT: Booking terekam di DB. Mengalihkan route screen...');
+        if (mounted) {
+          final dynamic rawBookingId = bookingResult['data']?['booking_id'] ?? bookingResult['data']?['id'];
+
+          context.push('/admin/payment-details', extra: {
+            'nameField': widget.nameField,
+            'nameTenant': _nameController.text,
+            'selectedDate': widget.selectedDate,
+            'hours': widget.hours,
+            'duration': widget.duration,
+            'totalPrice': totalHarga,
+            'downPaymentPrice': dpHarga,
+            'statusEarly': _paymentStatusOption,
+            'bookingId': int.tryParse(rawBookingId.toString()) ?? 0,
+            'paymentAmount': paymentAmount,
+          });
+        }
+      } else {
+        print('❌ REJECTED: Server merespon gagal. Isi pesan: ${bookingResult['message']}');
+        _showWarningSnackBar(bookingResult['message'] ?? 'Ditolak oleh sistem server.');
       }
-    } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()), backgroundColor: AppThemeConstants.errorRed));
+    } catch (e, stacktrace) {
+      print('🔴 CRITICAL ERROR DI DALAM TRY-BLOCK: $e');
+      print('📜 STACKTRACE LENGKAP: $stacktrace');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Eror internal: $e'), backgroundColor: AppThemeConstants.errorRed),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
+      print('🏁 PROCESS ENDED: Status loading dimatikan.');
     }
+  }
+
+  void _showWarningSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.warning_rounded, color: Colors.white),
+            const SizedBox(width: 10),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: AppThemeConstants.warningAmber,
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 
   @override
@@ -138,6 +215,14 @@ class _FormInputBookingAdminScreenState extends State<FormInputBookingAdminScree
               const SizedBox(height: 12),
               AppInputField(label: 'No. WhatsApp', controller: _phoneController, icon: Icons.phone, keyboardType: TextInputType.phone),
               const SizedBox(height: 12),
+              // 🟢 UI BARU: Menampilkan kolom input Email Penyewa di tengah form data sewa
+              AppInputField(
+                label: 'Email Penyewa',
+                controller: _emailController,
+                icon: Icons.email_outlined,
+                keyboardType: TextInputType.emailAddress,
+              ),
+              const SizedBox(height: 12),
               AppInputField(label: 'Catatan Masukan', controller: _noteController, maxLines: 2),
               const SizedBox(height: 16),
               RadioListTile<String>(
@@ -159,8 +244,14 @@ class _FormInputBookingAdminScreenState extends State<FormInputBookingAdminScree
               ),
               const SizedBox(height: 24),
               _isLoading
-                  ? const CircularProgressIndicator()
-                  : SizedBox(width: double.infinity, child: AppButton(label: 'Konfirmasi Selanjutnya', onPressed: _nextPage))
+                  ? const CircularProgressIndicator(color: AppThemeConstants.primaryBlue)
+                  : SizedBox(
+                      width: double.infinity,
+                      child: AppButton(
+                        label: 'Konfirmasi Selanjutnya',
+                        onPressed: _nextPage,
+                      ),
+                    )
             ],
           ),
         ),

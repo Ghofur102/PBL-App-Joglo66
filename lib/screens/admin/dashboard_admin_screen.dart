@@ -55,13 +55,48 @@ class _DashboardAdminScreenState extends State<DashboardAdminScreen> {
   @override
   Widget build(BuildContext context) {
     final List<Map<String, dynamic>> fieldMenu = [
-      {'icon': Icons.list_alt, 'label': 'Daftar Booking', 'color': Colors.blue, 'onTap': () => context.push('/admin/list-booking')},
-      {'icon': Icons.info_outline, 'label': 'Daftar Lapangan', 'color': Colors.green, 'onTap': () => context.push('/admin/list-field')},
-      {'icon': Icons.money, 'label': 'Pengeluaran', 'color': Colors.orange, 'onTap': () => context.push('/admin/list-expense-field')},
-      {'icon': Icons.inventory_2, 'label': 'Master Atribut', 'color': Colors.purple, 'onTap': () => context.push('/admin/list-attribute')},
-      {'icon': Icons.shopping_cart, 'label': 'Sewa Atribut', 'color': Colors.teal, 'onTap': () => context.push('/admin/rent-attribute')},
-      {'icon': Icons.receipt_long, 'label': 'Riwayat Atribut', 'color': Colors.indigo, 'onTap': () => context.push('/admin/history-rent-attribute')},
-      {'icon': Icons.book, 'label': 'Rekap Harian', 'color': Colors.indigo, 'onTap': () => context.push('/laporan-bulanan')},
+      {
+        'icon': Icons.assignment_rounded,
+        'label': 'Daftar Booking',
+        'color': AppThemeConstants.primaryBlue,
+        'onTap': () => context.push('/admin/list-booking')
+      },
+      {
+        'icon': Icons.stadium_rounded,
+        'label': 'Daftar Lapangan',
+        'color': AppThemeConstants.successGreen,
+        'onTap': () => context.push('/admin/list-field')
+      },
+      {
+        'icon': Icons.account_balance_wallet_rounded,
+        'label': 'Pengeluaran',
+        'color': AppThemeConstants.errorRed,
+        'onTap': () => context.push('/admin/list-expense-field')
+      },
+      {
+        'icon': Icons.category_rounded,
+        'label': 'Master Atribut',
+        'color': Colors.purple,
+        'onTap': () => context.push('/admin/list-attribute')
+      },
+      {
+        'icon': Icons.add_shopping_cart_rounded,
+        'label': 'Sewa Atribut',
+        'color': Colors.teal,
+        'onTap': () => context.push('/admin/rent-attribute')
+      },
+      {
+        'icon': Icons.history_toggle_off_rounded,
+        'label': 'Riwayat Atribut',
+        'color': Colors.indigo,
+        'onTap': () => context.push('/admin/history-rent-attribute')
+      },
+      {
+        'icon': Icons.analytics_rounded,
+        'label': 'Rekap Keuangan',
+        'color': AppThemeConstants.warningAmber,
+        'onTap': () => context.push('/laporan-bulanan')
+      },
     ];
 
     return Scaffold(
@@ -71,7 +106,7 @@ class _DashboardAdminScreenState extends State<DashboardAdminScreen> {
           : CustomScrollView(
               slivers: [
                 SliverAppBar(
-                  expandedHeight: 380,
+                  expandedHeight: 410,
                   automaticallyImplyLeading: false,
                   backgroundColor: AppThemeConstants.primaryBlue,
                   shape: const RoundedRectangleBorder(
@@ -86,18 +121,18 @@ class _DashboardAdminScreenState extends State<DashboardAdminScreen> {
                 ),
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         if (_errorMessage != null) _buildWarningBox(),
                         Text(
                           _dashboardData?['name'] ?? 'Joglo66',
-                          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppThemeConstants.textPrimary),
+                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppThemeConstants.textPrimary),
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 16),
                         MenuGrid(menuItems: fieldMenu),
-                        const SizedBox(height: 40),
+                        const SizedBox(height: 32),
                       ],
                     ),
                   ),
@@ -120,7 +155,7 @@ class _DashboardAdminScreenState extends State<DashboardAdminScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text('Peringatan', style: TextStyle(fontWeight: FontWeight.bold, color: AppThemeConstants.warningAmber)),
-          Text(_errorMessage ?? '', style: const TextStyle(fontSize: 12, color: AppThemeConstants.warningAmber)),
+          Text(_errorMessage!, style: const TextStyle(fontSize: 12, color: AppThemeConstants.warningAmber)),
           const SizedBox(height: 8),
           ElevatedButton.icon(
             onPressed: _loadDashboardData,
@@ -141,46 +176,41 @@ class HeaderSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 40, left: 24, right: 24, bottom: 40),
+      padding: const EdgeInsets.fromLTRB(24, 50, 24, 30),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text(
             dashboardData['name'] ?? 'Joglo66',
-            style: GoogleFonts.poppins(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
+            style: GoogleFonts.poppins(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
           Text(
             'Ringkasan Hari Ini',
-            style: GoogleFonts.poppins(fontSize: 14, color: Colors.white70, fontWeight: FontWeight.w400),
+            style: GoogleFonts.poppins(fontSize: 13, color: Colors.white70, fontWeight: FontWeight.w400),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 32),
-          Column(
+          const SizedBox(height: 28),
+          Wrap(
+            spacing: 14,
+            runSpacing: 12,
+            alignment: WrapAlignment.center,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  InfoCardCircle(
-                    title: 'Slot Terisi',
-                    value: '${dashboardData['slotTerisi']}/${dashboardData['totalSlot']}',
-                    icon: Icons.check_circle,
-                  ),
-                  InfoCardCircle(
-                    title: 'Slot Kosong',
-                    value: '${dashboardData['slotKosong']}/${dashboardData['totalSlot']}',
-                    icon: Icons.open_in_full,
-                  ),
-                ],
+              InfoCardCircle(
+                title: 'Slot Terisi',
+                value: '${dashboardData['slotTerisi']}/${dashboardData['totalSlot']}',
+                icon: Icons.check_circle_rounded,
               ),
-              const SizedBox(height: 12),
-              Center(
-                child: InfoCardCircle(
-                  title: 'Total Booking',
-                  value: '${dashboardData['totalBooking']}',
-                  icon: Icons.calendar_today,
-                ),
+              InfoCardCircle(
+                title: 'Slot Kosong',
+                value: '${dashboardData['slotKosong']}/${dashboardData['totalSlot']}',
+                icon: Icons.offline_bolt_rounded,
+              ),
+              InfoCardCircle(
+                title: 'Total Booking',
+                value: '${dashboardData['totalBooking']}',
+                icon: Icons.analytics_rounded,
               ),
             ],
           ),

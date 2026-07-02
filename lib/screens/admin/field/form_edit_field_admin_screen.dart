@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:pbl_app_joglo66/components/app_input_field.dart';
 import 'package:pbl_app_joglo66/components/app_button.dart';
 import 'package:pbl_app_joglo66/constants/app_theme_constants.dart';
+import 'package:pbl_app_joglo66/core/utils/currency_util.dart';
 import 'package:pbl_app_joglo66/services/field_service.dart';
 
 class FormEditFieldAdminScreen extends StatefulWidget {
@@ -191,7 +192,7 @@ class _FormEditFieldAdminScreenState extends State<FormEditFieldAdminScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppThemeConstants.primaryBlue,
-      appBar: AppBar(title: const Text("Edit Data Lapangan"), backgroundColor: AppThemeConstants.primaryBlue, iconTheme: const IconThemeData(color: Colors.white)),
+      appBar: AppBar(title: const Text("Edit Data Lapangan", style: TextStyle(color: Colors.white)), backgroundColor: AppThemeConstants.primaryBlue, iconTheme: const IconThemeData(color: Colors.white)),
       body: _isLoading
         ? const Center(child: CircularProgressIndicator(color: Colors.white))
         : SingleChildScrollView(
@@ -245,10 +246,12 @@ class _FormEditFieldAdminScreenState extends State<FormEditFieldAdminScreen> {
                     ],
                   ),
                   _buildPricingRulesList(),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 8),
                   _isSaving
                       ? const Center(child: CircularProgressIndicator())
                       : SizedBox(width: double.infinity, child: AppButton(label: 'Simpan Perubahan', onPressed: _saveData)),
+
+                  const SizedBox(height: 16),
                 ],
               ),
             ),
@@ -268,7 +271,7 @@ class _FormEditFieldAdminScreenState extends State<FormEditFieldAdminScreen> {
           margin: const EdgeInsets.only(bottom: 8),
           child: ListTile(
             title: Text(rule['day_type'].toString().toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text('${rule['start_time']} - ${rule['end_time']} | Rp ${rule['price']}'),
+            subtitle: Text('${rule['start_time']} - ${rule['end_time']} | ${CurrencyUtil.toRupiah(rule['price'])}'),
             trailing: IconButton(icon: const Icon(Icons.delete, color: AppThemeConstants.errorRed), onPressed: () => _removeRule(index)),
           ),
         );

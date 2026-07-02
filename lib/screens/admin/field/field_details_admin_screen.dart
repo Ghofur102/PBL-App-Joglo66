@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:pbl_app_joglo66/services/field_service.dart';
 import 'package:pbl_app_joglo66/components/detail_row.dart';
 import 'package:pbl_app_joglo66/components/app_button.dart';
 import 'package:pbl_app_joglo66/constants/app_theme_constants.dart';
+import 'package:pbl_app_joglo66/core/utils/currency_util.dart'; // Menggunakan integrasi CurrencyUtil baru
 
 class FieldDetailsAdminScreen extends StatefulWidget {
   final String fieldId;
@@ -58,7 +58,6 @@ class _FieldDetailsAdminScreenState extends State<FieldDetailsAdminScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final formatRp = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
     final String finalImageUrl = _getFinalImageUrl();
 
     return Scaffold(
@@ -112,7 +111,7 @@ class _FieldDetailsAdminScreenState extends State<FieldDetailsAdminScreen> {
                                 ),
                         ),
                       ),
-                      _buildInformationCard(formatRp),
+                      _buildInformationCard(),
                       const SizedBox(height: 24),
                       SizedBox(
                         width: double.infinity,
@@ -133,8 +132,8 @@ class _FieldDetailsAdminScreenState extends State<FieldDetailsAdminScreen> {
     );
   }
 
-  Widget _buildInformationCard(NumberFormat formatRp) {
-    final List<dynamic> priceList = _fieldData!['field_prices'] as List<dynamic>? ?? [];
+  Widget _buildInformationCard() {
+    final List<dynamic> priceList = _fieldData!['field_prices'] ?? _fieldData!['fieldPrices'] ?? [];
 
     return Container(
       width: double.infinity,
@@ -155,32 +154,67 @@ class _FieldDetailsAdminScreenState extends State<FieldDetailsAdminScreen> {
           const Padding(padding: EdgeInsets.symmetric(vertical: 12.0), child: Divider(color: AppThemeConstants.borderGrey, thickness: 1)),
           const Text('Jadwal & Ketentuan Harga:', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppThemeConstants.textSecondary)),
           const SizedBox(height: 12),
+
+          // ===================================================================
+          // 🛡️ FORM CARD AMAN HIGH OVERFLOW:
+          // Membatasi tinggi area list agar tidak menabrak batas layar jika database memuat puluhan jadwal harga.
+          // ===================================================================
           if (priceList.isEmpty)
             const Text('Belum ada jadwal harga yang diatur.', style: TextStyle(color: AppThemeConstants.errorRed, fontStyle: FontStyle.italic))
           else
-            ...priceList.map((priceItem) {
-              final String day = priceItem['day_type'].toString().toUpperCase();
-              final String startTime = priceItem['start_time'].toString().substring(0, 5);
-              final String endTime = priceItem['end_time'].toString().substring(0, 5);
-              final String formattedPrice = formatRp.format(int.tryParse(priceItem['price'].toString()) ?? 0);
+            Container(
+              constraints: const BoxConstraints(maxHeight: 200), // Batas tinggi maksimal aman dari overflow luar
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(AppThemeConstants.radiusMedium),
+                border: Border.all(color: AppThemeConstants.borderGrey.withOpacity(0.5)),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(AppThemeConstants.radiusMedium),
+                child: RawScrollbar(
+                  thumbColor: AppThemeConstants.accentBlue.withOpacity(0.3),
+                  radius: const Radius.circular(AppThemeConstants.radiusSmall),
+                  thickness: 4,
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Column(
+                      children: List.generate(priceList.length, (index) {
+                        final priceItem = priceList[index];
+                        final String day = priceItem['day_type'].toString().toUpperCase();
+                        final String startTime = priceItem['start_time'].toString().substring(0, 5);
+                        final String endTime = priceItem['end_time'].toString().substring(0, 5);
 
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 8.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.access_time, size: 14, color: AppThemeConstants.textSecondary),
-                        const SizedBox(width: 6),
-                        Text('$day ($startTime - $endTime)', style: const TextStyle(fontSize: 13, color: AppThemeConstants.textPrimary, fontWeight: FontWeight.w600)),
-                      ],
+                        // Konversi String/Dynamic dari DB langsung masuk ke utilitas Rupiah otomatis
+                        final String formattedPrice = CurrencyUtil.toRupiah(priceItem['price']);
+
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 8.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(Icons.access_time_rounded, size: 14, color: AppThemeConstants.textSecondary),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    '$day ($startTime - $endTime)',
+                                    style: const TextStyle(fontSize: 12, color: AppThemeConstants.textPrimary, fontWeight: FontWeight.w600),
+                                  ),
+                                ],
+                              ),
+                              Text(
+                                '$formattedPrice / Jam',
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppThemeConstants.successGreen),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
                     ),
-                    Text('$formattedPrice / Jam', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppThemeConstants.successGreen)),
-                  ],
+                  ),
                 ),
-              );
-            }),
+              ),
+            ),
         ],
       ),
     );
