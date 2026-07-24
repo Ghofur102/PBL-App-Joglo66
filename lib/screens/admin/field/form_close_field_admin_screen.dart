@@ -79,7 +79,9 @@ class _FormCloseFieldAdminScreenState extends State<FormCloseFieldAdminScreen> {
     final String endTimeStr = _endTimeController.text.isEmpty ? "23:59:00" : "${_endTimeController.text}:00";
     final String endDateTimeStr = "$endDateStr $endTimeStr";
 
-    setState(() { _isSaving = true; });
+    setState(() {
+      _isSaving = true;
+    });
 
     try {
       await FieldService.closeField(
@@ -97,12 +99,20 @@ class _FormCloseFieldAdminScreenState extends State<FormCloseFieldAdminScreen> {
       }
     } catch (e) {
       if (mounted) {
+        final String cleanError = e
+            .toString()
+            .replaceAll('FormatException: ', '')
+            .replaceAll('Exception: ', '');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: AppThemeConstants.errorRed),
+          SnackBar(content: Text(cleanError), backgroundColor: AppThemeConstants.errorRed),
         );
       }
     } finally {
-      if (mounted) { setState(() { _isSaving = false; }); }
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
     }
   }
 

@@ -35,7 +35,8 @@ class ExpenseService {
   static Future<bool> addExpense({
     required String name,
     required String category,
-    required String nominal,
+    required int quantity,
+    required int unitPrice,
     required String date,
     required String note,
     String? imagePath,
@@ -46,7 +47,40 @@ class ExpenseService {
 
       request.fields['name'] = name;
       request.fields['category'] = category;
-      request.fields['nominal'] = nominal;
+      request.fields['quantity'] = quantity.toString();
+      request.fields['unit_price'] = unitPrice.toString();
+      request.fields['date'] = date;
+      request.fields['note'] = note;
+
+      if (imagePath != null && imagePath.isNotEmpty) {
+        request.files.add(await http.MultipartFile.fromPath('image', imagePath));
+      }
+
+      final response = await ApiClient.sendMultipart(request);
+      return (response.statusCode == 200 || response.statusCode == 201);
+    } catch (e) {
+      throw FormatException(e.toString());
+    }
+  }
+
+  static Future<bool> updateExpense({
+    required int id,
+    required String name,
+    required String category,
+    required int quantity,
+    required int unitPrice,
+    required String date,
+    required String note,
+    String? imagePath,
+  }) async {
+    try {
+      final url = Uri.parse('${ApiEndpoints.updateExpense}/$id');
+      final request = http.MultipartRequest("POST", url);
+
+      request.fields['name'] = name;
+      request.fields['category'] = category;
+      request.fields['quantity'] = quantity.toString();
+      request.fields['unit_price'] = unitPrice.toString();
       request.fields['date'] = date;
       request.fields['note'] = note;
 

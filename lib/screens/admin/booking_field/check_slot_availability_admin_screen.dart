@@ -61,7 +61,9 @@ class _CheckSlotAvailabilityAdminScreenState extends State<CheckSlotAvailability
   }
 
   Future<void> _loadSlots() async {
-    if (_selectedFieldId == null) return;
+    if (_selectedFieldId == null) {
+      return;
+    }
     try {
       if (mounted) {
         setState(() {
@@ -94,11 +96,14 @@ class _CheckSlotAvailabilityAdminScreenState extends State<CheckSlotAvailability
   }
 
   Future<void> _pickDate() async {
+    final DateTime now = DateTime.now();
+    final DateTime today = DateTime(now.year, now.month, now.day);
+
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: _selectedDate,
-      firstDate: DateTime.now().subtract(const Duration(days: 30)),
-      lastDate: DateTime.now().add(const Duration(days: 90)),
+      initialDate: _selectedDate.isBefore(today) ? today : _selectedDate,
+      firstDate: today,
+      lastDate: today.add(const Duration(days: 90)),
     );
     if (picked != null) {
       setState(() {
@@ -112,10 +117,11 @@ class _CheckSlotAvailabilityAdminScreenState extends State<CheckSlotAvailability
   List<Map<String, dynamic>> _generate24HourSlots() {
     final List<Map<String, dynamic>> fullDaySlots = [];
     final DateTime now = DateTime.now();
+    final DateTime today = DateTime(now.year, now.month, now.day);
+    final DateTime targetDate = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day);
 
-    final bool isToday = _selectedDate.year == now.year &&
-        _selectedDate.month == now.month &&
-        _selectedDate.day == now.day;
+    final bool isPastDate = targetDate.isBefore(today);
+    final bool isToday = targetDate.isAtSameMomentAs(today);
 
     for (int i = 0; i < 24; i++) {
       final String startHour = '${i.toString().padLeft(2, '0')}:00';
@@ -126,13 +132,13 @@ class _CheckSlotAvailabilityAdminScreenState extends State<CheckSlotAvailability
         orElse: () => {},
       );
 
+      bool isClosed = match.isNotEmpty ? (match['is_closed'] ?? false) : false;
       bool isAvailable = match.isNotEmpty ? (match['is_available'] ?? false) : false;
 
-      if (isToday) {
-        final int slotHour = int.tryParse(startHour.split(':')[0]) ?? 0;
-        if (now.hour >= slotHour) {
-          isAvailable = false;
-        }
+      if (isPastDate) {
+        isAvailable = false;
+      } else if (isToday && now.hour >= i) {
+        isAvailable = false;
       }
 
       fullDaySlots.add({
@@ -141,6 +147,7 @@ class _CheckSlotAvailabilityAdminScreenState extends State<CheckSlotAvailability
         'price': match.isNotEmpty ? match['price'] : 0,
         'is_available': isAvailable,
         'is_open': match.isNotEmpty,
+        'is_closed': isClosed,
       });
     }
     return fullDaySlots;
@@ -183,47 +190,7 @@ class _CheckSlotAvailabilityAdminScreenState extends State<CheckSlotAvailability
                   ],
                 ),
                 const SizedBox(height: 16),
-                GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  // 🟢 PERBAIKAN UI: Mengubah crossAxisCount menjadi 3 agar teks rentang jam memiliki ruang luas
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    crossAxisSpacing: 8,
-                    mainAxisSpacing: 8,
-                    childAspectRatio: 2.3,
-                  ),
-                  itemCount: allSlots.length,
-                  itemBuilder: (context, index) {
-                    final slot = allSlots[index];
-                    final bool isOpen = slot['is_open'];
-                    final bool isAvailable = slot['is_available'];
-
-                    Color badgeColor = Colors.green;
-                    if (!isOpen) {
-                      badgeColor = AppThemeConstants.errorRed;
-                    } else if (!isAvailable) {
-                      badgeColor = Colors.grey.shade400;
-                    }
-
-                    // 🟢 PERBAIKAN LOGIKA UI: Menampilkan teks format rentang jam penuh (01:00 - 02:00)
-                    final String displayTimeRange =
-                        '${slot['start'].toString().substring(0, 5)} - ${slot['end'].toString().substring(0, 5)}';
-
-                    return Container(
-                      decoration: BoxDecoration(
-                        color: badgeColor.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: badgeColor, width: 1.2),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        displayTimeRange,
-                        style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: badgeColor),
-                      ),
-                    );
-                  },
-                ),
+                _buildSlotGrid(allSlots),
                 const SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,
@@ -234,6 +201,49 @@ class _CheckSlotAvailabilityAdminScreenState extends State<CheckSlotAvailability
                 ),
               ],
             ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSlotGrid(List<Map<String, dynamic>> allSlots) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+        childAspectRatio: 2.3,
+      ),
+      itemCount: allSlots.length,
+      itemBuilder: (context, index) {
+        final slot = allSlots[index];
+        final bool isOpen = slot['is_open'];
+        final bool isAvailable = slot['is_available'];
+        final bool isClosed = slot['is_closed'] ?? false;
+
+        Color badgeColor = Colors.green;
+        if (!isOpen || isClosed) {
+          badgeColor = AppThemeConstants.errorRed;
+        } else if (!isAvailable) {
+          badgeColor = Colors.grey.shade400;
+        }
+
+        final String displayTimeRange =
+            '${slot['start'].toString().substring(0, 5)} - ${slot['end'].toString().substring(0, 5)}';
+
+        return Container(
+          decoration: BoxDecoration(
+            color: badgeColor.withOpacity(0.12),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: badgeColor, width: 1.2),
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            displayTimeRange,
+            style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: badgeColor),
           ),
         );
       },
@@ -265,14 +275,6 @@ class _CheckSlotAvailabilityAdminScreenState extends State<CheckSlotAvailability
       backgroundColor: AppThemeConstants.primaryBlue,
       appBar: AppBar(
         title: const Text('Cek Slot Ketersediaan', style: TextStyle(fontWeight: FontWeight.bold)),
-        actions: [
-          IconButton(
-            // 🟢 PERBAIKAN LOGO: Mengganti ikon kamera menjadi assignment_outlined yang merepresentasikan manifes/ringkasan data sewa
-            icon: const Icon(Icons.assignment_outlined),
-            tooltip: 'Ambil Ringkasan Dokumentasi',
-            onPressed: _isLoadingSlots || _availableSlots.isEmpty ? null : _showScreenshotSummaryDialog,
-          ),
-        ],
       ),
       body: Container(
         margin: const EdgeInsets.all(16),
@@ -308,67 +310,27 @@ class _CheckSlotAvailabilityAdminScreenState extends State<CheckSlotAvailability
               icon: Icons.calendar_today,
               onTap: _pickDate,
             ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: _isLoadingSlots || _availableSlots.isEmpty ? null : _showScreenshotSummaryDialog,
+                icon: const Icon(Icons.grid_view_rounded, size: 18),
+                label: const Text(
+                  'Lihat Ringkasan Jadwal',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppThemeConstants.primaryBlue,
+                  side: const BorderSide(color: AppThemeConstants.primaryBlue),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ),
             const SizedBox(height: 16),
             Expanded(
-              child: _isLoadingSlots
-                  ? const Center(child: CircularProgressIndicator(color: AppThemeConstants.primaryBlue))
-                  : openSlotsOnly.isEmpty
-                      ? const Center(
-                          child: Text(
-                            'Tidak ada jadwal operasional pada tanggal ini.',
-                            style: TextStyle(color: AppThemeConstants.textSecondary, fontStyle: FontStyle.italic),
-                          ),
-                        )
-                      : ListView.builder(
-                          itemCount: openSlotsOnly.length,
-                          itemBuilder: (context, i) {
-                            final slot = openSlotsOnly[i];
-                            final String timeKey = '${slot['start']}-${slot['end']}';
-                            final bool isAvailable = slot['is_available'] == true;
-                            final bool isSelected = _selectedTimeSlots.contains(timeKey);
-
-                            return Container(
-                              margin: const EdgeInsets.only(bottom: 8),
-                              decoration: BoxDecoration(
-                                color: !isAvailable
-                                    ? Colors.grey.shade100
-                                    : (isSelected ? AppThemeConstants.lightGreen : Colors.white),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: isSelected ? AppThemeConstants.successGreen : AppThemeConstants.borderGrey.withOpacity(0.5),
-                                ),
-                              ),
-                              child: ListTile(
-                                enabled: isAvailable,
-                                title: Text(
-                                  '${slot['start'].toString().substring(0, 5)} - ${slot['end'].toString().substring(0, 5)}',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: !isAvailable ? Colors.grey : AppThemeConstants.textPrimary,
-                                  ),
-                                ),
-                                subtitle: Text(
-                                  !isAvailable && _selectedDate.day == DateTime.now().day && DateTime.now().hour >= (int.tryParse(slot['start'].toString().substring(0, 2)) ?? 0)
-                                      ? 'Waktu Sudah Terlewat'
-                                      : (!isAvailable ? 'Jadwal Sudah Dipesan' : CurrencyUtil.toRupiah(slot['price'])),
-                                  style: TextStyle(
-                                    color: !isAvailable ? Colors.grey : AppThemeConstants.successGreen,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                trailing: Icon(
-                                  isSelected ? Icons.check_box_rounded : Icons.check_box_outline_blank_rounded,
-                                  color: isSelected ? AppThemeConstants.successGreen : Colors.grey,
-                                ),
-                                onTap: () {
-                                  setState(() {
-                                    isSelected ? _selectedTimeSlots.remove(timeKey) : _selectedTimeSlots.add(timeKey);
-                                  });
-                                },
-                              ),
-                            );
-                          },
-                        ),
+              child: _buildSlotList(openSlotsOnly),
             ),
             const SizedBox(height: 12),
             SizedBox(
@@ -399,5 +361,108 @@ class _CheckSlotAvailabilityAdminScreenState extends State<CheckSlotAvailability
         ),
       ),
     );
+  }
+
+  Widget _buildSlotList(List<Map<String, dynamic>> openSlotsOnly) {
+    if (_isLoadingSlots) {
+      return const Center(child: CircularProgressIndicator(color: AppThemeConstants.primaryBlue));
+    }
+    if (openSlotsOnly.isEmpty) {
+      return const Center(
+        child: Text(
+          'Tidak ada jadwal operasional pada tanggal ini.',
+          style: TextStyle(color: AppThemeConstants.textSecondary, fontStyle: FontStyle.italic),
+        ),
+      );
+    }
+    return ListView.builder(
+      itemCount: openSlotsOnly.length,
+      itemBuilder: (context, i) {
+        final slot = openSlotsOnly[i];
+        return _buildSlotTile(slot);
+      },
+    );
+  }
+
+  Widget _buildSlotTile(Map<String, dynamic> slot) {
+    final String timeKey = '${slot['start']}-${slot['end']}';
+    final bool isAvailable = slot['is_available'] == true;
+    final bool isClosed = slot['is_closed'] == true;
+    final bool isSelected = _selectedTimeSlots.contains(timeKey);
+
+    final String startTimeStr = slot['start'].toString().substring(0, 5);
+    final String endTimeStr = slot['end'].toString().substring(0, 5);
+    final String subtitleText = _determineSubtitleText(slot, isAvailable, isClosed);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: !isAvailable
+            ? Colors.grey.shade100
+            : (isSelected ? AppThemeConstants.lightGreen : Colors.white),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isSelected ? AppThemeConstants.successGreen : AppThemeConstants.borderGrey.withOpacity(0.5),
+        ),
+      ),
+      child: ListTile(
+        enabled: isAvailable,
+        title: Text(
+          '$startTimeStr - $endTimeStr',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: !isAvailable ? Colors.grey : AppThemeConstants.textPrimary,
+          ),
+        ),
+        subtitle: Text(
+          subtitleText,
+          style: TextStyle(
+            color: !isAvailable
+                ? (isClosed ? AppThemeConstants.errorRed : Colors.grey)
+                : AppThemeConstants.successGreen,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        trailing: Icon(
+          isSelected ? Icons.check_box_rounded : Icons.check_box_outline_blank_rounded,
+          color: isSelected ? AppThemeConstants.successGreen : Colors.grey,
+        ),
+        onTap: !isAvailable
+            ? null
+            : () {
+                setState(() {
+                  if (isSelected) {
+                    _selectedTimeSlots.remove(timeKey);
+                  } else {
+                    _selectedTimeSlots.add(timeKey);
+                  }
+                });
+              },
+      ),
+    );
+  }
+
+  String _determineSubtitleText(Map<String, dynamic> slot, bool isAvailable, bool isClosed) {
+    if (isAvailable) {
+      return CurrencyUtil.toRupiah(slot['price']);
+    }
+
+    final DateTime now = DateTime.now();
+    final DateTime today = DateTime(now.year, now.month, now.day);
+    final DateTime targetDate = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day);
+    final int startHourInt = int.tryParse(slot['start'].toString().substring(0, 2)) ?? 0;
+
+    final bool isPastDate = targetDate.isBefore(today);
+    final bool isPastHour = targetDate.isAtSameMomentAs(today) && now.hour >= startHourInt;
+
+    if (isPastDate || isPastHour) {
+      return 'Waktu Sudah Terlewat';
+    }
+
+    if (isClosed) {
+      return 'Lapangan Ditutup';
+    }
+
+    return 'Jadwal Sudah Dipesan';
   }
 }

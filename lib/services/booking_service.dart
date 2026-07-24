@@ -101,12 +101,10 @@ class BookingService {
 
       final jsonData = json.decode(response.body);
 
-      // 🟢 PERBAIKAN: Validasi ketat status HTTP dan key JSON dari Laravel
       if (response.statusCode == 200 && jsonData['status'] == 'success') {
         return jsonData;
       }
 
-      // Jika server mengembalikan status 404, 422, atau 500, lemparkan sebagai eror ke UI
       throw FormatException(jsonData['message'] ?? 'Gagal mereschedule jadwal (Code: ${response.statusCode})');
     } catch (e) {
       rethrow;
@@ -133,7 +131,6 @@ class BookingService {
 
       final jsonData = json.decode(response.body);
 
-      // 🟢 PERBAIKAN: Validasi ketat status untuk pembatalan sewa
       if (response.statusCode == 200 && jsonData['status'] == 'success') {
         return jsonData;
       }
@@ -144,7 +141,7 @@ class BookingService {
     }
   }
 
-  static Future<Map<String, dynamic>> fetchClosedBookings({
+  static Future<List<dynamic>> fetchClosedBookings({
     int? fieldId,
     String? date,
   }) async {
@@ -158,8 +155,17 @@ class BookingService {
 
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
-        if (jsonData['status'] == 'success') {
-          return jsonData['closed_bookings'];
+        final bool isSuccess = jsonData['success'] == true || jsonData['status'] == 'success';
+
+        if (isSuccess) {
+          final rawData = jsonData['closed_bookings'];
+          if (rawData is Map<String, dynamic> && rawData.containsKey('data')) {
+            return rawData['data'] as List<dynamic>;
+          }
+          if (rawData is List) {
+            return rawData;
+          }
+          return [];
         }
         throw FormatException(jsonData['message'] ?? 'Gagal mengambil data closed bookings');
       }

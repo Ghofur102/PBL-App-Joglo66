@@ -17,6 +17,13 @@ class DetailExpenseAdminScreen extends StatefulWidget {
 
 class _DetailExpenseAdminScreenState extends State<DetailExpenseAdminScreen> {
   bool _isDeleting = false;
+  late Map<String, dynamic> _currentData;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentData = Map<String, dynamic>.from(widget.expenseData);
+  }
 
   String _formatPrice(int? price) {
     final format = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
@@ -24,7 +31,7 @@ class _DetailExpenseAdminScreenState extends State<DetailExpenseAdminScreen> {
   }
 
   Future<void> _deleteExpense() async {
-    final int id = int.tryParse(widget.expenseData['id']?.toString() ?? '0') ?? 0;
+    final int id = int.tryParse(_currentData['id']?.toString() ?? '0') ?? 0;
 
     bool? confirmDelete = await showDialog<bool>(
       context: context,
@@ -65,8 +72,13 @@ class _DetailExpenseAdminScreenState extends State<DetailExpenseAdminScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final int amount = int.tryParse(widget.expenseData['amount']?.toString() ?? '0') ?? 0;
-    final bool hasImage = widget.expenseData['proof_photo'] != null && widget.expenseData['proof_photo'].toString().isNotEmpty;
+    final int qty = int.tryParse(_currentData['quantity']?.toString() ?? '1') ?? 1;
+    final int unitPrice = int.tryParse(_currentData['unit_price']?.toString() ?? '0') ?? 0;
+    final int amount = int.tryParse(_currentData['amount']?.toString() ?? '0') ?? (qty * unitPrice);
+
+    final String? imageUrl = _currentData['image'] ?? _currentData['proof_photo'];
+    final bool hasImage = imageUrl != null && imageUrl.isNotEmpty;
+    final String name = _currentData['name'] ?? _currentData['title'] ?? '-';
 
     return Scaffold(
       backgroundColor: AppThemeConstants.bgLight,
@@ -87,9 +99,13 @@ class _DetailExpenseAdminScreenState extends State<DetailExpenseAdminScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        DetailRow(label: "Keterangan", value: widget.expenseData['category'] ?? '-'),
-                        DetailRow(label: "Tanggal", value: widget.expenseData['expense_date'] ?? '-'),
+                        DetailRow(label: "Nama Pengeluaran", value: name, isBoldValue: true),
+                        DetailRow(label: "Kategori", value: _currentData['category'] ?? '-'),
+                        DetailRow(label: "Kuantitas Pembelian", value: "$qty barang / unit"),
+                        DetailRow(label: "Harga Satuan", value: _formatPrice(unitPrice)),
+                        DetailRow(label: "Tanggal Transaksi", value: _currentData['date'] ?? _currentData['expense_date'] ?? '-'),
                         DetailRow(label: "Total Nominal", value: _formatPrice(amount), isBoldValue: true),
+                        DetailRow(label: "Catatan Tambahan", value: _currentData['note'] ?? '-'),
                       ],
                     ),
                   ),
@@ -101,10 +117,28 @@ class _DetailExpenseAdminScreenState extends State<DetailExpenseAdminScreen> {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: AppThemeConstants.borderGrey),
-                        image: DecorationImage(image: NetworkImage(widget.expenseData['proof_photo']), fit: BoxFit.cover),
+                        image: DecorationImage(image: NetworkImage(imageUrl), fit: BoxFit.cover),
                       ),
                     ),
                   const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: AppButton(
+                      label: "Edit Pengeluaran",
+                      backgroundColor: AppThemeConstants.lightAmber,
+                      textColor: AppThemeConstants.warningAmber,
+                      onPressed: () async {
+                        final updated = await context.push<bool>(
+                          '/admin/edit-expense-field',
+                          extra: _currentData,
+                        );
+                        if (updated == true && mounted) {
+                          context.pop(true);
+                        }
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                   SizedBox(
                     width: double.infinity,
                     child: AppButton(

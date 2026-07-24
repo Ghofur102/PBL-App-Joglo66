@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:pbl_app_joglo66/components/detail_row.dart';
 import 'package:pbl_app_joglo66/constants/app_theme_constants.dart';
 import 'package:pbl_app_joglo66/services/booking_service.dart';
 
@@ -89,112 +88,151 @@ class _BookingDetailsAdminScreenState extends State<BookingDetailsAdminScreen> {
 
             ...sessions.map((sessionItem) {
               final session = sessionItem as Map<String, dynamic>;
-              final int remainingPayment = int.tryParse(session['remaining_payment']?.toString() ?? '0') ?? 0;
-              final bool isLunas = remainingPayment <= 0;
-              final String opStatus = (session['status'] ?? 'WAITING').toString().toUpperCase();
+              return _buildSessionCard(session, formatRp);
+            }),
+          ],
+        ),
+      ),
+    );
+  }
 
-              Color opBadgeColor = AppThemeConstants.warningAmber;
-              Color opBgColor = AppThemeConstants.lightAmber;
-              if (opStatus == 'ACTIVE') {
-                opBadgeColor = AppThemeConstants.successGreen;
-                opBgColor = AppThemeConstants.lightGreen;
-              } else if (opStatus.contains('CANCEL')) {
-                opBadgeColor = AppThemeConstants.errorRed;
-                opBgColor = AppThemeConstants.lightRed;
-              }
+  Widget _buildSessionCard(Map<String, dynamic> session, NumberFormat formatRp) {
+    final int remainingPayment = int.tryParse(session['remaining_payment']?.toString() ?? '0') ?? 0;
+    final bool isLunas = remainingPayment <= 0;
+    final String opStatus = (session['status'] ?? 'WAITING').toString().toUpperCase();
 
-              return InkWell(
-                onTap: () {
-                  context.push('/admin/change-booking/${session['id']}').then((_) => _fetchBookingDetail());
-                },
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: isLunas ? AppThemeConstants.borderGrey.withOpacity(0.6) : AppThemeConstants.warningAmber.withOpacity(0.4)),
-                    boxShadow: [
-                      BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 6, offset: const Offset(0, 2)),
-                    ],
-                  ),
+    Color opBadgeColor = AppThemeConstants.warningAmber;
+    Color opBgColor = AppThemeConstants.lightAmber;
+    if (opStatus == 'ACTIVE') {
+      opBadgeColor = AppThemeConstants.successGreen;
+      opBgColor = AppThemeConstants.lightGreen;
+    } else if (opStatus.contains('CANCEL')) {
+      opBadgeColor = AppThemeConstants.errorRed;
+      opBgColor = AppThemeConstants.lightRed;
+    }
+
+    return InkWell(
+      onTap: () {
+        context.push('/admin/change-booking/${session['id']}').then((_) => _fetchBookingDetail());
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: isLunas ? AppThemeConstants.borderGrey.withOpacity(0.6) : AppThemeConstants.warningAmber.withOpacity(0.4)),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 6, offset: const Offset(0, 2)),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            children: [
-                              const Icon(Icons.calendar_today_rounded, size: 16, color: AppThemeConstants.primaryBlue),
-                              const SizedBox(width: 8),
-                              Text(session['play_date'] ?? '-', style: const TextStyle(fontWeight: FontWeight.bold, color: AppThemeConstants.textPrimary)),
-                            ],
-                          ),
-                          Text(formatRp.format(int.tryParse(session['price']?.toString() ?? '0') ?? 0), style: const TextStyle(fontWeight: FontWeight.bold, color: AppThemeConstants.textPrimary)),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          const Icon(Icons.access_time_rounded, size: 16, color: AppThemeConstants.textSecondary),
-                          const SizedBox(width: 8),
-                          Text('${session['start_time']} - ${session['end_time']}', style: const TextStyle(color: AppThemeConstants.textSecondary, fontWeight: FontWeight.w500)),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      const Divider(height: 1, color: AppThemeConstants.borderGrey),
-                      const SizedBox(height: 12),
-
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            decoration: BoxDecoration(color: opBgColor, borderRadius: BorderRadius.circular(6)),
+                          const Icon(Icons.calendar_today_rounded, size: 15, color: AppThemeConstants.primaryBlue),
+                          const SizedBox(width: 6),
+                          Expanded(
                             child: Text(
-                              opStatus,
-                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: opBadgeColor),
+                              session['play_date'] ?? '-',
+                              style: const TextStyle(fontWeight: FontWeight.bold, color: AppThemeConstants.textPrimary),
                             ),
                           ),
-                          const SizedBox(width: 8),
-
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: isLunas ? AppThemeConstants.lightGreen : AppThemeConstants.lightRed,
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(color: isLunas ? AppThemeConstants.successGreen : AppThemeConstants.errorRed, width: 0.5),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  isLunas ? Icons.check_circle_outline_rounded : Icons.info_outline_rounded,
-                                  size: 13,
-                                  color: isLunas ? AppThemeConstants.successGreen : AppThemeConstants.errorRed,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  isLunas ? 'LUNAS' : 'BELUM LUNAS (-${formatRp.format(remainingPayment)})',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
-                                    color: isLunas ? AppThemeConstants.successGreen : AppThemeConstants.errorRed,
-                                  ),
-                                ),
-                              ],
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          const Icon(Icons.access_time_rounded, size: 15, color: AppThemeConstants.textSecondary),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              '${session['start_time']} - ${session['end_time']}',
+                              style: const TextStyle(color: AppThemeConstants.textSecondary, fontWeight: FontWeight.w500, fontSize: 13),
                             ),
                           ),
-                          const Spacer(),
-                          const Icon(Icons.chevron_right_rounded, color: Colors.grey, size: 20),
                         ],
                       ),
                     ],
                   ),
                 ),
-              );
-            }),
+                const SizedBox(width: 8),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      formatRp.format(int.tryParse(session['price']?.toString() ?? '0') ?? 0),
+                      style: const TextStyle(fontWeight: FontWeight.bold, color: AppThemeConstants.textPrimary, fontSize: 14),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            const Divider(height: 1, color: AppThemeConstants.borderGrey),
+            const SizedBox(height: 12),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(color: opBgColor, borderRadius: BorderRadius.circular(6)),
+                        child: Text(
+                          opStatus,
+                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: opBadgeColor),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: isLunas ? AppThemeConstants.lightGreen : AppThemeConstants.lightRed,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: isLunas ? AppThemeConstants.successGreen : AppThemeConstants.errorRed, width: 0.5),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              isLunas ? Icons.check_circle_outline_rounded : Icons.info_outline_rounded,
+                              size: 13,
+                              color: isLunas ? AppThemeConstants.successGreen : AppThemeConstants.errorRed,
+                            ),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                isLunas ? 'LUNAS' : 'BELUM LUNAS (-${formatRp.format(remainingPayment)})',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: isLunas ? AppThemeConstants.successGreen : AppThemeConstants.errorRed,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Icon(Icons.chevron_right_rounded, color: Colors.grey, size: 20),
+              ],
+            ),
           ],
         ),
       ),
@@ -203,6 +241,7 @@ class _BookingDetailsAdminScreenState extends State<BookingDetailsAdminScreen> {
 
   Widget _buildSummaryCard(Map<String, dynamic> user, Map<String, dynamic> field, Map<String, dynamic> payment, NumberFormat formatRp) {
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -212,18 +251,42 @@ class _BookingDetailsAdminScreenState extends State<BookingDetailsAdminScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Informasi Pelanggan', style: TextStyle(fontWeight: FontWeight.bold, color: AppThemeConstants.textSecondary)),
+          const Text('Informasi Pelanggan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppThemeConstants.textPrimary)),
           const SizedBox(height: 12),
-          DetailRow(label: 'Nama', value: user['name']?.toString() ?? '-'),
-          DetailRow(label: 'Tim', value: user['team_name']?.toString() ?? '-'),
-          DetailRow(label: 'Kontak', value: user['phone']?.toString() ?? '-'),
-          const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Divider(color: AppThemeConstants.borderGrey)),
-          const Text('Informasi Lapangan & Pembayaran', style: TextStyle(fontWeight: FontWeight.bold, color: AppThemeConstants.textSecondary)),
+          _buildInfoItem('Nama', user['name']?.toString() ?? '-'),
+          _buildInfoItem('Tim', user['team_name']?.toString() ?? '-'),
+          _buildInfoItem('Kontak', user['phone']?.toString() ?? '-'),
+          const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Divider(color: AppThemeConstants.borderGrey)),
+          const Text('Informasi Lapangan & Pembayaran', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppThemeConstants.textPrimary)),
           const SizedBox(height: 12),
-          DetailRow(label: 'Lapangan', value: field['name']?.toString() ?? '-', isBoldValue: true),
-          DetailRow(label: 'Total Tagihan', value: formatRp.format(int.tryParse(payment['total_price']?.toString() ?? '0') ?? 0)),
-          DetailRow(label: 'Total Dibayar', value: formatRp.format(int.tryParse(payment['total_paid']?.toString() ?? '0') ?? 0)),
-          DetailRow(label: 'Metode', value: payment['payment_method'].toString().toUpperCase()),
+          _buildInfoItem('Lapangan', field['name']?.toString() ?? '-', isBoldValue: true),
+          _buildInfoItem('Total Tagihan', formatRp.format(int.tryParse(payment['total_price']?.toString() ?? '0') ?? 0)),
+          _buildInfoItem('Total Dibayar', formatRp.format(int.tryParse(payment['total_paid']?.toString() ?? '0') ?? 0)),
+          _buildInfoItem('Metode Pembayaran', payment['payment_method'].toString().toUpperCase()),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoItem(String label, String value, {bool isBoldValue = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(fontSize: 12, color: AppThemeConstants.textSecondary, fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 14,
+              color: AppThemeConstants.textPrimary,
+              fontWeight: isBoldValue ? FontWeight.bold : FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );

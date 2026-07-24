@@ -35,7 +35,7 @@ class _ListExpenseAdminScreenState extends State<ListExpenseAdminScreen> {
       });
     } catch (e) {
       setState(() {
-        _errorMessage = e.toString();
+        _errorMessage = e.toString().replaceAll('FormatException: ', '');
         _isLoading = false;
       });
     }
@@ -46,7 +46,12 @@ class _ListExpenseAdminScreenState extends State<ListExpenseAdminScreen> {
   }
 
   int _calculateTotal() {
-    return _expenses.fold(0, (sum, item) => sum + (int.tryParse(item['amount']?.toString() ?? '0') ?? 0));
+    return _expenses.fold(0, (sum, item) {
+      final int qty = int.tryParse(item['quantity']?.toString() ?? '1') ?? 1;
+      final int unitPrice = int.tryParse(item['unit_price']?.toString() ?? '0') ?? 0;
+      final int amount = int.tryParse(item['amount']?.toString() ?? '0') ?? (qty * unitPrice);
+      return sum + amount;
+    });
   }
 
   @override
@@ -83,22 +88,29 @@ class _ListExpenseAdminScreenState extends State<ListExpenseAdminScreen> {
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator(color: AppThemeConstants.primaryBlue))
-                : ListView.builder(
-                    itemCount: _expenses.length,
-                    itemBuilder: (context, i) {
-                      final item = _expenses[i];
-                      final amount = int.tryParse(item['amount']?.toString() ?? '0') ?? 0;
-                      return Card(
-                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                        child: ListTile(
-                          title: Text(item['category'] ?? '-'),
-                          subtitle: Text(item['expense_date'] ?? '-'),
-                          trailing: Text(_formatPrice(amount), style: const TextStyle(fontWeight: FontWeight.bold, color: AppThemeConstants.errorRed)),
-                          onTap: () => context.push('/admin/detail-expense-field', extra: item).then((_) => _loadExpenses()),
-                        ),
-                      );
-                    },
-                  ),
+                : _expenses.isEmpty
+                    ? const Center(child: Text("Belum ada data pengeluaran.", style: TextStyle(color: AppThemeConstants.textSecondary)))
+                    : ListView.builder(
+                        itemCount: _expenses.length,
+                        itemBuilder: (context, i) {
+                          final item = _expenses[i];
+                          final int qty = int.tryParse(item['quantity']?.toString() ?? '1') ?? 1;
+                          final int unitPrice = int.tryParse(item['unit_price']?.toString() ?? '0') ?? 0;
+                          final int total = int.tryParse(item['amount']?.toString() ?? '0') ?? (qty * unitPrice);
+                          final String title = item['name'] ?? item['title'] ?? item['category'] ?? '-';
+
+                          return Card(
+                            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                            child: ListTile(
+                              title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                              subtitle: Text("${item['category']} • ${item['date'] ?? '-'} \n$qty x ${_formatPrice(unitPrice)}"),
+                              isThreeLine: true,
+                              trailing: Text(_formatPrice(total), style: const TextStyle(fontWeight: FontWeight.bold, color: AppThemeConstants.errorRed)),
+                              onTap: () => context.push('/admin/detail-expense-field', extra: item).then((_) => _loadExpenses()),
+                            ),
+                          );
+                        },
+                      ),
           )
         ],
       ),

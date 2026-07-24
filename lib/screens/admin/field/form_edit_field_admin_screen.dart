@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:pbl_app_joglo66/components/app_input_field.dart';
 import 'package:pbl_app_joglo66/components/app_button.dart';
 import 'package:pbl_app_joglo66/constants/app_theme_constants.dart';
@@ -52,7 +53,16 @@ class _FormEditFieldAdminScreenState extends State<FormEditFieldAdminScreen> {
           _nameController.text = data['name'] ?? '';
           _descController.text = data['description'] ?? '';
           _categoryController.text = data['category'] ?? '';
-          _existingImageUrl = data['image_url'];
+
+          final String rawImageUrl = data['image_url'] ?? '';
+          if (rawImageUrl.isNotEmpty) {
+            if (rawImageUrl.startsWith('http')) {
+              _existingImageUrl = rawImageUrl;
+            } else {
+              final String baseUrl = dotenv.env['API_BASE_URL'] ?? '';
+              _existingImageUrl = baseUrl.endsWith('/') ? '$baseUrl$rawImageUrl' : '$baseUrl/$rawImageUrl';
+            }
+          }
 
           if (data['field_prices'] != null) {
             _pricingRules = List<Map<String, dynamic>>.from(data['field_prices'].map((item) {

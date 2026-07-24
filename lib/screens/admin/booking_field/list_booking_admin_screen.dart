@@ -17,6 +17,7 @@ class ListBookingAdminScreen extends StatefulWidget {
 class _ListBookingAdminScreensState extends State<ListBookingAdminScreen> {
   List<Map<String, dynamic>> _todayBookings = [];
   List<Map<String, dynamic>> _upcomingBookings = [];
+  int _closedAffectedCount = 0;
   bool _isLoading = true;
   String? _errorMessage;
 
@@ -61,6 +62,7 @@ class _ListBookingAdminScreensState extends State<ListBookingAdminScreen> {
         setState(() {
           _todayBookings = List<Map<String, dynamic>>.from(data['today'] ?? []);
           _upcomingBookings = List<Map<String, dynamic>>.from(data['upcoming'] ?? []);
+          _closedAffectedCount = int.tryParse(data['closed_affected_count']?.toString() ?? '0') ?? 0;
           _isLoading = false;
         });
       }
@@ -137,13 +139,16 @@ class _ListBookingAdminScreensState extends State<ListBookingAdminScreen> {
               }
             },
           ),
-          title: const Text('List Booking', style: TextStyle(color: AppThemeConstants.textPrimary, fontWeight: FontWeight.bold)),
+          title: const Text(
+            'List Booking',
+            style: TextStyle(color: AppThemeConstants.textPrimary, fontWeight: FontWeight.bold),
+          ),
         ),
         backgroundColor: AppThemeConstants.bgLight,
         body: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
               child: Row(
                 children: [
                   Expanded(
@@ -172,17 +177,22 @@ class _ListBookingAdminScreensState extends State<ListBookingAdminScreen> {
                     const SizedBox(width: 8),
                     GestureDetector(
                       onTap: () {
-                        setState(() { _selectedDateRange = null; });
+                        setState(() {
+                          _selectedDateRange = null;
+                        });
                         _loadBookingData();
                       },
                       child: Container(
-                        width: 42, height: 42,
+                        width: 42,
+                        height: 42,
                         decoration: BoxDecoration(
                           color: AppThemeConstants.lightRed,
                           borderRadius: BorderRadius.circular(AppThemeConstants.radiusMedium),
                           border: Border.all(color: AppThemeConstants.errorRed.withOpacity(0.3)),
                         ),
-                        child: const Center(child: Icon(Icons.close, size: 20, color: AppThemeConstants.errorRed)),
+                        child: const Center(
+                          child: Icon(Icons.close, size: 20, color: AppThemeConstants.errorRed),
+                        ),
                       ),
                     ),
                   ],
@@ -190,7 +200,8 @@ class _ListBookingAdminScreensState extends State<ListBookingAdminScreen> {
                   GestureDetector(
                     onTap: _pickDateRange,
                     child: Container(
-                      width: 42, height: 42,
+                      width: 42,
+                      height: 42,
                       decoration: BoxDecoration(
                         color: _selectedDateRange != null ? AppThemeConstants.accentBlue : Colors.white,
                         borderRadius: BorderRadius.circular(AppThemeConstants.radiusMedium),
@@ -208,6 +219,7 @@ class _ListBookingAdminScreensState extends State<ListBookingAdminScreen> {
                 ],
               ),
             ),
+            _buildClosureBanner(),
             Expanded(
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator(color: AppThemeConstants.primaryBlue))
@@ -219,27 +231,106 @@ class _ListBookingAdminScreensState extends State<ListBookingAdminScreen> {
     );
   }
 
+  Widget _buildClosureBanner() {
+    final bool hasAffected = _closedAffectedCount > 0;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => context.push('/admin/list-closed-booking').then((_) => _loadBookingData()),
+          borderRadius: BorderRadius.circular(10),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: hasAffected ? AppThemeConstants.lightRed : Colors.white,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: hasAffected ? AppThemeConstants.errorRed : AppThemeConstants.borderGrey,
+                width: hasAffected ? 1.2 : 1.0,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  hasAffected ? Icons.warning_amber_rounded : Icons.history_toggle_off_rounded,
+                  color: hasAffected ? AppThemeConstants.errorRed : AppThemeConstants.textSecondary,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    hasAffected
+                        ? 'Terdampak Penutupan Lapangan'
+                        : 'Riwayat Booking Lapangan Tutup',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: hasAffected ? AppThemeConstants.errorRed : AppThemeConstants.textPrimary,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: hasAffected ? AppThemeConstants.errorRed : AppThemeConstants.borderGrey.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '$_closedAffectedCount Booking',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: hasAffected ? Colors.white : AppThemeConstants.textSecondary,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: hasAffected ? AppThemeConstants.errorRed : AppThemeConstants.textSecondary,
+                  size: 18,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildBookingList() {
     return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       children: [
         if (_errorMessage != null)
           Container(
             padding: const EdgeInsets.all(12),
             margin: const EdgeInsets.only(bottom: 16),
-            decoration: BoxDecoration(color: AppThemeConstants.lightAmber, borderRadius: BorderRadius.circular(8)),
-            child: Text(_errorMessage!, style: const TextStyle(color: AppThemeConstants.warningAmber, fontSize: 13)),
+            decoration: BoxDecoration(
+              color: AppThemeConstants.lightAmber,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              _errorMessage!,
+              style: const TextStyle(color: AppThemeConstants.warningAmber, fontSize: 13),
+            ),
           ),
         if (_todayBookings.isNotEmpty)
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(_getHeaderTitle(), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppThemeConstants.textPrimary)),
+              Text(
+                _getHeaderTitle(),
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppThemeConstants.textPrimary),
+              ),
               const SizedBox(height: 8),
-              ..._todayBookings.map((booking) => BookingCard(
-                    booking: booking,
-                    onTap: () => context.push('/admin/booking-detail/${booking['id']}'),
-                  )),
+              ..._todayBookings.map(
+                (booking) => BookingCard(
+                  booking: booking,
+                  onTap: () => context.push('/admin/booking-detail/${booking['id']}'),
+                ),
+              ),
               const SizedBox(height: 24),
             ],
           ),
@@ -247,12 +338,17 @@ class _ListBookingAdminScreensState extends State<ListBookingAdminScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Mendatang', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppThemeConstants.textPrimary)),
+              const Text(
+                'Mendatang',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppThemeConstants.textPrimary),
+              ),
               const SizedBox(height: 8),
-              ..._upcomingBookings.map((booking) => BookingCard(
-                    booking: booking,
-                    onTap: () => context.push('/admin/booking-detail/${booking['id']}'),
-                  )),
+              ..._upcomingBookings.map(
+                (booking) => BookingCard(
+                  booking: booking,
+                  onTap: () => context.push('/admin/booking-detail/${booking['id']}'),
+                ),
+              ),
               const SizedBox(height: 32),
             ],
           ),

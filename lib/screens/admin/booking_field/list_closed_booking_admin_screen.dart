@@ -28,14 +28,14 @@ class _ListClosedBookingAdminScreensState extends State<ListClosedBookingAdminSc
       final responseData = await BookingService.fetchClosedBookings();
       if (mounted) {
         setState(() {
-          _allBookings = responseData['data'] ?? responseData;
+          _allBookings = responseData;
           _isLoading = false;
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = e.toString().replaceAll('Exception: ', '');
+          _errorMessage = e.toString().replaceAll('FormatException: ', '').replaceAll('Exception: ', '');
           _isLoading = false;
         });
       }

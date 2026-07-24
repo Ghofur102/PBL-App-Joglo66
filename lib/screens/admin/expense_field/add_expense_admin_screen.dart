@@ -19,7 +19,8 @@ class _AddExpenseAdminScreenState extends State<AddExpenseAdminScreen> {
   final _formKey = GlobalKey<FormState>();
 
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _nominalController = TextEditingController();
+  final TextEditingController _quantityController = TextEditingController(text: '1');
+  final TextEditingController _unitPriceController = TextEditingController();
   final TextEditingController _dateController = TextEditingController();
   final TextEditingController _noteController = TextEditingController();
   final TextEditingController _customCategoryController = TextEditingController();
@@ -32,29 +33,41 @@ class _AddExpenseAdminScreenState extends State<AddExpenseAdminScreen> {
   bool _isLoadingCategories = true;
   bool _isCustomCategory = false;
   List<String> _categories = [];
+  int _calculatedTotal = 0;
 
   @override
   void initState() {
     super.initState();
     _loadCategories();
+    _quantityController.addListener(_updateTotal);
+    _unitPriceController.addListener(_updateTotal);
   }
 
   @override
   void dispose() {
     _nameController.dispose();
-    _nominalController.dispose();
+    _quantityController.dispose();
+    _unitPriceController.dispose();
     _dateController.dispose();
     _noteController.dispose();
     _customCategoryController.dispose();
     super.dispose();
   }
 
+  void _updateTotal() {
+    final int qty = int.tryParse(_quantityController.text.trim()) ?? 0;
+    final int price = int.tryParse(_unitPriceController.text.trim()) ?? 0;
+    setState(() {
+      _calculatedTotal = qty * price;
+    });
+  }
+
   Future<void> _loadCategories() async {
     try {
-      final fetched = await ExpenseService.getExpenses();
+      final fetched = await ExpenseService.getCategories();
       if (mounted) {
         setState(() {
-          _categories = List<String>.from(fetched.map((e) => e['category']?.toString() ?? 'Operasional').toSet());
+          _categories = fetched;
           _isLoadingCategories = false;
         });
       }
@@ -117,7 +130,8 @@ class _AddExpenseAdminScreenState extends State<AddExpenseAdminScreen> {
       final success = await ExpenseService.addExpense(
         name: _nameController.text.trim(),
         category: categoryToSend,
-        nominal: _nominalController.text.trim(),
+        quantity: int.parse(_quantityController.text.trim()),
+        unitPrice: int.parse(_unitPriceController.text.trim()),
         date: _dateController.text.trim(),
         note: _noteController.text.trim(),
         imagePath: _selectedImage?.path,
@@ -133,13 +147,18 @@ class _AddExpenseAdminScreenState extends State<AddExpenseAdminScreen> {
       }
     } catch (e) {
       if (mounted) {
+        final cleanError = e.toString().replaceAll('FormatException: ', '').replaceAll('Exception: ', '');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString()), backgroundColor: AppThemeConstants.errorRed),
+          SnackBar(content: Text(cleanError), backgroundColor: AppThemeConstants.errorRed),
         );
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
+  }
+
+  String _formatPrice(int price) {
+    return NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0).format(price);
   }
 
   @override
@@ -166,7 +185,7 @@ class _AddExpenseAdminScreenState extends State<AddExpenseAdminScreen> {
                   children: [
                     AppInputField(
                       label: "Nama Pengeluaran",
-                      hint: "Masukkan nama pengeluaran",
+                      hint: "Masukkan nama barang / transaksi",
                       controller: _nameController,
                       icon: Icons.edit_note_rounded,
                       validator: (v) => v == null || v.trim().isEmpty ? "Nama pengeluaran wajib diisi" : null,
@@ -213,13 +232,43 @@ class _AddExpenseAdminScreenState extends State<AddExpenseAdminScreen> {
                       ),
                     ],
                     const SizedBox(height: 20),
-                    AppInputField(
-                      label: "Nominal",
-                      hint: "0",
-                      controller: _nominalController,
-                      keyboardType: TextInputType.number,
-                      prefixText: "Rp ",
-                      validator: (v) => v == null || int.tryParse(v.trim()) == null ? "Nominal harus berupa angka" : null,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: AppInputField(
+                            label: "Kuantitas (Qty)",
+                            hint: "1",
+                            controller: _quantityController,
+                            keyboardType: TextInputType.number,
+                            validator: (v) => v == null || int.tryParse(v.trim()) == null || int.parse(v.trim()) <= 0 ? "Format angka valid" : null,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          flex: 2,
+                          child: AppInputField(
+                            label: "Harga Satuan (Rp)",
+                            hint: "0",
+                            controller: _unitPriceController,
+                            keyboardType: TextInputType.number,
+                            prefixText: "Rp ",
+                            validator: (v) => v == null || int.tryParse(v.trim()) == null ? "Harga satuan valid" : null,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(color: AppThemeConstants.lightBlue, borderRadius: BorderRadius.circular(12)),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text("Total Kalkulasi:", style: TextStyle(fontWeight: FontWeight.bold, color: AppThemeConstants.textPrimary)),
+                          Text(_formatPrice(_calculatedTotal), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppThemeConstants.accentBlue)),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 20),
                     AppInputField(

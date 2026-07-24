@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pbl_app_joglo66/constants/app_theme_constants.dart';
 import 'package:pbl_app_joglo66/router/app_router.dart';
+import 'package:pbl_app_joglo66/services/booking_service.dart';
 
-class CustomBottomNavPage extends StatelessWidget {
+class CustomBottomNavPage extends StatefulWidget {
   final Widget child;
   final String currentRole;
 
@@ -12,6 +14,41 @@ class CustomBottomNavPage extends StatelessWidget {
     required this.child,
     required this.currentRole,
   });
+
+  @override
+  State<CustomBottomNavPage> createState() => _CustomBottomNavPageState();
+}
+
+class _CustomBottomNavPageState extends State<CustomBottomNavPage> {
+  int _affectedBookingCount = 0;
+  Timer? _pollingTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.currentRole == 'admin' || widget.currentRole == 'worker') {
+      _checkAffectedBookings();
+      _pollingTimer = Timer.periodic(const Duration(seconds: 30), (_) => _checkAffectedBookings());
+    }
+  }
+
+  @override
+  void dispose() {
+    _pollingTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _checkAffectedBookings() async {
+    try {
+      final data = await BookingService.fetchListBooking();
+      final int count = int.tryParse(data['closed_affected_count']?.toString() ?? '0') ?? 0;
+      if (mounted && count != _affectedBookingCount) {
+        setState(() {
+          _affectedBookingCount = count;
+        });
+      }
+    } catch (_) {}
+  }
 
   int _calculateSelectedIndex(BuildContext context) {
     final String location = GoRouterState.of(context).uri.toString();
@@ -23,7 +60,7 @@ class CustomBottomNavPage extends StatelessWidget {
   }
 
   void _onItemTapped(int index, BuildContext context) {
-    final bool isAdminOrWorker = currentRole == 'admin' || currentRole == 'worker';
+    final bool isAdminOrWorker = widget.currentRole == 'admin' || widget.currentRole == 'worker';
 
     if (isAdminOrWorker) {
       final List<String> adminPaths = [
@@ -37,7 +74,7 @@ class CustomBottomNavPage extends StatelessWidget {
       }
     } else {
       if (index == 0) {
-        context.go('/$currentRole/dashboard');
+        context.go('/${widget.currentRole}/dashboard');
       } else if (index == 4) {
         authService.logout();
         context.go('/login');
@@ -48,10 +85,10 @@ class CustomBottomNavPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final int currentIndex = _calculateSelectedIndex(context);
-    final bool isAdminOrWorker = currentRole == 'admin' || currentRole == 'worker';
+    final bool isAdminOrWorker = widget.currentRole == 'admin' || widget.currentRole == 'worker';
 
     return Scaffold(
-      body: child,
+      body: widget.child,
       floatingActionButton: isAdminOrWorker
           ? FloatingActionButton(
               backgroundColor: AppThemeConstants.accentBlue,
@@ -74,7 +111,7 @@ class CustomBottomNavPage extends StatelessWidget {
             children: isAdminOrWorker
                 ? [
                     Expanded(child: _buildNavItem(context, Icons.dashboard, 'Dashboard', 0, currentIndex)),
-                    Expanded(child: _buildNavItem(context, Icons.book_online, 'Booking', 1, currentIndex)),
+                    Expanded(child: _buildNavItem(context, Icons.book_online, 'Booking', 1, currentIndex, badgeCount: _affectedBookingCount)),
                     const SizedBox(width: 60),
                     Expanded(child: _buildNavItem(context, Icons.sports_soccer, 'Lapangan', 2, currentIndex)),
                     Expanded(child: _buildNavItem(context, Icons.person, 'Profil', 3, currentIndex)),
@@ -89,7 +126,7 @@ class CustomBottomNavPage extends StatelessWidget {
     );
   }
 
-  Widget _buildNavItem(BuildContext context, IconData icon, String label, int index, int currentIndex) {
+  Widget _buildNavItem(BuildContext context, IconData icon, String label, int index, int currentIndex, {int badgeCount = 0}) {
     final isSelected = currentIndex == index;
     final color = isSelected ? AppThemeConstants.accentBlue : AppThemeConstants.textSecondary;
 
@@ -101,7 +138,34 @@ class CustomBottomNavPage extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: color, size: 22),
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Icon(icon, color: color, size: 22),
+                if (badgeCount > 0)
+                  Positioned(
+                    right: -8,
+                    top: -4,
+                    child: Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: const BoxDecoration(
+                        color: AppThemeConstants.errorRed,
+                        shape: BoxShape.circle,
+                      ),
+                      constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                      child: Text(
+                        badgeCount > 99 ? '99+' : '$badgeCount',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
             const SizedBox(height: 2),
             Text(
               label,

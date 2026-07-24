@@ -18,6 +18,7 @@ import 'package:pbl_app_joglo66/screens/admin/booking_field/successful_payment_a
 import 'package:pbl_app_joglo66/screens/admin/dashboard_admin_screen.dart';
 import 'package:pbl_app_joglo66/screens/admin/expense_field/add_expense_admin_screen.dart';
 import 'package:pbl_app_joglo66/screens/admin/expense_field/detail_expense_admin_screen.dart';
+import 'package:pbl_app_joglo66/screens/admin/expense_field/edit_expense_admin_screen.dart';
 import 'package:pbl_app_joglo66/screens/admin/expense_field/list_expense_admin_screen.dart';
 import 'package:pbl_app_joglo66/screens/admin/field/field_details_admin_screen.dart';
 import 'package:pbl_app_joglo66/screens/admin/field/form_close_field_admin_screen.dart';
@@ -205,6 +206,17 @@ final GoRouter appRouter = (() {
                 allowedRoles: _adminWorkerRoles,
                 currentRole: authService.role,
                 child: DetailExpenseAdminScreen(expenseData: extra),
+              );
+            },
+          ),
+          GoRoute(
+            path: '/admin/edit-expense-field',
+            builder: (context, state) {
+              final extra = state.extra as Map<String, dynamic>? ?? {};
+              return ProtectedRoute(
+                allowedRoles: _adminWorkerRoles,
+                currentRole: authService.role,
+                child: EditExpenseAdminScreen(expenseData: extra),
               );
             },
           ),
