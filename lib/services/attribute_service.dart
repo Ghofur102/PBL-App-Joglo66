@@ -22,6 +22,20 @@ class AttributeService {
     }
   }
 
+  static Future<List<String>> fetchAttributeTypes() async {
+    try {
+      final response = await ApiClient.get(Uri.parse(ApiEndpoints.attributeTypes));
+      final jsonData = json.decode(response.body);
+
+      if (response.statusCode == 200 && jsonData['success'] == true) {
+        return List<String>.from(jsonData['data'] ?? []);
+      }
+      throw FormatException(jsonData['message'] ?? 'Gagal memuat jenis atribut');
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   static Future<Map<String, dynamic>> fetchDetailAttribute(int id) async {
     try {
       final response = await ApiClient.get(Uri.parse('${ApiEndpoints.detailAttribute}/$id'));

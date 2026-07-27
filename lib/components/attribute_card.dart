@@ -61,6 +61,7 @@ class AttributeCard extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
                   width: 52,
@@ -76,41 +77,38 @@ class AttributeCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              name,
-                              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppThemeConstants.textPrimary),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          StatusBadge(status: status),
-                        ],
+                      Text(
+                        name,
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppThemeConstants.textPrimary),
                       ),
                       const SizedBox(height: 4),
-                      Text(fieldName, style: const TextStyle(fontSize: 12, color: AppThemeConstants.textSecondary)),
+                      Text('Lapangan: $fieldName', style: const TextStyle(fontSize: 12, color: AppThemeConstants.textSecondary)),
                       const SizedBox(height: 2),
-                      Text(
-                        'Stok: $stock | ${formatRp.format(price)} / jam',
-                        style: const TextStyle(fontSize: 12, color: AppThemeConstants.textSecondary, fontWeight: FontWeight.w500),
-                      ),
+                      Text('Jenis: ${type.toUpperCase()}', style: const TextStyle(fontSize: 12, color: AppThemeConstants.textSecondary, fontWeight: FontWeight.w500)),
+                      const SizedBox(height: 2),
+                      Text('Stok: $stock unit', style: const TextStyle(fontSize: 12, color: AppThemeConstants.textSecondary, fontWeight: FontWeight.w500)),
+                      const SizedBox(height: 2),
+                      Text('Harga: ${formatRp.format(price)} / jam', style: const TextStyle(fontSize: 12, color: AppThemeConstants.textSecondary, fontWeight: FontWeight.w500)),
+                      const SizedBox(height: 8),
+                      StatusBadge(status: status),
                     ],
                   ),
                 ),
-                const SizedBox(width: 8),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
                   children: [
                     IconButton(
                       icon: const Icon(Icons.edit_rounded, color: Colors.blue, size: 20),
                       onPressed: onEdit,
+                      constraints: const BoxConstraints(),
+                      padding: const EdgeInsets.all(4),
                     ),
+                    const SizedBox(height: 8),
                     IconButton(
                       icon: const Icon(Icons.delete_outline_rounded, color: AppThemeConstants.errorRed, size: 20),
                       onPressed: onDelete,
+                      constraints: const BoxConstraints(),
+                      padding: const EdgeInsets.all(4),
                     ),
                   ],
                 )

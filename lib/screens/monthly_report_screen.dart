@@ -1,6 +1,10 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+import 'package:pbl_app_joglo66/constants/api_endpoints.dart';
 import 'package:pbl_app_joglo66/constants/app_theme_constants.dart';
-import 'package:pbl_app_joglo66/services/report_service.dart';
+import 'package:pbl_app_joglo66/services/api_client.dart';
 
 class MonthlyReportScreen extends StatefulWidget {
   const MonthlyReportScreen({super.key});
@@ -10,84 +14,58 @@ class MonthlyReportScreen extends StatefulWidget {
 }
 
 class _MonthlyReportScreenState extends State<MonthlyReportScreen> {
-  int _selectedMonth = DateTime.now().month;
-  int _selectedYear = DateTime.now().year;
-  int _selectedTab = 0;
-  String _selectedCategory = 'Semua';
-  DateTime? _startDate;
-  DateTime? _endDate;
-
-  bool _isLoading = false;
+  bool _isLoading = true;
   String? _errorMessage;
   Map<String, dynamic>? _reportData;
 
-  static const _monthLabels = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+  int _selectedMonth = DateTime.now().month;
+  int _selectedYear = DateTime.now().year;
+
+  final List<String> _months = [
+    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+  ];
 
   @override
   void initState() {
     super.initState();
-    _fetchData();
+    _fetchReport();
   }
 
-  Future<void> _fetchData() async {
+  Future<void> _fetchReport() async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
+
     try {
-      final data = await ReportService.fetchMonthlyReport(_selectedMonth, _selectedYear);
-      setState(() {
-        _reportData = data;
-        _selectedCategory = 'Semua';
-        _startDate = null;
-        _endDate = null;
-      });
+      final response = await ApiClient.get(
+        Uri.parse('${ApiEndpoints.monthlyReport}?bulan=$_selectedMonth&tahun=$_selectedYear'),
+      );
+      final jsonData = json.decode(response.body);
+
+      if (response.statusCode == 200 && jsonData['success'] == true) {
+        if (mounted) {
+          setState(() {
+            _reportData = jsonData['data'];
+            _isLoading = false;
+          });
+        }
+      } else {
+        throw FormatException(jsonData['message'] ?? 'Gagal memuat rekap laporan.');
+      }
     } catch (e) {
-      setState(() => _errorMessage = e.toString());
-    } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString().replaceAll('FormatException: ', '').replaceAll('Exception: ', '');
+          _isLoading = false;
+        });
+      }
     }
   }
 
-  String _formatRupiah(dynamic amount) {
-    if (amount == null) return 'Rp 0';
-    final int val = (amount is num) ? amount.toInt() : int.tryParse(amount.toString()) ?? 0;
-    final int absVal = val.abs();
-    final String sign = val < 0 ? '-' : '';
-
-    // Kurung kurawal {} pada ${sign} wajib digunakan agar compiler tidak mengiranya sebagai variabel signRp
-    if (absVal >= 1000000000) {
-      final double billion = absVal / 1000000000;
-      return '${sign}Rp ${billion.toStringAsFixed(billion % 1 == 0 ? 0 : 1).replaceAll('.', ',')} Miliar';
-    }
-
-    if (absVal >= 1000000) {
-      final double million = absVal / 1000000;
-      return '${sign}Rp ${million.toStringAsFixed(million % 1 == 0 ? 0 : 1).replaceAll('.', ',')} Juta';
-    }
-
-    final reg = RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))');
-    return '${sign}Rp ${absVal.toString().replaceAllMapped(reg, (Match m) => '${m[1]}.')}';
-  }
-
-  Future<void> _pickDateRange() async {
-    final DateTimeRange? picked = await showDateRangePicker(
-      context: context,
-      firstDate: DateTime(_selectedYear, _selectedMonth, 1),
-      lastDate: DateTime(_selectedYear, _selectedMonth + 1, 0),
-      builder: (context, child) => Theme(
-        data: Theme.of(context).copyWith(
-          colorScheme: const ColorScheme.light(primary: AppThemeConstants.primaryBlue),
-        ),
-        child: child!,
-      ),
-    );
-    if (picked != null) {
-      setState(() {
-        _startDate = picked.start;
-        _endDate = picked.end;
-      });
-    }
+  String _formatRp(int amount) {
+    return NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0).format(amount);
   }
 
   @override
@@ -95,165 +73,205 @@ class _MonthlyReportScreenState extends State<MonthlyReportScreen> {
     return Scaffold(
       backgroundColor: AppThemeConstants.bgLight,
       appBar: AppBar(
-        title: const Text('Laporan Keuangan', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: AppThemeConstants.primaryBlue,
-        iconTheme: const IconThemeData(color: Colors.white),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: const Text('Rekap Laporan Keuangan', style: TextStyle(color: AppThemeConstants.textPrimary, fontWeight: FontWeight.bold)),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppThemeConstants.textPrimary),
+          onPressed: () => context.canPop() ? context.pop() : context.go('/admin/dashboard'),
+        ),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppThemeConstants.primaryBlue))
-          : _errorMessage != null
-              ? _buildErrorView()
-              : _buildContentView(),
-    );
-  }
-
-  Widget _buildErrorView() {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+      body: Column(
         children: [
-          const Icon(Icons.error_outline, color: AppThemeConstants.errorRed, size: 48),
-          const SizedBox(height: 12),
-          Text(_errorMessage!, textAlign: TextAlign.center),
-          const SizedBox(height: 16),
-          ElevatedButton(onPressed: _fetchData, child: const Text('Coba Lagi')),
+          _buildFilterHeader(),
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator(color: AppThemeConstants.primaryBlue))
+                : _errorMessage != null
+                    ? Center(child: Text(_errorMessage!, style: const TextStyle(color: AppThemeConstants.errorRed)))
+                    : _buildReportContent(),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildContentView() {
-    return RefreshIndicator(
-      onRefresh: _fetchData,
-      child: ListView(
-        padding: const EdgeInsets.all(14),
+  Widget _buildFilterHeader() {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
         children: [
-          _buildFilterRow(),
-          const SizedBox(height: 14),
-          _buildSummaryCards(),
-          const SizedBox(height: 14),
-          _buildDailySection(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFilterRow() {
-    return Row(
-      children: [
-        Expanded(
-          child: DropdownButtonHideUnderline(
+          Expanded(
             child: DropdownButtonFormField<int>(
               value: _selectedMonth,
-              items: List.generate(12, (i) => DropdownMenuItem(value: i + 1, child: Text(_monthLabels[i + 1]))),
-              onChanged: (v) => setState(() => _selectedMonth = v ?? 1),
+              decoration: InputDecoration(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              items: List.generate(12, (index) {
+                return DropdownMenuItem(value: index + 1, child: Text(_months[index]));
+              }),
+              onChanged: (val) {
+                if (val != null) {
+                  setState(() => _selectedMonth = val);
+                  _fetchReport();
+                }
+              },
             ),
           ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: DropdownButtonHideUnderline(
+          const SizedBox(width: 12),
+          Expanded(
             child: DropdownButtonFormField<int>(
               value: _selectedYear,
-              items: List.generate(5, (i) {
-                final y = DateTime.now().year - i;
-                return DropdownMenuItem(value: y, child: Text('$y'));
-              }),
-              onChanged: (v) => setState(() => _selectedYear = v ?? 2026),
+              decoration: InputDecoration(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              items: [2025, 2026, 2027, 2028, 2029, 2030].map((year) {
+                return DropdownMenuItem(value: year, child: Text('$year'));
+              }).toList(),
+              onChanged: (val) {
+                if (val != null) {
+                  setState(() => _selectedYear = val);
+                  _fetchReport();
+                }
+              },
             ),
           ),
-        ),
-        const SizedBox(width: 8),
-        ElevatedButton(
-          onPressed: _fetchData,
-          style: ElevatedButton.styleFrom(backgroundColor: AppThemeConstants.primaryBlue),
-          child: const Text('Cari', style: TextStyle(color: Colors.white)),
-        )
-      ],
-    );
-  }
-
-  Widget _buildSummaryCards() {
-    final netProfit = _reportData?['net_profit'] ?? 0;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Text('Laba Bersih: ${_formatRupiah(netProfit)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            const Divider(),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                Text('Masuk: ${_formatRupiah(_reportData?['total_income'])}', style: const TextStyle(color: AppThemeConstants.successGreen)),
-                Text('Keluar: ${_formatRupiah(_reportData?['total_expense'])}', style: const TextStyle(color: AppThemeConstants.errorRed)),
-              ],
-            )
-          ],
-        ),
+        ],
       ),
     );
   }
 
-  Widget _buildDailySection() {
-    final transactions = _reportData?['daily_transactions'] as List<dynamic>? ?? [];
-    final targetType = _selectedTab == 0 ? 'income' : 'expense';
+  Widget _buildReportContent() {
+    final summary = _reportData?['summary'] as Map<String, dynamic>? ?? {};
+    final transactions = (_reportData?['transactions'] as List<dynamic>?) ?? [];
 
-    final List<String> availableCategories = ['Semua', ...transactions.where((t) => t['type'] == targetType).map((t) => t['category']?.toString() ?? 'Lainnya').toSet()];
+    final int grossIncome = int.tryParse(summary['gross_income']?.toString() ?? '0') ?? 0;
+    final int totalRefund = int.tryParse(summary['total_refund']?.toString() ?? '0') ?? 0;
+    final int netIncome = int.tryParse(summary['net_income']?.toString() ?? '0') ?? 0;
+    final int totalExpense = int.tryParse(summary['total_expense']?.toString() ?? '0') ?? 0;
+    final int netProfit = int.tryParse(summary['net_profit']?.toString() ?? '0') ?? 0;
 
-    // Menggunakan variabel state lokal untuk menyaring data yang ditampilkan ke UI halaman depan
-    final filteredList = transactions.where((t) {
-      if (t['type'] != targetType) return false;
-      if (_selectedCategory != 'Semua' && t['category'] != _selectedCategory) return false;
-      if (_startDate != null && _endDate != null) {
-        final txDate = DateTime.tryParse(t['date'] ?? '');
-        if (txDate != null) {
-          final normTx = DateTime(txDate.year, txDate.month, txDate.day);
-          final normStart = DateTime(_startDate!.year, _startDate!.month, _startDate!.day);
-          final normEnd = DateTime(_endDate!.year, _endDate!.month, _endDate!.day);
-          if (normTx.isBefore(normStart) || normTx.isAfter(normEnd)) return false;
-        }
-      }
-      return true;
-    }).toList();
+    return RefreshIndicator(
+      onRefresh: _fetchReport,
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          _buildSummaryCard(grossIncome, totalRefund, netIncome, totalExpense, netProfit),
+          const SizedBox(height: 20),
+          const Text('Rincian Transaksi Keuangan', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppThemeConstants.textPrimary)),
+          const SizedBox(height: 12),
+          if (transactions.isEmpty)
+            const Center(child: Padding(padding: EdgeInsets.all(32), child: Text('Tidak ada transaksi pada periode ini.', style: TextStyle(color: AppThemeConstants.textSecondary))))
+          else
+            ...transactions.map((tx) => _buildTransactionCard(tx as Map<String, dynamic>)),
+        ],
+      ),
+    );
+  }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
+  Widget _buildSummaryCard(int gross, int refund, int netInc, int expense, int profit) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppThemeConstants.borderGrey),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Ringkasan Kas Bulanan', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppThemeConstants.textPrimary)),
+          const SizedBox(height: 16),
+          _buildSummaryRow('Pemasukan Kotor (Gross)', _formatRp(gross), color: AppThemeConstants.textPrimary),
+          _buildSummaryRow('Pengembalian Dana (Refund)', '- ${_formatRp(refund)}', color: AppThemeConstants.errorRed),
+          const Divider(height: 20, color: AppThemeConstants.borderGrey),
+          _buildSummaryRow('Pemasukan Bersih', _formatRp(netInc), color: AppThemeConstants.successGreen, isBold: true),
+          _buildSummaryRow('Total Pengeluaran', '- ${_formatRp(expense)}', color: AppThemeConstants.warningAmber),
+          const Divider(height: 20, color: AppThemeConstants.borderGrey),
+          _buildSummaryRow('Laba Bersih (Net Profit)', _formatRp(profit), color: profit >= 0 ? AppThemeConstants.accentBlue : AppThemeConstants.errorRed, isBold: true, fontSize: 16),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryRow(String label, String value, {Color? color, bool isBold = false, double fontSize = 14}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: TextStyle(fontSize: fontSize - 1, color: AppThemeConstants.textSecondary, fontWeight: isBold ? FontWeight.bold : FontWeight.w500)),
+          Text(value, style: TextStyle(fontSize: fontSize, color: color ?? AppThemeConstants.textPrimary, fontWeight: isBold ? FontWeight.bold : FontWeight.w600)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTransactionCard(Map<String, dynamic> tx) {
+    final String type = tx['type']?.toString() ?? 'income';
+    final bool isRefund = type == 'refund' || tx['payment_type'] == 'refund';
+    final bool isExpense = type == 'expense';
+
+    final int amount = int.tryParse(tx['amount']?.toString() ?? '0') ?? 0;
+    final String title = tx['title']?.toString() ?? tx['category']?.toString() ?? '-';
+    final String date = tx['date']?.toString() ?? '-';
+    final String method = tx['method']?.toString() ?? 'CASH';
+
+    Color cardColor = AppThemeConstants.successGreen;
+    Color bgColor = AppThemeConstants.lightGreen;
+    IconData icon = Icons.account_balance_wallet_rounded;
+    String badgeLabel = 'MASUK';
+    String prefix = '+ ';
+
+    if (isRefund) {
+      cardColor = AppThemeConstants.errorRed;
+      bgColor = AppThemeConstants.lightRed;
+      icon = Icons.money_off_rounded;
+      badgeLabel = 'REFUND';
+      prefix = '- ';
+    } else if (isExpense) {
+      cardColor = AppThemeConstants.warningAmber;
+      bgColor = AppThemeConstants.lightAmber;
+      icon = Icons.shopping_bag_outlined;
+      badgeLabel = 'PENGELUARAN';
+      prefix = '- ';
+    }
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 10),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: CircleAvatar(
+          backgroundColor: bgColor,
+          child: Icon(icon, color: cardColor, size: 20),
+        ),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+        subtitle: Text('$date • $method\n${tx['field_name'] ?? ''}', style: const TextStyle(fontSize: 11, color: AppThemeConstants.textSecondary)),
+        isThreeLine: true,
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            ChoiceChip(label: const Text('Pemasukan'), selected: _selectedTab == 0, onSelected: (b) => setState(() => _selectedTab = 0)),
-            const SizedBox(width: 8),
-            ChoiceChip(label: const Text('Pengeluaran'), selected: _selectedTab == 1, onSelected: (b) => setState(() => _selectedTab = 1)),
-            const Spacer(),
-            IconButton(icon: const Icon(Icons.date_range), onPressed: _pickDateRange),
+            Text(
+              '$prefix${_formatRp(amount)}',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: cardColor),
+            ),
+            const SizedBox(height: 4),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(4)),
+              child: Text(
+                badgeLabel,
+                style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: cardColor),
+              ),
+            ),
           ],
         ),
-        const SizedBox(height: 8),
-        DropdownButtonFormField<String>(
-          value: availableCategories.contains(_selectedCategory) ? _selectedCategory : 'Semua',
-          items: availableCategories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-          onChanged: (v) => setState(() => _selectedCategory = v ?? 'Semua'),
-          decoration: const InputDecoration(labelText: 'Filter Kategori'),
-        ),
-        const SizedBox(height: 12),
-        if (filteredList.isEmpty)
-          const Center(child: Padding(padding: EdgeInsets.all(32.0), child: Text('Tidak ada riwayat transaksi harian.')))
-        else
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: filteredList.length,
-            itemBuilder: (context, i) {
-              final tx = filteredList[i];
-              return ListTile(
-                title: Text(tx['description'] ?? '-'),
-                subtitle: Text(tx['date']?.toString().split(' ')[0] ?? '-'),
-                trailing: Text(_formatRupiah(tx['amount']), style: TextStyle(fontWeight: FontWeight.bold, color: _selectedTab == 0 ? AppThemeConstants.successGreen : AppThemeConstants.errorRed)),
-              );
-            },
-          )
-      ],
+      ),
     );
   }
 }

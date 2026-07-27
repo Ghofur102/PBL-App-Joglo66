@@ -12,6 +12,7 @@ class ApiEndpoints {
   static String get historyAttribute => '$baseUrl/api/admin/history-rent-attribute';
   static String get detailAttribute => '$baseUrl/api/admin/detail-attribute';
   static String get listAttribute => '$baseUrl/api/admin/list-attribute';
+  static String get attributeTypes => '$baseUrl/api/admin/attribute-types';
   static String get createAttribute => '$baseUrl/api/admin/create-attribute';
   static String get updateAttribute => '$baseUrl/api/admin/update-attribute';
   static String get deleteAttribute => '$baseUrl/api/admin/delete-attribute';

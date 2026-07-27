@@ -101,10 +101,31 @@ class _ListAttributeAdminScreenState extends State<ListAttributeAdminScreen> {
           Container(
             color: Colors.white,
             padding: const EdgeInsets.all(16),
-            child: TextField(
-              controller: _searchController,
-              decoration: const InputDecoration(hintText: 'Cari nama atau tipe atribut...', prefixIcon: Icon(Icons.search)),
-              onChanged: (val) => _loadData(search: val.isEmpty ? null : val),
+            child: Column(
+              children: [
+                TextField(
+                  controller: _searchController,
+                  decoration: const InputDecoration(
+                    hintText: 'Cari nama atau tipe atribut...',
+                    prefixIcon: Icon(Icons.search),
+                  ),
+                  onChanged: (val) => _loadData(search: val.isEmpty ? null : val),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () => context.push('/admin/add-attribute').then((_) => _loadData()),
+                    icon: const Icon(Icons.add, color: Colors.white),
+                    label: const Text('Tambah Atribut Baru', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppThemeConstants.accentBlue,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppThemeConstants.radiusMedium)),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           Expanded(
@@ -116,12 +137,6 @@ class _ListAttributeAdminScreenState extends State<ListAttributeAdminScreen> {
                   ),
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: AppThemeConstants.accentBlue,
-        onPressed: () => context.push('/admin/add-attribute').then((_) => _loadData()),
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('Tambah Atribut', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       ),
     );
   }
