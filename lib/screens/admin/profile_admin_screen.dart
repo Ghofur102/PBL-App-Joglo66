@@ -196,7 +196,7 @@ class _ProfileAdminScreenState extends State<ProfileAdminScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 40),
+          const SizedBox(height: 20),
           SizedBox(
             width: double.infinity,
             child: AppButton(
@@ -206,6 +206,7 @@ class _ProfileAdminScreenState extends State<ProfileAdminScreen> {
               onPressed: _handleLogout,
             ),
           ),
+          const SizedBox(height: 20),
         ],
       ),
     );

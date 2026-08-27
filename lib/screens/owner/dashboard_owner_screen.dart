@@ -10,38 +10,66 @@ class DashboardOwnerScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppThemeConstants.bgLight,
       appBar: AppBar(
-        title: const Text('Owner Dashboard', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: AppThemeConstants.primaryBlue,
+        title: const Text('Dasbor Pemilik (Owner)', style: TextStyle(fontWeight: FontWeight.bold, color: AppThemeConstants.textPrimary)),
+        backgroundColor: Colors.white,
+        elevation: 0,
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Card(
-              child: ListTile(
-                leading: const CircleAvatar(backgroundColor: AppThemeConstants.lightBlue, child: Icon(Icons.star, color: AppThemeConstants.primaryBlue)),
-                title: const Text('Selamat Datang,', style: TextStyle(fontSize: 12, color: AppThemeConstants.textSecondary)),
-                subtitle: const Text('Owner Joglo66', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppThemeConstants.textPrimary)),
-              ),
+            const Text('Menu Utama Pengelolaan', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppThemeConstants.textPrimary)),
+            const SizedBox(height: 16),
+            _buildMenuCard(
+              context,
+              title: 'Manajemen Data Lapangan',
+              subtitle: 'Tambah dan perbarui profil unit lapangan olahraga',
+              icon: Icons.sports_soccer_rounded,
+              color: Colors.green,
+              onTap: () => context.push('/owner/fields'),
             ),
-            const SizedBox(height: 24),
-            ListTile(
-              title: const Text('Manajemen Karyawan', style: TextStyle(fontWeight: FontWeight.bold)),
-              subtitle: const Text('Tambah, edit, dan hapus data karyawan.'),
-              leading: const Icon(Icons.people_alt_outlined, color: Colors.blue),
-              trailing: const Icon(Icons.chevron_right),
+            const SizedBox(height: 12),
+            _buildMenuCard(
+              context,
+              title: 'Manajemen Karyawan & Otorisasi',
+              subtitle: 'Kelola data karyawan dan penugasan akses sistem',
+              icon: Icons.people_alt_rounded,
+              color: AppThemeConstants.accentBlue,
               onTap: () => context.push('/owner/karyawan'),
             ),
-            ListTile(
-              title: const Text('Laporan Bulanan', style: TextStyle(fontWeight: FontWeight.bold)),
-              subtitle: const Text('Preview neraca dan unduh PDF.'),
-              leading: const Icon(Icons.picture_as_pdf_outlined, color: Colors.red),
-              trailing: const Icon(Icons.chevron_right),
+            const SizedBox(height: 12),
+            _buildMenuCard(
+              context,
+              title: 'Rekap Laporan Keuangan',
+              subtitle: 'Pantau arus kas, laba bersih, dan histori transaksi',
+              icon: Icons.analytics_rounded,
+              color: Colors.purple,
               onTap: () => context.push('/laporan-bulanan'),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildMenuCard(BuildContext context, {required String title, required String subtitle, required IconData icon, required Color color, required VoidCallback onTap}) {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(16),
+        leading: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(color: color.withOpacity(0.12), shape: BoxShape.circle),
+          child: Icon(icon, color: color, size: 28),
+        ),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Text(subtitle, style: const TextStyle(fontSize: 12, color: AppThemeConstants.textSecondary)),
+        ),
+        trailing: const Icon(Icons.chevron_right_rounded, color: Colors.grey),
+        onTap: onTap,
       ),
     );
   }

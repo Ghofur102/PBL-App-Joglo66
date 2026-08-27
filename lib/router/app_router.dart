@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pbl_app_joglo66/components/custom_bottom_nav_page.dart';
 import 'package:pbl_app_joglo66/router/protected_route.dart';
-import 'package:pbl_app_joglo66/screens/admin/attribute_booking/add_attribute_booking_admin_screen.dart';
-import 'package:pbl_app_joglo66/screens/admin/attribute_booking/confirmation_attribute_booking_admin_screen.dart';
 import 'package:pbl_app_joglo66/screens/admin/attribute_booking/history_attribute_booking_admin_screen.dart';
 import 'package:pbl_app_joglo66/screens/admin/attribute_field/add_attribute_admin_screen.dart';
 import 'package:pbl_app_joglo66/screens/admin/attribute_field/list_attribute_admin_screen.dart';
@@ -29,6 +27,7 @@ import 'package:pbl_app_joglo66/screens/auth/login_auth_screen.dart';
 import 'package:pbl_app_joglo66/screens/monthly_report_screen.dart';
 import 'package:pbl_app_joglo66/screens/owner/dashboard_owner_screen.dart';
 import 'package:pbl_app_joglo66/screens/owner/employee/employee_list_owner_screen.dart';
+import 'package:pbl_app_joglo66/screens/owner/field/owner_field_list_screen.dart';
 import 'package:pbl_app_joglo66/screens/treasurer/dashboard_treasurer_screen.dart';
 import 'package:pbl_app_joglo66/screens/treasurer/salary/salary_form_treasurer_screen.dart';
 import 'package:pbl_app_joglo66/services/auth_service.dart';
@@ -148,33 +147,6 @@ final GoRouter appRouter = (() {
             ),
           ),
           GoRoute(
-            path: '/admin/rent-attribute',
-            builder: (context, state) => ProtectedRoute(
-              allowedRoles: _adminWorkerRoles,
-              currentRole: authService.role,
-              child: const AddAttributeBookingAdminScreen(),
-            ),
-          ),
-          GoRoute(
-            path: '/admin/confirmation-rent-attribute',
-            builder: (context, state) {
-              final extra = state.extra as Map<String, dynamic>? ?? {};
-              return ProtectedRoute(
-                allowedRoles: _adminWorkerRoles,
-                currentRole: authService.role,
-                child: ConfirmationAttributeBookingAdminScreen(
-                  fkBookingId: extra['fkBookingId'] as int? ?? 0,
-                  items: (extra['items'] as List<dynamic>?)?.map((e) => e as Map<String, dynamic>).toList() ?? [],
-                  customerName: extra['customerName'] as String? ?? '',
-                  customerPhone: extra['customerPhone'] as String? ?? '',
-                  durationHours: extra['durationHours'] as int? ?? 1,
-                  transactionDate: extra['transactionDate'] as String? ?? '',
-                  totalPrice: extra['totalPrice'] as int? ?? 0,
-                ),
-              );
-            },
-          ),
-          GoRoute(
             path: '/admin/history-rent-attribute',
             builder: (context, state) => ProtectedRoute(
               allowedRoles: _adminWorkerRoles,
@@ -229,14 +201,6 @@ final GoRouter appRouter = (() {
             ),
           ),
           GoRoute(
-            path: '/owner/karyawan',
-            builder: (context, state) => ProtectedRoute(
-              allowedRoles: const ['owner'],
-              currentRole: authService.role,
-              child: const EmployeeListOwnerScreen(),
-            ),
-          ),
-          GoRoute(
             path: '/treasurer/dashboard',
             builder: (context, state) => ProtectedRoute(
               allowedRoles: const ['treasurer'],
@@ -253,6 +217,24 @@ final GoRouter appRouter = (() {
             ),
           ),
         ],
+      ),
+      GoRoute(
+        path: '/owner/karyawan',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => ProtectedRoute(
+          allowedRoles: const ['owner'],
+          currentRole: authService.role,
+          child: const EmployeeListOwnerScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/owner/fields',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => ProtectedRoute(
+          allowedRoles: const ['owner'],
+          currentRole: authService.role,
+          child: const OwnerFieldListScreen(),
+        ),
       ),
       GoRoute(
         path: '/laporan-bulanan',

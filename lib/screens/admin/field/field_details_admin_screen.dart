@@ -20,6 +20,26 @@ class _FieldDetailsAdminScreenState extends State<FieldDetailsAdminScreen> {
   bool _isLoading = true;
   String _errorMessage = '';
 
+  final List<String> _daysOfWeek = [
+    'monday',
+    'tuesday',
+    'wednesday',
+    'thursday',
+    'friday',
+    'saturday',
+    'sunday'
+  ];
+
+  final Map<String, String> _dayNamesIndo = {
+    'monday': 'Senin',
+    'tuesday': 'Selasa',
+    'wednesday': 'Rabu',
+    'thursday': 'Kamis',
+    'friday': 'Jumat',
+    'saturday': 'Sabtu',
+    'sunday': 'Minggu',
+  };
+
   @override
   void initState() {
     super.initState();
@@ -77,7 +97,16 @@ class _FieldDetailsAdminScreenState extends State<FieldDetailsAdminScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: AppThemeConstants.primaryBlue))
           : _errorMessage.isNotEmpty
-              ? Center(child: Padding(padding: const EdgeInsets.all(20.0), child: Text(_errorMessage, textAlign: TextAlign.center, style: const TextStyle(color: AppThemeConstants.errorRed, fontSize: 16))))
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Text(
+                      _errorMessage,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: AppThemeConstants.errorRed, fontSize: 16),
+                    ),
+                  ),
+                )
               : SingleChildScrollView(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
@@ -94,7 +123,9 @@ class _FieldDetailsAdminScreenState extends State<FieldDetailsAdminScreen> {
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(AppThemeConstants.radiusMedium),
                           child: finalImageUrl.isEmpty
-                              ? const Center(child: Text('TIDAK ADA FOTO', style: TextStyle(color: AppThemeConstants.accentBlue, fontWeight: FontWeight.bold)))
+                              ? const Center(
+                                  child: Text('TIDAK ADA FOTO', style: TextStyle(color: AppThemeConstants.accentBlue, fontWeight: FontWeight.bold)),
+                                )
                               : Image.network(
                                   finalImageUrl,
                                   fit: BoxFit.cover,
@@ -128,7 +159,7 @@ class _FieldDetailsAdminScreenState extends State<FieldDetailsAdminScreen> {
                           },
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 50),
                     ],
                   ),
                 ),
@@ -157,12 +188,7 @@ class _FieldDetailsAdminScreenState extends State<FieldDetailsAdminScreen> {
           const Padding(padding: EdgeInsets.symmetric(vertical: 8.0), child: Divider(color: AppThemeConstants.borderGrey, thickness: 1)),
           const Text('Jadwal & Ketentuan Harga:', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppThemeConstants.textSecondary)),
           const SizedBox(height: 12),
-          if (priceList.isEmpty)
-            const Text('Belum ada jadwal harga yang diatur.', style: TextStyle(color: AppThemeConstants.errorRed, fontStyle: FontStyle.italic))
-          else
-            Column(
-              children: priceList.map((item) => _buildPriceCard(Map<String, dynamic>.from(item))).toList(),
-            ),
+          _buildPricingRulesGroupedByDay(priceList),
         ],
       ),
     );
@@ -188,43 +214,142 @@ class _FieldDetailsAdminScreenState extends State<FieldDetailsAdminScreen> {
     );
   }
 
-  Widget _buildPriceCard(Map<String, dynamic> priceItem) {
-    final String day = priceItem['day_type'].toString().toUpperCase();
-    final String rawStart = priceItem['start_time'].toString();
-    final String rawEnd = priceItem['end_time'].toString();
-    final String startTime = rawStart.length >= 5 ? rawStart.substring(0, 5) : rawStart;
-    final String endTime = rawEnd.length >= 5 ? rawEnd.substring(0, 5) : rawEnd;
-    final String formattedPrice = CurrencyUtil.toRupiah(priceItem['price']);
+  Widget _buildPricingRulesGroupedByDay(List<dynamic> priceList) {
+    if (priceList.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 8.0),
+        child: Text(
+          'Belum ada jadwal harga yang diatur.',
+          style: TextStyle(color: AppThemeConstants.errorRed, fontStyle: FontStyle.italic),
+        ),
+      );
+    }
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8.0),
-      elevation: 0,
-      color: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppThemeConstants.radiusSmall),
-        side: const BorderSide(color: AppThemeConstants.borderGrey),
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
-        title: Text(
-          day,
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppThemeConstants.textPrimary),
-        ),
-        subtitle: Row(
-          children: [
-            const Icon(Icons.access_time_rounded, size: 14, color: AppThemeConstants.textSecondary),
-            const SizedBox(width: 4),
-            Text(
-              '$startTime - $endTime',
-              style: const TextStyle(fontSize: 12, color: AppThemeConstants.textSecondary),
+    final Map<String, List<Map<String, dynamic>>> grouped = {};
+    for (var day in _daysOfWeek) {
+      final dayRules = priceList
+          .map((item) => Map<String, dynamic>.from(item))
+          .where((r) => r['day_type'].toString().toLowerCase() == day)
+          .toList();
+      if (dayRules.isNotEmpty) {
+        grouped[day] = dayRules;
+      }
+    }
+
+    if (grouped.isEmpty) {
+      return Column(
+        children: priceList.map((item) {
+          final rule = Map<String, dynamic>.from(item);
+          final String day = rule['day_type'].toString().toUpperCase();
+          final String rawStart = rule['start_time'].toString();
+          final String rawEnd = rule['end_time'].toString();
+          final String startTime = rawStart.length >= 5 ? rawStart.substring(0, 5) : rawStart;
+          final String endTime = rawEnd.length >= 5 ? rawEnd.substring(0, 5) : rawEnd;
+          final String formattedPrice = CurrencyUtil.toRupiah(rule['price']);
+
+          return Card(
+            margin: const EdgeInsets.only(bottom: 8.0),
+            elevation: 0,
+            color: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppThemeConstants.radiusSmall),
+              side: const BorderSide(color: AppThemeConstants.borderGrey),
             ),
-          ],
-        ),
-        trailing: Text(
-          '$formattedPrice / Jam',
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppThemeConstants.successGreen),
-        ),
-      ),
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+              title: Text(day, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppThemeConstants.textPrimary)),
+              subtitle: Row(
+                children: [
+                  const Icon(Icons.access_time_rounded, size: 14, color: AppThemeConstants.textSecondary),
+                  const SizedBox(width: 4),
+                  Text('$startTime - $endTime', style: const TextStyle(fontSize: 12, color: AppThemeConstants.textSecondary)),
+                ],
+              ),
+              trailing: Text('$formattedPrice / Jam', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppThemeConstants.successGreen)),
+            ),
+          );
+        }).toList(),
+      );
+    }
+
+    return Column(
+      children: grouped.entries.map((entry) {
+        final String dayEnglish = entry.key;
+        final String dayIndo = _dayNamesIndo[dayEnglish] ?? dayEnglish.toUpperCase();
+        final List<Map<String, dynamic>> rules = entry.value;
+
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          elevation: 0,
+          color: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppThemeConstants.radiusMedium),
+            side: const BorderSide(color: AppThemeConstants.borderGrey),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  dayIndo.toUpperCase(),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: AppThemeConstants.accentBlue,
+                  ),
+                ),
+                const Divider(height: 16),
+                Column(
+                  children: rules.map((rule) {
+                    final String rawStart = rule['start_time'].toString();
+                    final String rawEnd = rule['end_time'].toString();
+                    final String startTime = rawStart.length >= 5 ? rawStart.substring(0, 5) : rawStart;
+                    final String endTime = rawEnd.length >= 5 ? rawEnd.substring(0, 5) : rawEnd;
+                    final String formattedPrice = CurrencyUtil.toRupiah(rule['price']);
+
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.access_time_rounded, size: 16, color: AppThemeConstants.textSecondary),
+                              const SizedBox(width: 6),
+                              Text(
+                                '$startTime - $endTime',
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppThemeConstants.textPrimary,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Text(
+                            '$formattedPrice / Jam',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: AppThemeConstants.successGreen,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                )
+              ],
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 }

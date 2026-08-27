@@ -11,12 +11,11 @@ class ListBookingAdminScreen extends StatefulWidget {
   const ListBookingAdminScreen({super.key});
 
   @override
-  State<ListBookingAdminScreen> createState() => _ListBookingAdminScreensState();
+  State<ListBookingAdminScreen> createState() => _ListBookingAdminScreenState();
 }
 
-class _ListBookingAdminScreensState extends State<ListBookingAdminScreen> {
-  List<Map<String, dynamic>> _todayBookings = [];
-  List<Map<String, dynamic>> _upcomingBookings = [];
+class _ListBookingAdminScreenState extends State<ListBookingAdminScreen> {
+  List<Map<String, dynamic>> _groupedBookings = [];
   int _closedAffectedCount = 0;
   bool _isLoading = true;
   String? _errorMessage;
@@ -59,9 +58,11 @@ class _ListBookingAdminScreensState extends State<ListBookingAdminScreen> {
       );
 
       if (mounted) {
+        final rawGroups = data['grouped_bookings'] as List<dynamic>? ?? [];
         setState(() {
-          _todayBookings = List<Map<String, dynamic>>.from(data['today'] ?? []);
-          _upcomingBookings = List<Map<String, dynamic>>.from(data['upcoming'] ?? []);
+          _groupedBookings = rawGroups
+              .map((g) => Map<String, dynamic>.from(g as Map))
+              .toList();
           _closedAffectedCount = int.tryParse(data['closed_affected_count']?.toString() ?? '0') ?? 0;
           _isLoading = false;
         });
@@ -107,16 +108,6 @@ class _ListBookingAdminScreensState extends State<ListBookingAdminScreen> {
       });
       _loadBookingData();
     }
-  }
-
-  String _getHeaderTitle() {
-    if (_selectedDateRange == null) return 'Hari Ini';
-    if (_selectedDateRange!.start == _selectedDateRange!.end) {
-      return DateFormat('dd MMM yyyy').format(_selectedDateRange!.start);
-    }
-    final String startStr = DateFormat('dd MMM').format(_selectedDateRange!.start);
-    final String endStr = DateFormat('dd MMM yyyy').format(_selectedDateRange!.end);
-    return '$startStr - $endStr';
   }
 
   @override
@@ -223,7 +214,11 @@ class _ListBookingAdminScreensState extends State<ListBookingAdminScreen> {
             Expanded(
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator(color: AppThemeConstants.primaryBlue))
-                  : _buildBookingList(),
+                  : RefreshIndicator(
+                      onRefresh: _loadBookingData,
+                      color: AppThemeConstants.primaryBlue,
+                      child: _buildBookingList(),
+                    ),
             ),
           ],
         ),
@@ -300,63 +295,27 @@ class _ListBookingAdminScreensState extends State<ListBookingAdminScreen> {
   }
 
   Widget _buildBookingList() {
-    return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      children: [
-        if (_errorMessage != null)
-          Container(
-            padding: const EdgeInsets.all(12),
-            margin: const EdgeInsets.only(bottom: 16),
-            decoration: BoxDecoration(
-              color: AppThemeConstants.lightAmber,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              _errorMessage!,
-              style: const TextStyle(color: AppThemeConstants.warningAmber, fontSize: 13),
-            ),
+    if (_errorMessage != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Text(
+            _errorMessage!,
+            style: const TextStyle(color: AppThemeConstants.errorRed),
+            textAlign: TextAlign.center,
           ),
-        if (_todayBookings.isNotEmpty)
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                _getHeaderTitle(),
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppThemeConstants.textPrimary),
-              ),
-              const SizedBox(height: 8),
-              ..._todayBookings.map(
-                (booking) => BookingCard(
-                  booking: booking,
-                  onTap: () => context.push('/admin/booking-detail/${booking['id']}'),
-                ),
-              ),
-              const SizedBox(height: 24),
-            ],
-          ),
-        if (_upcomingBookings.isNotEmpty && _selectedDateRange == null)
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Mendatang',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppThemeConstants.textPrimary),
-              ),
-              const SizedBox(height: 8),
-              ..._upcomingBookings.map(
-                (booking) => BookingCard(
-                  booking: booking,
-                  onTap: () => context.push('/admin/booking-detail/${booking['id']}'),
-                ),
-              ),
-              const SizedBox(height: 32),
-            ],
-          ),
-        if (_todayBookings.isEmpty && _upcomingBookings.isEmpty)
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.all(32),
+        ),
+      );
+    }
+
+    if (_groupedBookings.isEmpty) {
+      return ListView(
+        children: [
+          SizedBox(
+            height: MediaQuery.of(context).size.height * 0.4,
+            child: Center(
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(Icons.search_off_rounded, size: 60, color: Colors.grey[400]),
                   const SizedBox(height: 16),
@@ -364,13 +323,53 @@ class _ListBookingAdminScreensState extends State<ListBookingAdminScreen> {
                     _searchController.text.isEmpty && _selectedDateRange == null
                         ? 'Belum ada jadwal booking'
                         : 'Booking tidak ditemukan',
-                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                    style: TextStyle(fontSize: 15, color: Colors.grey[600]),
                   ),
                 ],
               ),
             ),
           ),
-      ],
+        ],
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      itemCount: _groupedBookings.length,
+      itemBuilder: (context, groupIndex) {
+        final group = _groupedBookings[groupIndex];
+        final String dateLabel = group['date_label'] ?? '';
+        final List<dynamic> bookingsRaw = group['bookings'] ?? [];
+        final List<Map<String, dynamic>> bookings = bookingsRaw
+            .map((b) => Map<String, dynamic>.from(b as Map))
+            .toList();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
+              child: Text(
+                dateLabel,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: AppThemeConstants.textPrimary,
+                ),
+              ),
+            ),
+            ...bookings.map(
+              (booking) => BookingCard(
+                booking: booking,
+                onTap: () => context
+                    .push('/admin/booking-detail/${booking['id']}')
+                    .then((_) => _loadBookingData()),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+        );
+      },
     );
   }
 }

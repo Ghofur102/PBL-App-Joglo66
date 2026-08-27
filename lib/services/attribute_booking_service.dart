@@ -38,7 +38,7 @@ class AttributeBookingService {
   }
 
   static Future<Map<String, dynamic>> rentAttribute({
-    required int fkBookingId,
+    required int fkBookingDetailId,
     required List<Map<String, dynamic>> items,
     required String customerName,
     String? customerPhone,
@@ -49,7 +49,7 @@ class AttributeBookingService {
       final response = await ApiClient.post(
         Uri.parse(ApiEndpoints.rentAttribute),
         body: jsonEncode({
-          'fk_booking_id': fkBookingId,
+          'fk_booking_detail_id': fkBookingDetailId,
           'items': items,
           'customer_name': customerName,
           'customer_phone': customerPhone ?? '',

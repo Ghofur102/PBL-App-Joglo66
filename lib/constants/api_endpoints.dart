@@ -10,6 +10,7 @@ class ApiEndpoints {
   static String get rentAttribute => '$baseUrl/api/admin/rent-attribute';
   static String get returnAttribute => '$baseUrl/api/admin/return-rent-attribute';
   static String get historyAttribute => '$baseUrl/api/admin/history-rent-attribute';
+  static String get extendBookingTime => '$baseUrl/api/admin/extend-booking-time';
   static String get detailAttribute => '$baseUrl/api/admin/detail-attribute';
   static String get listAttribute => '$baseUrl/api/admin/list-attribute';
   static String get attributeTypes => '$baseUrl/api/admin/attribute-types';
