@@ -12,16 +12,11 @@ class BookingService {
     try {
       final List<String> queryParams = [];
       if (fieldId != null) queryParams.add('field_id=$fieldId');
-      if (search != null && search.isNotEmpty)
-        queryParams.add('search=$search');
-      if (startDate != null && startDate.isNotEmpty)
-        queryParams.add('start_date=$startDate');
-      if (endDate != null && endDate.isNotEmpty)
-        queryParams.add('end_date=$endDate');
+      if (search != null && search.isNotEmpty) queryParams.add('search=$search');
+      if (startDate != null && startDate.isNotEmpty) queryParams.add('start_date=$startDate');
+      if (endDate != null && endDate.isNotEmpty) queryParams.add('end_date=$endDate');
 
-      final String queryString = queryParams.isNotEmpty
-          ? '?${queryParams.join('&')}'
-          : '';
+      final String queryString = queryParams.isNotEmpty ? '?${queryParams.join('&')}' : '';
       final response = await ApiClient.get(
         Uri.parse('${ApiEndpoints.listBooking}$queryString'),
       );
@@ -29,9 +24,7 @@ class BookingService {
       if (response.statusCode == 200) {
         return json.decode(response.body)['data'];
       }
-      throw FormatException(
-        'Gagal mengambil daftar booking (Error ${response.statusCode})',
-      );
+      throw FormatException('Gagal mengambil daftar booking (Error ${response.statusCode})');
     } catch (e) {
       rethrow;
     }
@@ -68,9 +61,7 @@ class BookingService {
     }
   }
 
-  static Future<Map<String, dynamic>> fetchBookingDetail(
-    String detailBookingId,
-  ) async {
+  static Future<Map<String, dynamic>> fetchBookingDetail(String detailBookingId) async {
     try {
       final response = await ApiClient.get(
         Uri.parse('${ApiEndpoints.detailBooking}/$detailBookingId'),
@@ -80,9 +71,7 @@ class BookingService {
       if (response.statusCode == 200 && jsonData['success'] == true) {
         return jsonData['data'];
       }
-      throw FormatException(
-        jsonData['message'] ?? 'Data booking tidak ditemukan',
-      );
+      throw FormatException(jsonData['message'] ?? 'Data booking tidak ditemukan');
     } catch (e) {
       rethrow;
     }
@@ -120,10 +109,7 @@ class BookingService {
         return jsonData;
       }
 
-      throw FormatException(
-        jsonData['message'] ??
-            'Gagal mereschedule jadwal (Code: ${response.statusCode})',
-      );
+      throw FormatException(jsonData['message'] ?? 'Gagal mereschedule jadwal (Code: ${response.statusCode})');
     } catch (e) {
       rethrow;
     }
@@ -153,35 +139,78 @@ class BookingService {
         return jsonData;
       }
 
-      throw FormatException(
-        jsonData['message'] ??
-            'Gagal membatalkan booking (Code: ${response.statusCode})',
-      );
+      throw FormatException(jsonData['message'] ?? 'Gagal membatalkan booking (Code: ${response.statusCode})');
     } catch (e) {
       rethrow;
     }
   }
 
-  static Future<List<dynamic>> fetchClosedBookings({
-    int? fieldId,
-    String? date,
+  static Future<void> approveCancelBooking(String detailBookingId) async {
+    final response = await ApiClient.post(
+      Uri.parse(ApiEndpoints.approveCancelBooking(detailBookingId)),
+    );
+    final jsonData = json.decode(response.body);
+
+    if (response.statusCode != 200 || jsonData['status'] != 'success') {
+      throw FormatException(jsonData['message'] ?? 'Gagal menyetujui pembatalan.');
+    }
+  }
+
+  static Future<void> rejectCancelBooking({
+    required String detailBookingId,
+    required String rejectionReason,
   }) async {
+    final response = await ApiClient.post(
+      Uri.parse(ApiEndpoints.rejectCancelBooking(detailBookingId)),
+      body: jsonEncode({'rejection_reason': rejectionReason}),
+    );
+    final jsonData = json.decode(response.body);
+
+    if (response.statusCode != 200 || jsonData['status'] != 'success') {
+      throw FormatException(jsonData['message'] ?? 'Gagal menolak pembatalan.');
+    }
+  }
+
+  static Future<void> approveRescheduleBooking(String detailBookingId) async {
+    final response = await ApiClient.post(
+      Uri.parse(ApiEndpoints.approveRescheduleBooking(detailBookingId)),
+    );
+    final jsonData = json.decode(response.body);
+
+    if (response.statusCode != 200 || jsonData['status'] != 'success') {
+      throw FormatException(jsonData['message'] ?? 'Gagal menyetujui reschedule.');
+    }
+  }
+
+  static Future<void> rejectRescheduleBooking({
+    required String detailBookingId,
+    required String rejectionReason,
+  }) async {
+    final response = await ApiClient.post(
+      Uri.parse(ApiEndpoints.rejectRescheduleBooking(detailBookingId)),
+      body: jsonEncode({'rejection_reason': rejectionReason}),
+    );
+    final jsonData = json.decode(response.body);
+
+    if (response.statusCode != 200 || jsonData['status'] != 'success') {
+      throw FormatException(jsonData['message'] ?? 'Gagal menolak reschedule.');
+    }
+  }
+
+  static Future<List<dynamic>> fetchClosedBookings({int? fieldId, String? date}) async {
     try {
       final List<String> queryParams = [];
       if (fieldId != null) queryParams.add('field_id=$fieldId');
       if (date != null && date.isNotEmpty) queryParams.add('date=$date');
 
-      final String queryString = queryParams.isNotEmpty
-          ? '?${queryParams.join('&')}'
-          : '';
+      final String queryString = queryParams.isNotEmpty ? '?${queryParams.join('&')}' : '';
       final response = await ApiClient.get(
         Uri.parse('${ApiEndpoints.listClosedBooking}$queryString'),
       );
 
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
-        final bool isSuccess =
-            jsonData['success'] == true || jsonData['status'] == 'success';
+        final bool isSuccess = jsonData['success'] == true || jsonData['status'] == 'success';
 
         if (isSuccess) {
           final rawData = jsonData['closed_bookings'];
@@ -193,9 +222,7 @@ class BookingService {
           }
           return [];
         }
-        throw FormatException(
-          jsonData['message'] ?? 'Gagal mengambil data closed bookings',
-        );
+        throw FormatException(jsonData['message'] ?? 'Gagal mengambil data closed bookings');
       }
       throw FormatException('Error server (Code: ${response.statusCode})');
     } catch (e) {
@@ -222,9 +249,7 @@ class BookingService {
         return jsonData['data'];
       }
 
-      throw FormatException(
-        jsonData['message'] ?? 'Gagal memperpanjang waktu bermain.',
-      );
+      throw FormatException(jsonData['message'] ?? 'Gagal memperpanjang waktu bermain.');
     } catch (e) {
       rethrow;
     }

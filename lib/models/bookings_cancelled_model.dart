@@ -8,6 +8,9 @@ class BookingCancelled {
   final String reason;
   final String? cancelDate;
   final String statusRefund;
+  final String approvalStatus;
+  final String senderBy;
+  final String? rejectionReason;
 
   final BookingDetail? bookingDetail;
   final FieldClosure? fieldClosure;
@@ -19,6 +22,9 @@ class BookingCancelled {
     required this.reason,
     this.cancelDate,
     required this.statusRefund,
+    this.approvalStatus = 'approved',
+    this.senderBy = 'admin',
+    this.rejectionReason,
     this.bookingDetail,
     this.fieldClosure,
   });
@@ -29,8 +35,11 @@ class BookingCancelled {
       fkBookingDetailId: int.tryParse(json['fk_booking_detail_id'].toString()) ?? 0,
       fkFieldClosureId: json['fk_field_closure_id'] != null ? int.tryParse(json['fk_field_closure_id'].toString()) : null,
       reason: json['reason'] ?? '',
-      cancelDate: json['cancle_date'] ?? json['cancel_date'] ?? '', // Mengamankan typo typo 'cancle' dari database laravel
+      cancelDate: json['cancle_date'] ?? json['cancel_date'] ?? '',
       statusRefund: json['status_refund'] ?? 'none',
+      approvalStatus: json['approval_status'] ?? 'approved',
+      senderBy: json['sender_by'] ?? 'admin',
+      rejectionReason: json['rejection_reason'],
       bookingDetail: json['booking_detail'] != null ? BookingDetail.fromJson(json['booking_detail']) : null,
       fieldClosure: json['field_closure'] != null ? FieldClosure.fromJson(json['field_closure']) : null,
     );
@@ -43,5 +52,8 @@ class BookingCancelled {
     'reason': reason,
     'cancle_date': cancelDate,
     'status_refund': statusRefund,
+    'approval_status': approvalStatus,
+    'sender_by': senderBy,
+    'rejection_reason': rejectionReason,
   };
 }

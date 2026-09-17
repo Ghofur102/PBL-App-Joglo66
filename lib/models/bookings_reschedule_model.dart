@@ -6,8 +6,15 @@ class BookingReschedule {
   final int fkBookingDetailId;
   final int? fkFieldClosureId;
   final String oldDate;
+  final String? newPlayDate;
+  final String? newStartPlayTime;
+  final String? newEndPlayTime;
+  final int? newPrice;
   final String statusRefund;
   final String reason;
+  final String approvalStatus;
+  final String senderBy;
+  final String? rejectionReason;
 
   final BookingDetail? bookingDetail;
   final FieldClosure? fieldClosure;
@@ -17,8 +24,15 @@ class BookingReschedule {
     required this.fkBookingDetailId,
     this.fkFieldClosureId,
     required this.oldDate,
+    this.newPlayDate,
+    this.newStartPlayTime,
+    this.newEndPlayTime,
+    this.newPrice,
     required this.statusRefund,
     required this.reason,
+    this.approvalStatus = 'approved',
+    this.senderBy = 'admin',
+    this.rejectionReason,
     this.bookingDetail,
     this.fieldClosure,
   });
@@ -29,8 +43,15 @@ class BookingReschedule {
       fkBookingDetailId: int.tryParse(json['fk_booking_detail_id'].toString()) ?? 0,
       fkFieldClosureId: json['fk_field_closure_id'] != null ? int.tryParse(json['fk_field_closure_id'].toString()) : null,
       oldDate: json['old_date'] ?? '',
+      newPlayDate: json['new_play_date'],
+      newStartPlayTime: json['new_start_play_time'],
+      newEndPlayTime: json['new_end_play_time'],
+      newPrice: json['new_price'] != null ? int.tryParse(json['new_price'].toString()) : null,
       statusRefund: json['status_refund'] ?? 'none',
       reason: json['reason'] ?? '',
+      approvalStatus: json['approval_status'] ?? 'approved',
+      senderBy: json['sender_by'] ?? 'admin',
+      rejectionReason: json['rejection_reason'],
       bookingDetail: json['booking_detail'] != null ? BookingDetail.fromJson(json['booking_detail']) : null,
       fieldClosure: json['field_closure'] != null ? FieldClosure.fromJson(json['field_closure']) : null,
     );
@@ -41,7 +62,14 @@ class BookingReschedule {
     'fk_booking_detail_id': fkBookingDetailId,
     'fk_field_closure_id': fkFieldClosureId,
     'old_date': oldDate,
+    'new_play_date': newPlayDate,
+    'new_start_play_time': newStartPlayTime,
+    'new_end_play_time': newEndPlayTime,
+    'new_price': newPrice,
     'status_refund': statusRefund,
     'reason': reason,
+    'approval_status': approvalStatus,
+    'sender_by': senderBy,
+    'rejection_reason': rejectionReason,
   };
 }

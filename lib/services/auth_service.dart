@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:pbl_app_joglo66/constants/api_endpoints.dart';
 
 class AuthService extends ChangeNotifier {
   bool _isLoggedIn = false;
@@ -32,7 +33,7 @@ class AuthService extends ChangeNotifier {
   Future<Map<String, dynamic>> login(String email, String password) async {
     try {
       final response = await http.post(
-        Uri.parse('$_baseUrl/api/login'),
+        Uri.parse(ApiEndpoints.login),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -89,7 +90,7 @@ class AuthService extends ChangeNotifier {
       throw const FormatException('Sesi telah habis. Silakan login kembali.');
     }
 
-    final url = Uri.parse('$_baseUrl/api/admin/profile');
+    final url = Uri.parse(ApiEndpoints.profile);
 
     try {
       final response = await http.get(
@@ -121,7 +122,7 @@ class AuthService extends ChangeNotifier {
 
     if (token != null) {
       try {
-        final String apiUrl = '$_baseUrl/api/admin/logout';
+        final String apiUrl = ApiEndpoints.logout;
         await http.post(
           Uri.parse(apiUrl),
           headers: {

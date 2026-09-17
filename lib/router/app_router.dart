@@ -25,6 +25,7 @@ import 'package:pbl_app_joglo66/screens/admin/field/list_field_admin_screen.dart
 import 'package:pbl_app_joglo66/screens/admin/profile_admin_screen.dart';
 import 'package:pbl_app_joglo66/screens/auth/login_auth_screen.dart';
 import 'package:pbl_app_joglo66/screens/monthly_report_screen.dart';
+import 'package:pbl_app_joglo66/screens/notification/notification_list_screen.dart';
 import 'package:pbl_app_joglo66/screens/owner/dashboard_owner_screen.dart';
 import 'package:pbl_app_joglo66/screens/owner/employee/employee_list_owner_screen.dart';
 import 'package:pbl_app_joglo66/screens/owner/field/owner_field_list_screen.dart';
@@ -36,7 +37,8 @@ import 'package:pbl_app_joglo66/services/api_client.dart';
 final authService = AuthService();
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
-final GlobalKey<NavigatorState> _shellNavigatorKey = GlobalKey<NavigatorState>();
+final GlobalKey<NavigatorState> _shellNavigatorKey =
+    GlobalKey<NavigatorState>();
 
 const List<String> _adminWorkerRoles = ['worker'];
 const List<String> _allManagementRoles = ['owner', 'treasurer', 'worker'];
@@ -80,7 +82,8 @@ final GoRouter appRouter = (() {
         return '/owner/dashboard';
       }
 
-      if ((currentRole == 'admin' || currentRole == 'worker') && !isGoingToAdmin) {
+      if ((currentRole == 'admin' || currentRole == 'worker') &&
+          !isGoingToAdmin) {
         return '/admin/dashboard';
       }
 
@@ -95,7 +98,10 @@ final GoRouter appRouter = (() {
       ShellRoute(
         navigatorKey: _shellNavigatorKey,
         builder: (context, state, child) {
-          return CustomBottomNavPage(currentRole: authService.role, child: child);
+          return CustomBottomNavPage(
+            currentRole: authService.role,
+            child: child,
+          );
         },
         routes: [
           GoRoute(
@@ -120,6 +126,14 @@ final GoRouter appRouter = (() {
               allowedRoles: _adminWorkerRoles,
               currentRole: authService.role,
               child: const ListBookingAdminScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/admin/notifications',
+            builder: (context, state) => ProtectedRoute(
+              allowedRoles: _adminWorkerRoles,
+              currentRole: authService.role,
+              child: const NotificationListScreen(role: 'worker'),
             ),
           ),
           GoRoute(
@@ -217,6 +231,15 @@ final GoRouter appRouter = (() {
             ),
           ),
         ],
+      ),
+      GoRoute(
+        path: '/owner/notifications',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => ProtectedRoute(
+          allowedRoles: const ['owner'],
+          currentRole: authService.role,
+          child: const NotificationListScreen(role: 'owner'),
+        ),
       ),
       GoRoute(
         path: '/owner/karyawan',
@@ -347,7 +370,9 @@ final GoRouter appRouter = (() {
             currentRole: authService.role,
             child: SuccessfulPaymentAdminScreen(
               isSuccess: extra['isSuccess'] as bool? ?? true,
-              message: extra['message'] as String? ?? 'Pembayaran berhasil dikonfirmasi.',
+              message:
+                  extra['message'] as String? ??
+                  'Pembayaran berhasil dikonfirmasi.',
             ),
           );
         },

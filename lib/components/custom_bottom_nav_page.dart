@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:pbl_app_joglo66/constants/app_theme_constants.dart';
 import 'package:pbl_app_joglo66/router/app_router.dart';
 import 'package:pbl_app_joglo66/services/booking_service.dart';
+import 'package:pbl_app_joglo66/services/notification_service.dart';
 
 class CustomBottomNavPage extends StatefulWidget {
   final Widget child;
@@ -21,14 +22,15 @@ class CustomBottomNavPage extends StatefulWidget {
 
 class _CustomBottomNavPageState extends State<CustomBottomNavPage> {
   int _affectedBookingCount = 0;
+  int _unreadNotificationCount = 0;
   Timer? _pollingTimer;
 
   @override
   void initState() {
     super.initState();
-    if (widget.currentRole == 'admin' || widget.currentRole == 'worker') {
-      _checkAffectedBookings();
-      _pollingTimer = Timer.periodic(const Duration(seconds: 30), (_) => _checkAffectedBookings());
+    if (widget.currentRole == 'worker') {
+      _runPeriodicSync();
+      _pollingTimer = Timer.periodic(const Duration(seconds: 30), (_) => _runPeriodicSync());
     }
   }
 
@@ -36,6 +38,13 @@ class _CustomBottomNavPageState extends State<CustomBottomNavPage> {
   void dispose() {
     _pollingTimer?.cancel();
     super.dispose();
+  }
+
+  Future<void> _runPeriodicSync() async {
+    await Future.wait([
+      _checkAffectedBookings(),
+      _checkUnreadNotifications(),
+    ]);
   }
 
   Future<void> _checkAffectedBookings() async {
@@ -50,27 +59,38 @@ class _CustomBottomNavPageState extends State<CustomBottomNavPage> {
     } catch (_) {}
   }
 
+  Future<void> _checkUnreadNotifications() async {
+    try {
+      final count = await NotificationService.fetchUnreadCount(role: 'worker');
+      if (mounted && count != _unreadNotificationCount) {
+        setState(() {
+          _unreadNotificationCount = count;
+        });
+      }
+    } catch (_) {}
+  }
+
   int _calculateSelectedIndex(BuildContext context) {
     final String location = GoRouterState.of(context).uri.toString();
-    if (location.contains('dashboard')) return 0;
-    if (location.contains('list-booking')) return 1;
-    if (location.contains('list-field')) return 2;
-    if (location.contains('profile')) return 3;
+    if (location.startsWith('/admin/dashboard')) return 0;
+    if (location.startsWith('/admin/list-booking')) return 1;
+    if (location.startsWith('/admin/notifications')) return 2;
+    if (location.startsWith('/admin/profile')) return 3;
     return 0;
   }
 
   void _onItemTapped(int index, BuildContext context) {
-    final bool isAdminOrWorker = widget.currentRole == 'admin' || widget.currentRole == 'worker';
+    final bool isWorker = widget.currentRole == 'worker';
 
-    if (isAdminOrWorker) {
-      final List<String> adminPaths = [
+    if (isWorker) {
+      final List<String> workerPaths = [
         '/admin/dashboard',
         '/admin/list-booking',
-        '/admin/list-field',
-        '/admin/profile'
+        '/admin/notifications',
+        '/admin/profile',
       ];
-      if (index >= 0 && index < adminPaths.length) {
-        context.go(adminPaths[index]);
+      if (index >= 0 && index < workerPaths.length) {
+        context.go(workerPaths[index]);
       }
     } else {
       if (index == 0) {
@@ -85,11 +105,11 @@ class _CustomBottomNavPageState extends State<CustomBottomNavPage> {
   @override
   Widget build(BuildContext context) {
     final int currentIndex = _calculateSelectedIndex(context);
-    final bool isAdminOrWorker = widget.currentRole == 'admin' || widget.currentRole == 'worker';
+    final bool isWorker = widget.currentRole == 'worker';
 
     return Scaffold(
       body: widget.child,
-      floatingActionButton: isAdminOrWorker
+      floatingActionButton: isWorker
           ? FloatingActionButton(
               backgroundColor: AppThemeConstants.accentBlue,
               shape: const CircleBorder(),
@@ -98,9 +118,9 @@ class _CustomBottomNavPageState extends State<CustomBottomNavPage> {
               child: const Icon(Icons.add, color: Colors.white, size: 32),
             )
           : null,
-      floatingActionButtonLocation: isAdminOrWorker ? FloatingActionButtonLocation.centerDocked : null,
+      floatingActionButtonLocation: isWorker ? FloatingActionButtonLocation.centerDocked : null,
       bottomNavigationBar: BottomAppBar(
-        shape: isAdminOrWorker ? const CircularNotchedRectangle() : null,
+        shape: isWorker ? const CircularNotchedRectangle() : null,
         notchMargin: 8.0,
         color: Colors.white,
         clipBehavior: Clip.antiAlias,
@@ -108,17 +128,17 @@ class _CustomBottomNavPageState extends State<CustomBottomNavPage> {
         child: SizedBox(
           height: 64,
           child: Row(
-            children: isAdminOrWorker
+            children: isWorker
                 ? [
-                    Expanded(child: _buildNavItem(context, Icons.dashboard, 'Dashboard', 0, currentIndex)),
-                    Expanded(child: _buildNavItem(context, Icons.book_online, 'Booking', 1, currentIndex, badgeCount: _affectedBookingCount)),
+                    Expanded(child: _buildNavItem(context, Icons.dashboard_rounded, 'Dashboard', 0, currentIndex)),
+                    Expanded(child: _buildNavItem(context, Icons.book_online_rounded, 'Booking', 1, currentIndex, badgeCount: _affectedBookingCount)),
                     const SizedBox(width: 60),
-                    Expanded(child: _buildNavItem(context, Icons.sports_soccer, 'Lapangan', 2, currentIndex)),
-                    Expanded(child: _buildNavItem(context, Icons.person, 'Profil', 3, currentIndex)),
+                    Expanded(child: _buildNavItem(context, Icons.notifications_rounded, 'Notifikasi', 2, currentIndex, badgeCount: _unreadNotificationCount)),
+                    Expanded(child: _buildNavItem(context, Icons.person_rounded, 'Profil', 3, currentIndex)),
                   ]
                 : [
-                    Expanded(child: _buildNavItem(context, Icons.dashboard, 'Beranda', 0, currentIndex)),
-                    Expanded(child: _buildNavItem(context, Icons.logout, 'Keluar', 4, currentIndex)),
+                    Expanded(child: _buildNavItem(context, Icons.dashboard_rounded, 'Beranda', 0, currentIndex)),
+                    Expanded(child: _buildNavItem(context, Icons.logout_rounded, 'Keluar', 4, currentIndex)),
                   ],
           ),
         ),

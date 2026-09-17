@@ -42,4 +42,19 @@ class ApiEndpoints {
   static String get monthlyReport => '$baseUrl/api/laporan-bulanan';
   static String get dailyRecap => '$baseUrl/api/admin/rekap-harian';
   static String get paymentBooking => '$baseUrl/api/admin/payment-booking';
+
+  static String adminNotifications({int perPage = 15}) => '$baseUrl/api/admin/notifications?per_page=$perPage';
+  static String get adminNotificationUnreadCount => '$baseUrl/api/admin/notifications/unread-count';
+  static String adminNotificationMarkRead(String id) => '$baseUrl/api/admin/notifications/$id/read';
+  static String get adminNotificationMarkAllRead => '$baseUrl/api/admin/notifications/read-all';
+
+  static String ownerNotifications({int perPage = 15}) => '$baseUrl/api/owner/notifications?per_page=$perPage';
+  static String get ownerNotificationUnreadCount => '$baseUrl/api/owner/notifications/unread-count';
+  static String ownerNotificationMarkRead(String id) => '$baseUrl/api/owner/notifications/$id/read';
+  static String get ownerNotificationMarkAllRead => '$baseUrl/api/owner/notifications/read-all';
+
+  static String approveCancelBooking(String detailBookingId) => '$baseUrl/api/admin/cancel-booking/$detailBookingId/approve';
+  static String rejectCancelBooking(String detailBookingId) => '$baseUrl/api/admin/cancel-booking/$detailBookingId/reject';
+  static String approveRescheduleBooking(String detailBookingId) => '$baseUrl/api/admin/reschedule-booking/$detailBookingId/approve';
+  static String rejectRescheduleBooking(String detailBookingId) => '$baseUrl/api/admin/reschedule-booking/$detailBookingId/reject';
 }
