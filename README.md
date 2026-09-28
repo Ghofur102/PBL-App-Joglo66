@@ -1,16 +1,10 @@
 # pbl_app_joglo66
 
-A new Flutter project.
+## DESKRIPSI TIM
 
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Aplikasi mobile dari PBL tim 1 (Putra Zeus) dari kelas 3B TRPL dengan mitra Joglo66 Mini Soccer
+Nama Anggota:
+- Muhammad Ainul Huda
+- Hilmi Zamzami
+- Daniel Amrulloh
+- Muhamad Abdul Ghofur
