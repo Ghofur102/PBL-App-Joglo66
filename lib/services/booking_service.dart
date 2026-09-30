@@ -145,14 +145,26 @@ class BookingService {
     }
   }
 
-  static Future<void> approveCancelBooking(String detailBookingId) async {
-    final response = await ApiClient.post(
-      Uri.parse(ApiEndpoints.approveCancelBooking(detailBookingId)),
-    );
-    final jsonData = json.decode(response.body);
+  static Future<void> approveCancelBooking({
+    required String detailBookingId,
+    required String statusRefund,
+    required int refundAmount,
+  }) async {
+    try {
+      final response = await ApiClient.post(
+        Uri.parse(ApiEndpoints.approveCancelBooking(detailBookingId)),
+        body: jsonEncode({
+          'status_refund': statusRefund,
+          'refund_amount': refundAmount,
+        }),
+      );
+      final jsonData = json.decode(response.body);
 
-    if (response.statusCode != 200 || jsonData['status'] != 'success') {
-      throw FormatException(jsonData['message'] ?? 'Gagal menyetujui pembatalan.');
+      if (response.statusCode != 200 || jsonData['status'] != 'success') {
+        throw FormatException(jsonData['message'] ?? 'Gagal menyetujui pembatalan.');
+      }
+    } catch (e) {
+      rethrow;
     }
   }
 

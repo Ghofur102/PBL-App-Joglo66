@@ -76,12 +76,114 @@ class _NotificationListScreenState extends State<NotificationListScreen> {
       });
     }
 
-    if (notif.data.bookingId != null && mounted) {
+    if (widget.role == 'worker' && notif.data.bookingId != null && mounted) {
       context.push('/admin/booking-detail/${notif.data.bookingId}');
     }
   }
 
-  void _showApprovalDialog({
+  String _formatDateHeader(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final itemDate = DateTime(date.year, date.month, date.day);
+
+    if (itemDate == today) {
+      return 'Hari Ini';
+    } else if (itemDate == today.subtract(const Duration(days: 1))) {
+      return 'Kemarin';
+    }
+    return DateFormat('dd MMMM yyyy').format(date);
+  }
+
+  Map<String, List<AppNotification>> _groupNotifications() {
+    final Map<String, List<AppNotification>> grouped = {};
+    for (var item in _notifications) {
+      final header = _formatDateHeader(item.createdAt);
+      grouped.putIfAbsent(header, () => []).add(item);
+    }
+    return grouped;
+  }
+
+  void _showApproveCancelDialog(String detailBookingId) {
+    String selectedRefundStatus = 'None';
+    final refundAmountController = TextEditingController(text: '0');
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: const Text('Persetujuan Pembatalan', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Tentukan skema pengembalian dana kasir:', style: TextStyle(fontSize: 13, color: AppThemeConstants.textSecondary)),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    value: selectedRefundStatus,
+                    decoration: const InputDecoration(
+                      labelText: 'Skema Refund',
+                      border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: 'None', child: Text('Tanpa Refund (0%)')),
+                      DropdownMenuItem(value: 'Partial', child: Text('Sebagian (Kustom)')),
+                      DropdownMenuItem(value: 'Full', child: Text('Refund Penuh')),
+                    ],
+                    onChanged: (val) {
+                      setDialogState(() {
+                        selectedRefundStatus = val ?? 'None';
+                        if (selectedRefundStatus == 'None') {
+                          refundAmountController.text = '0';
+                        }
+                      });
+                    },
+                  ),
+                  if (selectedRefundStatus != 'None') ...[
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: refundAmountController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Nominal Refund (Rp)',
+                        prefixText: 'Rp ',
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Batal'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: AppThemeConstants.successGreen),
+                onPressed: () async {
+                  final amount = int.tryParse(refundAmountController.text) ?? 0;
+                  Navigator.pop(ctx);
+                  _processApprovalAction(
+                    actionType: 'approve_cancel',
+                    detailBookingId: detailBookingId,
+                    statusRefund: selectedRefundStatus,
+                    refundAmount: amount,
+                  );
+                },
+                child: const Text('Setujui Batal', style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  void _showRejectDialog({
     required String title,
     required String actionType,
     required String detailBookingId,
@@ -91,26 +193,23 @@ class _NotificationListScreenState extends State<NotificationListScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(title),
-        content: actionType.contains('reject')
-            ? TextField(
-                controller: reasonController,
-                decoration: const InputDecoration(
-                  labelText: 'Alasan Penolakan',
-                  hintText: 'Tuliskan alasan penolakan...',
-                ),
-                maxLines: 2,
-              )
-            : const Text('Apakah Anda yakin ingin menyetujui permohonan ini?'),
+        title: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        content: TextField(
+          controller: reasonController,
+          decoration: const InputDecoration(
+            labelText: 'Alasan Penolakan',
+            hintText: 'Tuliskan alasan penolakan...',
+            border: OutlineInputBorder(),
+          ),
+          maxLines: 2,
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: const Text('Batal'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: actionType.contains('reject') ? AppThemeConstants.errorRed : AppThemeConstants.successGreen,
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: AppThemeConstants.errorRed),
             onPressed: () async {
               Navigator.pop(ctx);
               _processApprovalAction(
@@ -119,7 +218,7 @@ class _NotificationListScreenState extends State<NotificationListScreen> {
                 reason: reasonController.text,
               );
             },
-            child: Text(actionType.contains('reject') ? 'Tolak' : 'Setujui', style: const TextStyle(color: Colors.white)),
+            child: const Text('Tolak', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -129,12 +228,18 @@ class _NotificationListScreenState extends State<NotificationListScreen> {
   Future<void> _processApprovalAction({
     required String actionType,
     required String detailBookingId,
+    String? statusRefund,
+    int? refundAmount,
     String? reason,
   }) async {
     setState(() => _isLoading = true);
     try {
       if (actionType == 'approve_cancel') {
-        await BookingService.approveCancelBooking(detailBookingId);
+        await BookingService.approveCancelBooking(
+          detailBookingId: detailBookingId,
+          statusRefund: statusRefund ?? 'None',
+          refundAmount: refundAmount ?? 0,
+        );
       } else if (actionType == 'reject_cancel') {
         await BookingService.rejectCancelBooking(
           detailBookingId: detailBookingId,
@@ -167,6 +272,8 @@ class _NotificationListScreenState extends State<NotificationListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final grouped = _groupNotifications();
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -187,13 +294,43 @@ class _NotificationListScreenState extends State<NotificationListScreen> {
               ? const Center(child: Text('Belum ada notifikasi.', style: TextStyle(color: Colors.grey)))
               : RefreshIndicator(
                   onRefresh: _loadNotifications,
-                  child: ListView.separated(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _notifications.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
-                    itemBuilder: (context, index) {
-                      final item = _notifications[index];
-                      return _buildNotificationCard(item);
+                  child: ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    itemCount: grouped.keys.length,
+                    itemBuilder: (context, groupIndex) {
+                      final header = grouped.keys.elementAt(groupIndex);
+                      final items = grouped[header]!;
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade100,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: Colors.grey.shade300),
+                                  ),
+                                  child: Text(
+                                    header,
+                                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey.shade700),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(child: Divider(color: Colors.grey.shade200, thickness: 1)),
+                              ],
+                            ),
+                          ),
+                          ...items.map((item) => Padding(
+                                padding: const EdgeInsets.only(bottom: 10),
+                                child: _buildNotificationCard(item),
+                              )),
+                        ],
+                      );
                     },
                   ),
                 ),
@@ -201,20 +338,28 @@ class _NotificationListScreenState extends State<NotificationListScreen> {
   }
 
   Widget _buildNotificationCard(AppNotification notif) {
-    final dateFormat = DateFormat('dd MMM yyyy, HH:mm');
-    final isCancelRequest = notif.data.type == 'cancel_request';
-    final isRescheduleRequest = notif.data.type == 'reschedule_request';
-    final canApprove = widget.role != 'owner' && (isCancelRequest || isRescheduleRequest);
+    final timeFormat = DateFormat('HH:mm');
+    final targetDetailId = (notif.data.bookingDetailId ?? notif.data.bookingId)?.toString();
+
+    final isCancel = notif.data.type.isCancel;
+    final isReschedule = notif.data.type.isReschedule;
+    final isActionable = notif.data.type.isActionableRequest;
+    final status = notif.data.decisionStatus;
+
+    final canApprove = widget.role != 'owner' &&
+        isActionable &&
+        status.isPending &&
+        targetDetailId != null;
 
     Color badgeColor = Colors.blue.shade50;
     Color iconColor = AppThemeConstants.primaryBlue;
     IconData icon = Icons.notifications;
 
-    if (isCancelRequest || notif.data.type.contains('cancel')) {
+    if (isCancel) {
       badgeColor = Colors.red.shade50;
       iconColor = AppThemeConstants.errorRed;
       icon = Icons.cancel_outlined;
-    } else if (isRescheduleRequest || notif.data.type.contains('reschedule')) {
+    } else if (isReschedule) {
       badgeColor = Colors.orange.shade50;
       iconColor = Colors.orange.shade800;
       icon = Icons.edit_calendar;
@@ -224,11 +369,13 @@ class _NotificationListScreenState extends State<NotificationListScreen> {
       onTap: () => _handleNotificationTap(notif),
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: notif.isUnread ? Colors.blue.shade50.withOpacity(0.4) : Colors.white,
+          color: notif.isUnread ? Colors.blue.shade50.withOpacity(0.35) : Colors.white,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: notif.isUnread ? AppThemeConstants.primaryBlue.withOpacity(0.3) : AppThemeConstants.borderGrey),
+          border: Border.all(
+            color: notif.isUnread ? AppThemeConstants.primaryBlue.withOpacity(0.3) : AppThemeConstants.borderGrey,
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -237,40 +384,112 @@ class _NotificationListScreenState extends State<NotificationListScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 CircleAvatar(
-                  radius: 18,
+                  radius: 16,
                   backgroundColor: badgeColor,
-                  child: Icon(icon, color: iconColor, size: 18),
+                  child: Icon(icon, color: iconColor, size: 16),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Expanded(
                             child: Text(
                               notif.data.title,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          if (notif.isUnread)
+                          if (notif.isUnread) ...[
+                            const SizedBox(width: 6),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
                               decoration: BoxDecoration(color: AppThemeConstants.primaryBlue, borderRadius: BorderRadius.circular(8)),
-                              child: const Text('Baru', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                              child: const Text('Baru', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
                             ),
+                          ],
                         ],
                       ),
                       const SizedBox(height: 4),
-                      Text(notif.data.message, style: const TextStyle(fontSize: 13, color: AppThemeConstants.textPrimary)),
-                      const SizedBox(height: 8),
+                      Text(
+                        notif.data.message,
+                        style: const TextStyle(fontSize: 12, color: AppThemeConstants.textPrimary),
+                      ),
+                      const SizedBox(height: 6),
+
+                      if (status.isPending) ...[
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 6),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.shade50,
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: Colors.amber.shade300),
+                          ),
+                          child: Text(
+                            'Status: Menunggu Keputusan Admin',
+                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.amber.shade900),
+                          ),
+                        ),
+                      ] else if (status.isApproved) ...[
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 6),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade50,
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: Colors.green.shade300),
+                          ),
+                          child: const Text(
+                            'Status: Telah Disetujui',
+                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.green),
+                          ),
+                        ),
+                      ] else if (status.isRejected) ...[
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 6),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.red.shade50,
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: Colors.red.shade300),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Status: Telah Ditolak',
+                                style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppThemeConstants.errorRed),
+                              ),
+                              if (notif.data.rejectionReason != null && notif.data.rejectionReason!.isNotEmpty)
+                                Text(
+                                  'Alasan: ${notif.data.rejectionReason}',
+                                  style: TextStyle(fontSize: 10, color: Colors.red.shade800),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
+
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('Dari: ${notif.data.senderName} (${notif.data.senderRole})', style: const TextStyle(fontSize: 11, color: Colors.grey)),
-                          Text(dateFormat.format(notif.createdAt), style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                          Flexible(
+                            child: Text(
+                              'Dari: ${notif.data.senderName} (${notif.data.senderRole})',
+                              style: const TextStyle(fontSize: 10, color: Colors.grey),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            timeFormat.format(notif.createdAt),
+                            style: const TextStyle(fontSize: 10, color: Colors.grey),
+                          ),
                         ],
                       ),
                     ],
@@ -278,36 +497,54 @@ class _NotificationListScreenState extends State<NotificationListScreen> {
                 ),
               ],
             ),
-            if (canApprove && notif.data.bookingId != null) ...[
-              const Divider(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  OutlinedButton(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppThemeConstants.errorRed,
-                      side: const BorderSide(color: AppThemeConstants.errorRed),
+            if (canApprove) ...[
+              const SizedBox(height: 8),
+              Divider(height: 1, color: Colors.grey.shade200),
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerRight,
+                child: Wrap(
+                  alignment: WrapAlignment.end,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
+                  runSpacing: 6,
+                  children: [
+                    OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppThemeConstants.errorRed,
+                        side: const BorderSide(color: AppThemeConstants.errorRed),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                        minimumSize: const Size(60, 32),
+                        textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                      ),
+                      onPressed: () => _showRejectDialog(
+                        title: isCancel ? 'Tolak Pembatalan' : 'Tolak Reschedule',
+                        actionType: isCancel ? 'reject_cancel' : 'reject_reschedule',
+                        detailBookingId: targetDetailId,
+                      ),
+                      child: const Text('Tolak'),
                     ),
-                    onPressed: () => _showApprovalDialog(
-                      title: 'Tolak Permohonan',
-                      actionType: isCancelRequest ? 'reject_cancel' : 'reject_reschedule',
-                      detailBookingId: notif.data.bookingId.toString(),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppThemeConstants.successGreen,
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                        minimumSize: const Size(60, 32),
+                        textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                      ),
+                      onPressed: () {
+                        if (isCancel) {
+                          _showApproveCancelDialog(targetDetailId);
+                        } else {
+                          _processApprovalAction(
+                            actionType: 'approve_reschedule',
+                            detailBookingId: targetDetailId,
+                          );
+                        }
+                      },
+                      child: const Text('Setujui', style: TextStyle(color: Colors.white)),
                     ),
-                    child: const Text('Tolak'),
-                  ),
-                  const SizedBox(width: 8),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppThemeConstants.successGreen,
-                    ),
-                    onPressed: () => _showApprovalDialog(
-                      title: 'Setujui Permohonan',
-                      actionType: isCancelRequest ? 'approve_cancel' : 'approve_reschedule',
-                      detailBookingId: notif.data.bookingId.toString(),
-                    ),
-                    child: const Text('Setujui', style: TextStyle(color: Colors.white)),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ],

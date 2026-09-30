@@ -972,7 +972,7 @@ class _BookingDetailsAdminScreenState extends State<BookingDetailsAdminScreen> {
                     TextButton.icon(
                       onPressed: () => _showAddAttributeModal(initialSession: session),
                       icon: const Icon(Icons.add_shopping_cart_rounded, size: 15),
-                      label: const Text('+ Sewa Atribut Sesi Ini', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                      label: const Text('+ Sewa Atribut', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                       style: TextButton.styleFrom(
                         foregroundColor: AppThemeConstants.accentBlue,
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
