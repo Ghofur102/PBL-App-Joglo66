@@ -53,6 +53,9 @@ class ApiEndpoints {
   static String ownerNotificationMarkRead(String id) => '$baseUrl/api/owner/notifications/$id/read';
   static String get ownerNotificationMarkAllRead => '$baseUrl/api/owner/notifications/read-all';
 
+  static String get ownerFields => '$baseUrl/api/owner/fields';
+  static String ownerUpdateField(int id) => '$baseUrl/api/owner/fields/$id/update';
+
   static String approveCancelBooking(String detailBookingId) => '$baseUrl/api/admin/cancel-booking/$detailBookingId/approve';
   static String rejectCancelBooking(String detailBookingId) => '$baseUrl/api/admin/cancel-booking/$detailBookingId/reject';
   static String approveRescheduleBooking(String detailBookingId) => '$baseUrl/api/admin/reschedule-booking/$detailBookingId/approve';

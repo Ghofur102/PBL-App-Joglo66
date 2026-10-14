@@ -172,4 +172,110 @@ class FieldService {
       rethrow;
     }
   }
+
+  static Future<List<dynamic>> fetchOwnerFields() async {
+    try {
+      final response = await ApiClient.get(
+        Uri.parse(ApiEndpoints.ownerFields),
+      );
+
+      if (response.statusCode == 200) {
+        final jsonData = json.decode(response.body);
+        if (jsonData['success'] == true) {
+          return jsonData['data'] as List<dynamic>? ?? [];
+        }
+        throw FormatException(
+          jsonData['message'] ?? 'Gagal memuat daftar lapangan owner',
+        );
+      }
+      throw FormatException('Error server (Code: ${response.statusCode})');
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  static Future<Map<String, dynamic>> createOwnerField({
+    required String name,
+    required String category,
+    String? description,
+    int? minCancelDays,
+    int? minRescheduleDays,
+    int? maxRescheduleTimes,
+  }) async {
+    try {
+      final body = <String, dynamic>{
+        'name': name.trim(),
+        'category': category.toLowerCase().trim(),
+        if (description != null && description.isNotEmpty) 'description': description.trim(),
+        'min_cancel_days': ?minCancelDays,
+        'min_reschedule_days': ?minRescheduleDays,
+        'max_reschedule_times': ?maxRescheduleTimes,
+      };
+
+      final response = await ApiClient.post(
+        Uri.parse(ApiEndpoints.ownerFields),
+        body: json.encode(body),
+      );
+
+      final jsonData = json.decode(response.body);
+
+      if ((response.statusCode == 200 || response.statusCode == 201) &&
+          jsonData['success'] == true) {
+        return jsonData['data'] as Map<String, dynamic>? ?? {};
+      }
+
+      if (response.statusCode == 422) {
+        throw FormatException(
+          jsonData['message'] ?? 'Data yang dikirim tidak valid',
+        );
+      }
+
+      throw FormatException(jsonData['message'] ?? 'Gagal menambahkan data lapangan');
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  static Future<Map<String, dynamic>> updateOwnerField({
+    required int id,
+    required String name,
+    required String category,
+    String? description,
+    int? minCancelDays,
+    int? minRescheduleDays,
+    int? maxRescheduleTimes,
+  }) async {
+    try {
+      final body = <String, dynamic>{
+        'name': name.trim(),
+        'category': category.toLowerCase().trim(),
+        if (description != null && description.isNotEmpty) 'description': description.trim(),
+        'min_cancel_days': ?minCancelDays,
+        'min_reschedule_days': ?minRescheduleDays,
+        'max_reschedule_times': ?maxRescheduleTimes,
+      };
+
+      final response = await ApiClient.post(
+        Uri.parse(ApiEndpoints.ownerUpdateField(id)),
+        body: json.encode(body),
+      );
+
+      final jsonData = json.decode(response.body);
+
+      if ((response.statusCode == 200 || response.statusCode == 201) &&
+          jsonData['success'] == true) {
+        return jsonData['data'] as Map<String, dynamic>? ?? {};
+      }
+
+      if (response.statusCode == 422) {
+        throw FormatException(
+          jsonData['message'] ?? 'Data yang dikirim tidak valid',
+        );
+      }
+
+      throw FormatException(jsonData['message'] ?? 'Gagal memperbarui data lapangan');
+    } catch (e) {
+      rethrow;
+    }
+  }
 }
