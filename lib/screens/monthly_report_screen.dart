@@ -38,6 +38,7 @@ class _MonthlyReportScreenState extends State<MonthlyReportScreen> {
   // Custom date range
   DateTime? _startDate;
   DateTime? _endDate;
+  bool _isFilterExpanded = false;
 
   final List<String> _months = [
     'Januari',
@@ -325,27 +326,43 @@ class _MonthlyReportScreenState extends State<MonthlyReportScreen> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final isCompact = constraints.maxWidth < 600;
-        final columnCount = isCompact ? 2 : 3;
-        final itemWidth =
-            (constraints.maxWidth - (12 * (columnCount - 1))) / columnCount;
-        final fullWidth = constraints.maxWidth;
-
-        InputDecoration dropdownDecoration({String? hintText}) =>
-            InputDecoration(
-              hintText: hintText,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 8,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            );
+        InputDecoration dropdownDecoration({
+          required String label,
+          String? hintText,
+        }) => InputDecoration(
+          labelText: label,
+          hintText: hintText,
+          filled: true,
+          fillColor: AppThemeConstants.bgLight,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 12,
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(
+              color: AppThemeConstants.borderGrey.withValues(alpha: 0.8),
+            ),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(
+              color: AppThemeConstants.borderGrey.withValues(alpha: 0.8),
+            ),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(
+              color: AppThemeConstants.primaryBlue,
+              width: 1.5,
+            ),
+          ),
+        );
 
         final monthDropdown = DropdownButtonFormField<int>(
           value: _selectedMonth,
           isExpanded: true,
-          decoration: dropdownDecoration(),
+          decoration: dropdownDecoration(label: 'Bulan'),
           items: List.generate(12, (index) {
             return DropdownMenuItem(
               value: index + 1,
@@ -363,7 +380,7 @@ class _MonthlyReportScreenState extends State<MonthlyReportScreen> {
         final yearDropdown = DropdownButtonFormField<int>(
           value: _selectedYear,
           isExpanded: true,
-          decoration: dropdownDecoration(),
+          decoration: dropdownDecoration(label: 'Tahun'),
           items: [2025, 2026, 2027, 2028, 2029, 2030].map((year) {
             return DropdownMenuItem(value: year, child: Text('$year'));
           }).toList(),
@@ -378,7 +395,7 @@ class _MonthlyReportScreenState extends State<MonthlyReportScreen> {
         final categoryDropdown = DropdownButtonFormField<String>(
           value: _selectedCategory,
           isExpanded: true,
-          decoration: dropdownDecoration(),
+          decoration: dropdownDecoration(label: 'Kategori'),
           selectedItemBuilder: (context) => _categoryLabels.values
               .map(
                 (label) => Align(
@@ -405,7 +422,7 @@ class _MonthlyReportScreenState extends State<MonthlyReportScreen> {
         final fieldDropdown = DropdownButtonFormField<String>(
           value: _selectedFieldId ?? '',
           isExpanded: true,
-          decoration: dropdownDecoration(hintText: 'Pilih Lapangan'),
+          decoration: dropdownDecoration(label: 'Lapangan'),
           selectedItemBuilder: (context) => [
             const Align(
               alignment: Alignment.centerLeft,
@@ -456,7 +473,6 @@ class _MonthlyReportScreenState extends State<MonthlyReportScreen> {
         );
 
         Widget dateFilter({
-          required String label,
           required DateTime? value,
           required VoidCallback onTap,
         }) {
@@ -464,151 +480,315 @@ class _MonthlyReportScreenState extends State<MonthlyReportScreen> {
             onTap: onTap,
             child: InputDecorator(
               decoration: InputDecoration(
-                labelText: label,
+                filled: true,
+                fillColor: AppThemeConstants.bgLight,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 14,
+                ),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: AppThemeConstants.borderGrey.withValues(alpha: 0.8),
+                  ),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: AppThemeConstants.borderGrey.withValues(alpha: 0.8),
+                  ),
                 ),
               ),
-              child: Text(
-                value != null ? DateFormat('yyyy-MM-dd').format(value) : '-',
-                overflow: TextOverflow.ellipsis,
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.calendar_month_outlined,
+                    size: 18,
+                    color: AppThemeConstants.accentBlue,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      value != null
+                          ? DateFormat('dd/MM/yyyy').format(value)
+                          : 'Pilih tanggal',
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: value != null
+                            ? AppThemeConstants.textPrimary
+                            : AppThemeConstants.textSecondary,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           );
         }
 
+        final extraFilterCount = [
+          if (_selectedCategory != 'all') true,
+          if (_selectedFieldId != null) true,
+          if (_startDate != null) true,
+          if (_endDate != null) true,
+        ].length;
+
         return Container(
+          margin: const EdgeInsets.fromLTRB(16, 10, 16, 8),
           decoration: BoxDecoration(
             color: Colors.white,
-            border: Border(
-              bottom: BorderSide(
-                color: AppThemeConstants.borderGrey.withValues(alpha: 0.6),
-              ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: AppThemeConstants.borderGrey.withValues(alpha: 0.65),
             ),
+            boxShadow: [
+              BoxShadow(
+                color: AppThemeConstants.textPrimary.withValues(alpha: 0.035),
+                blurRadius: 12,
+                offset: const Offset(0, 3),
+              ),
+            ],
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  const Icon(
-                    Icons.tune_rounded,
-                    size: 18,
-                    color: AppThemeConstants.accentBlue,
-                  ),
-                  const SizedBox(width: 8),
-                  const Expanded(
-                    child: Text(
-                      'Filter laporan',
-                      style: TextStyle(
-                        color: AppThemeConstants.textPrimary,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                  TextButton.icon(
-                    onPressed: () {
-                      _applyLocalFilter(() {
-                        _selectedCategory = 'all';
-                        _selectedFieldId = null;
-                        _startDate = null;
-                        _endDate = null;
-                      });
-                    },
-                    icon: const Icon(Icons.restart_alt_rounded, size: 17),
-                    label: const Text('Reset'),
-                    style: TextButton.styleFrom(
-                      foregroundColor: AppThemeConstants.accentBlue,
-                      visualDensity: VisualDensity.compact,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: [
-                  SizedBox(width: itemWidth, child: monthDropdown),
-                  SizedBox(width: itemWidth, child: yearDropdown),
-                  SizedBox(
-                    width: isCompact ? fullWidth : itemWidth,
-                    child: categoryDropdown,
-                  ),
-                  SizedBox(
-                    width: isCompact ? fullWidth : itemWidth,
-                    child: fieldDropdown,
-                  ),
-                  SizedBox(
-                    width: itemWidth,
-                    child: dateFilter(
-                      label: 'Dari',
-                      value: _startDate,
-                      onTap: () async {
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate:
-                              _startDate ??
-                              DateTime(_selectedYear, _selectedMonth, 1),
-                          firstDate: DateTime(2000),
-                          lastDate: DateTime(2100),
-                        );
-                        if (picked != null) {
-                          _applyLocalFilter(() => _startDate = picked);
-                        }
-                      },
-                    ),
-                  ),
-                  SizedBox(
-                    width: itemWidth,
-                    child: dateFilter(
-                      label: 'Sampai',
-                      value: _endDate,
-                      onTap: () async {
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate:
-                              _endDate ??
-                              DateTime(
-                                _selectedYear,
-                                _selectedMonth,
-                                DateTime(
-                                  _selectedYear,
-                                  _selectedMonth + 1,
-                                  0,
-                                ).day,
-                              ),
-                          firstDate: DateTime(2000),
-                          lastDate: DateTime(2100),
-                        );
-                        if (picked != null) {
-                          _applyLocalFilter(() => _endDate = picked);
-                        }
-                      },
-                    ),
-                  ),
-                  SizedBox(
-                    width: isCompact ? fullWidth : 48,
-                    child: Align(
-                      alignment: Alignment.centerRight,
-                      child: IconButton(
-                        tooltip: 'Muat ulang laporan',
-                        icon: const Icon(
-                          Icons.refresh,
-                          color: AppThemeConstants.accentBlue,
+              InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: () =>
+                    setState(() => _isFilterExpanded = !_isFilterExpanded),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          color: AppThemeConstants.lightBlue,
+                          borderRadius: BorderRadius.circular(11),
                         ),
-                        onPressed: _fetchReport,
+                        child: const Icon(
+                          Icons.tune_rounded,
+                          size: 19,
+                          color: AppThemeConstants.primaryBlue,
+                        ),
                       ),
-                    ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Filter laporan',
+                              style: TextStyle(
+                                color: AppThemeConstants.textPrimary,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              extraFilterCount == 0
+                                  ? '${_months[_selectedMonth - 1]} $_selectedYear'
+                                  : '${_months[_selectedMonth - 1]} $_selectedYear · $extraFilterCount filter aktif',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: AppThemeConstants.textSecondary,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'Reset filter',
+                        visualDensity: VisualDensity.compact,
+                        onPressed: () {
+                          _applyLocalFilter(() {
+                            _selectedCategory = 'all';
+                            _selectedFieldId = null;
+                            _startDate = null;
+                            _endDate = null;
+                          });
+                        },
+                        icon: const Icon(
+                          Icons.restart_alt_rounded,
+                          color: AppThemeConstants.accentBlue,
+                          size: 20,
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'Muat ulang laporan',
+                        visualDensity: VisualDensity.compact,
+                        onPressed: _fetchReport,
+                        icon: const Icon(
+                          Icons.refresh_rounded,
+                          color: AppThemeConstants.accentBlue,
+                          size: 20,
+                        ),
+                      ),
+                      Icon(
+                        _isFilterExpanded
+                            ? Icons.keyboard_arrow_up_rounded
+                            : Icons.keyboard_arrow_down_rounded,
+                        color: AppThemeConstants.textSecondary,
+                      ),
+                    ],
                   ),
-                ],
+                ),
+              ),
+              AnimatedSize(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeInOut,
+                child: _isFilterExpanded
+                    ? Padding(
+                        padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Divider(
+                              height: 1,
+                              color: AppThemeConstants.borderGrey.withValues(
+                                alpha: 0.65,
+                              ),
+                            ),
+                            const SizedBox(height: 14),
+                            _buildFilterSectionLabel(
+                              'Periode laporan',
+                              Icons.event_note_rounded,
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Expanded(child: monthDropdown),
+                                const SizedBox(width: 10),
+                                Expanded(child: yearDropdown),
+                              ],
+                            ),
+                            const SizedBox(height: 14),
+                            _buildFilterSectionLabel(
+                              'Kategori dan lapangan',
+                              Icons.category_outlined,
+                            ),
+                            const SizedBox(height: 8),
+                            if (isCompact) ...[
+                              categoryDropdown,
+                              const SizedBox(height: 10),
+                              fieldDropdown,
+                            ] else
+                              Row(
+                                children: [
+                                  Expanded(child: categoryDropdown),
+                                  const SizedBox(width: 10),
+                                  Expanded(child: fieldDropdown),
+                                ],
+                              ),
+                            const SizedBox(height: 14),
+                            _buildFilterSectionLabel(
+                              'Rentang tanggal (opsional)',
+                              Icons.date_range_rounded,
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: dateFilter(
+                                    value: _startDate,
+                                    onTap: () async {
+                                      final picked = await showDatePicker(
+                                        context: context,
+                                        initialDate:
+                                            _startDate ??
+                                            DateTime(
+                                              _selectedYear,
+                                              _selectedMonth,
+                                              1,
+                                            ),
+                                        firstDate: DateTime(2000),
+                                        lastDate: DateTime(2100),
+                                      );
+                                      if (picked != null) {
+                                        _applyLocalFilter(
+                                          () => _startDate = picked,
+                                        );
+                                      }
+                                    },
+                                  ),
+                                ),
+                                const Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 8),
+                                  child: Icon(
+                                    Icons.arrow_forward_rounded,
+                                    size: 16,
+                                    color: AppThemeConstants.textSecondary,
+                                  ),
+                                ),
+                                Expanded(
+                                  child: dateFilter(
+                                    value: _endDate,
+                                    onTap: () async {
+                                      final picked = await showDatePicker(
+                                        context: context,
+                                        initialDate:
+                                            _endDate ??
+                                            DateTime(
+                                              _selectedYear,
+                                              _selectedMonth,
+                                              DateTime(
+                                                _selectedYear,
+                                                _selectedMonth + 1,
+                                                0,
+                                              ).day,
+                                            ),
+                                        firstDate: DateTime(2000),
+                                        lastDate: DateTime(2100),
+                                      );
+                                      if (picked != null) {
+                                        _applyLocalFilter(
+                                          () => _endDate = picked,
+                                        );
+                                      }
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            const Text(
+                              'Gunakan untuk membatasi transaksi pada tanggal tertentu.',
+                              style: TextStyle(
+                                color: AppThemeConstants.textSecondary,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : const SizedBox(width: double.infinity),
               ),
             ],
           ),
         );
       },
+    );
+  }
+
+  Widget _buildFilterSectionLabel(String label, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, size: 15, color: AppThemeConstants.accentBlue),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: const TextStyle(
+            color: AppThemeConstants.textPrimary,
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
     );
   }
 
