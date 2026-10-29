@@ -774,17 +774,16 @@ class _MonthlyReportScreenState extends State<MonthlyReportScreen> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF1B4F8A), Color(0xFF406093)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: AppThemeConstants.borderGrey.withValues(alpha: 0.65),
+        ),
         boxShadow: [
           BoxShadow(
-            color: AppThemeConstants.primaryBlue.withValues(alpha: 0.18),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
+            color: AppThemeConstants.textPrimary.withValues(alpha: 0.05),
+            blurRadius: 16,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -794,16 +793,16 @@ class _MonthlyReportScreenState extends State<MonthlyReportScreen> {
           Row(
             children: [
               Container(
-                width: 40,
-                height: 40,
+                width: 42,
+                height: 42,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.16),
+                  color: AppThemeConstants.lightBlue,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
-                  Icons.account_balance_wallet_rounded,
-                  color: Colors.white,
-                  size: 21,
+                  Icons.assessment_outlined,
+                  color: AppThemeConstants.primaryBlue,
+                  size: 23,
                 ),
               ),
               const SizedBox(width: 12),
@@ -812,19 +811,19 @@ class _MonthlyReportScreenState extends State<MonthlyReportScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Ringkasan keuangan',
+                      'Ikhtisar keuangan',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: AppThemeConstants.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 3),
                     Text(
                       '${_months[_selectedMonth - 1]} $_selectedYear',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 12,
-                        color: Colors.white.withValues(alpha: 0.78),
+                        color: AppThemeConstants.textSecondary,
                       ),
                     ),
                   ],
@@ -835,64 +834,152 @@ class _MonthlyReportScreenState extends State<MonthlyReportScreen> {
           const SizedBox(height: 18),
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
+              gradient: const LinearGradient(
+                colors: [AppThemeConstants.primaryBlue, Color(0xFF2C669E)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
               children: [
-                Text(
-                  'LABA BERSIH',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.76),
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'LABA BERSIH',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.78),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        'Pemasukan bersih - pengeluaran',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.82),
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 5),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    _formatRp(profit),
-                    style: TextStyle(
-                      color: profit >= 0
-                          ? Colors.white
-                          : const Color(0xFFFFD7D7),
-                      fontSize: 27,
-                      fontWeight: FontWeight.w800,
+                const SizedBox(width: 12),
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      _formatRp(profit),
+                      style: TextStyle(
+                        color: profit >= 0
+                            ? Colors.white
+                            : const Color(0xFFFFD7D7),
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 14),
-          _buildSummaryRow(
-            'Pemasukan kotor',
-            _formatRp(gross),
-            color: Colors.white,
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildFinancialMetric(
+                  label: 'Pemasukan bersih',
+                  amount: netInc,
+                  icon: Icons.trending_up_rounded,
+                  color: AppThemeConstants.successGreen,
+                  backgroundColor: AppThemeConstants.lightGreen,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _buildFinancialMetric(
+                  label: 'Pengeluaran',
+                  amount: expense,
+                  icon: Icons.trending_down_rounded,
+                  color: AppThemeConstants.warningAmber,
+                  backgroundColor: AppThemeConstants.lightAmber,
+                ),
+              ),
+            ],
           ),
-          _buildSummaryRow(
-            'Refund',
-            '- ${_formatRp(refund)}',
-            color: const Color(0xFFFFD7D7),
+          const SizedBox(height: 18),
+          const Text(
+            'RINCIAN PERHITUNGAN',
+            style: TextStyle(
+              color: AppThemeConstants.textSecondary,
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.9,
+            ),
           ),
+          const SizedBox(height: 8),
+          _buildSummaryRow('Pemasukan kotor', _formatRp(gross)),
+          _buildSummaryRow('Refund', '- ${_formatRp(refund)}'),
           _summaryDivider(),
-          _buildSummaryRow(
-            'Pemasukan bersih',
-            _formatRp(netInc),
-            color: Colors.white,
-            isBold: true,
+          _buildSummaryRow('Pemasukan bersih', _formatRp(netInc), isBold: true),
+          _buildSummaryRow('Total pengeluaran', '- ${_formatRp(expense)}'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFinancialMetric({
+    required String label,
+    required int amount,
+    required IconData icon,
+    required Color color,
+    required Color backgroundColor,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 15, color: color),
+              const SizedBox(width: 5),
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
           ),
-          _buildSummaryRow(
-            'Total pengeluaran',
-            '- ${_formatRp(expense)}',
-            color: const Color(0xFFFFE2B8),
+          const SizedBox(height: 8),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              _formatRp(amount),
+              style: TextStyle(
+                color: color,
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
           ),
         ],
       ),
@@ -901,40 +988,37 @@ class _MonthlyReportScreenState extends State<MonthlyReportScreen> {
 
   Widget _summaryDivider() => Padding(
     padding: const EdgeInsets.symmetric(vertical: 8),
-    child: Divider(height: 1, color: Colors.white.withValues(alpha: 0.22)),
+    child: Divider(
+      height: 1,
+      color: AppThemeConstants.borderGrey.withValues(alpha: 0.75),
+    ),
   );
 
-  Widget _buildSummaryRow(
-    String label,
-    String value, {
-    Color? color,
-    bool isBold = false,
-    double fontSize = 14,
-  }) {
+  Widget _buildSummaryRow(String label, String value, {bool isBold = false}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: fontSize - 1,
-              color: color == Colors.white
-                  ? Colors.white.withValues(alpha: 0.78)
-                  : color?.withValues(alpha: 0.88) ??
-                        AppThemeConstants.textSecondary,
-              fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
+          Expanded(
+            child: Text(
+              label,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12,
+                color: AppThemeConstants.textSecondary,
+                fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
+              ),
             ),
           ),
+          const SizedBox(width: 12),
           Text(
             value,
             textAlign: TextAlign.right,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              fontSize: fontSize,
-              color: color ?? AppThemeConstants.textPrimary,
+              fontSize: 13,
+              color: AppThemeConstants.textPrimary,
               fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
             ),
           ),
